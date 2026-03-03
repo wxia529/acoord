@@ -79,7 +79,7 @@ export function deactivatePicker(canvas: HTMLCanvasElement, onSetStatus: (msg: s
   setActiveLightPicker(null, canvas, onSetStatus);
 }
 
-function setupLightSliders(prefix: string, lightObj: { intensity: number; color: string; x: number; y: number; z: number }): void {
+function setupLightSliders(prefix: string): void {
   const intensitySlider = document.getElementById(`${prefix}-intensity-slider`) as HTMLInputElement | null;
   const intensityValue = document.getElementById(`${prefix}-intensity-value`);
   const xSlider = document.getElementById(`${prefix}-x-slider`) as HTMLInputElement | null;
@@ -92,6 +92,8 @@ function setupLightSliders(prefix: string, lightObj: { intensity: number; color:
 
   if (intensitySlider) {
     intensitySlider.addEventListener('input', () => {
+      const lightObj = getLightObject(prefix);
+      if (!lightObj) return;
       lightObj.intensity = parseFloat(intensitySlider.value);
       if (intensityValue) intensityValue.textContent = lightObj.intensity.toFixed(1);
       renderer.updateLighting();
@@ -99,6 +101,8 @@ function setupLightSliders(prefix: string, lightObj: { intensity: number; color:
   }
   if (xSlider) {
     xSlider.addEventListener('input', () => {
+      const lightObj = getLightObject(prefix);
+      if (!lightObj) return;
       lightObj.x = parseInt(xSlider.value);
       if (xValue) xValue.textContent = String(lightObj.x);
       renderer.updateLighting();
@@ -106,6 +110,8 @@ function setupLightSliders(prefix: string, lightObj: { intensity: number; color:
   }
   if (ySlider) {
     ySlider.addEventListener('input', () => {
+      const lightObj = getLightObject(prefix);
+      if (!lightObj) return;
       lightObj.y = parseInt(ySlider.value);
       if (yValue) yValue.textContent = String(lightObj.y);
       renderer.updateLighting();
@@ -113,14 +119,17 @@ function setupLightSliders(prefix: string, lightObj: { intensity: number; color:
   }
   if (zSlider) {
     zSlider.addEventListener('input', () => {
+      const lightObj = getLightObject(prefix);
+      if (!lightObj) return;
       lightObj.z = parseInt(zSlider.value);
       if (zValue) zValue.textContent = String(lightObj.z);
       renderer.updateLighting();
     });
   }
   if (colorPicker) {
-    colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff');
     colorPicker.addEventListener('input', () => {
+      const lightObj = getLightObject(prefix);
+      if (!lightObj) return;
       lightObj.color = colorPicker.value;
       renderer.updateLighting();
     });
@@ -192,9 +201,12 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
     });
   }
 
-  setupLightSliders('key', state.keyLight);
-  setupLightSliders('fill', state.fillLight);
-  setupLightSliders('rim', state.rimLight);
+  setupLightSliders('key');
+  setupLightSliders('fill');
+  setupLightSliders('rim');
+  updateLightSliderUI('key', state.keyLight);
+  updateLightSliderUI('fill', state.fillLight);
+  updateLightSliderUI('rim', state.rimLight);
 
   for (const prefix of ['key', 'fill', 'rim']) {
     const button = document.getElementById(`btn-pick-${prefix}-light`) as HTMLButtonElement | null;

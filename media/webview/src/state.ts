@@ -1,4 +1,13 @@
-import type { AppState, LightConfig, DisplaySettings, AvailableConfigs } from './types';
+import type { AppState, LightConfig, DisplaySettings, AvailableConfigs, NormalizedLightConfig } from './types';
+
+function flattenLight(light: LightConfig | NormalizedLightConfig): LightConfig {
+  const pos = (light as NormalizedLightConfig).position;
+  if (pos && typeof pos.x === 'number') {
+    return { intensity: light.intensity, color: light.color, x: pos.x, y: pos.y, z: pos.z };
+  }
+  const flat = light as LightConfig;
+  return { intensity: flat.intensity, color: flat.color, x: flat.x ?? 0, y: flat.y ?? 0, z: flat.z ?? 0 };
+}
 
 export const state: AppState = {
   currentStructure: null,
@@ -128,8 +137,8 @@ export const state: AppState = {
     this.ambientIntensity = settings.ambientIntensity ?? this.ambientIntensity;
     this.ambientColor = settings.ambientColor ?? this.ambientColor;
     this.shininess = settings.shininess ?? this.shininess;
-    if (settings.keyLight) { this.keyLight = settings.keyLight as LightConfig; }
-    if (settings.fillLight) { this.fillLight = settings.fillLight as LightConfig; }
-    if (settings.rimLight) { this.rimLight = settings.rimLight as LightConfig; }
+    if (settings.keyLight) { this.keyLight = flattenLight(settings.keyLight); }
+    if (settings.fillLight) { this.fillLight = flattenLight(settings.fillLight); }
+    if (settings.rimLight) { this.rimLight = flattenLight(settings.rimLight); }
   },
 };

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import { state } from './state';
 import type { Atom, Bond, Structure, UiHooks } from './types';
 
@@ -13,6 +13,7 @@ export interface RendererApi {
   renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: { fitCamera?: boolean }): void;
   fitCamera(): void;
   setProjectionMode(mode: string): void;
+  snapCameraToAxis(axis: string): void;
   getScale(): number;
   getRaycaster(): THREE.Raycaster;
   getMouse(): THREE.Vector2;
@@ -30,7 +31,7 @@ interface RendererState {
   scene: THREE.Scene | null;
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera | null;
   renderer: THREE.WebGLRenderer | null;
-  controls: OrbitControls | { update: () => void; enabled?: boolean; target?: THREE.Vector3; dispose?: () => void } | null;
+  controls: TrackballControls | { update: () => void; enabled?: boolean; target?: THREE.Vector3; dispose?: () => void } | null;
   atomMeshes: Map<string, THREE.Mesh>;
   bondMeshes: THREE.Mesh[];
   bondLines: THREE.Mesh[];
@@ -144,13 +145,15 @@ function createCamera(mode: string, width: number, height: number): THREE.Perspe
 }
 
 function applyControls(camera: THREE.Camera): void {
-  const ctrl = rendererState.controls as OrbitControls | null;
+  const ctrl = rendererState.controls as TrackballControls | null;
   if (ctrl && ctrl.dispose) {
     ctrl.dispose();
   }
-  const controls = new OrbitControls(camera, rendererState.renderer!.domElement);
-  controls.enableDamping = true;
-  controls.dampingFactor = 0.05;
+  const controls = new TrackballControls(camera, rendererState.renderer!.domElement);
+  controls.rotateSpeed = 3.0;
+  controls.zoomSpeed = 1.2;
+  controls.panSpeed = 0.8;
+  controls.staticMoving = true;
   rendererState.controls = controls;
 }
 
@@ -289,6 +292,10 @@ function onResize(): void {
   }
   rendererState.camera.updateProjectionMatrix();
   rendererState.renderer.setSize(width, height);
+  const ctrl = rendererState.controls as TrackballControls | null;
+  if (ctrl && ctrl.handleResize) {
+    ctrl.handleResize();
+  }
 }
 
 function getAutoScales(atoms: Atom[]): { scale: number; sizeScale: number } {
@@ -585,11 +592,45 @@ function fitCamera(): void {
     cam.far = Math.max(1000, cameraDistance * 10);
     cam.updateProjectionMatrix();
   }
-  const ctrl = rendererState.controls as OrbitControls;
+  const ctrl = rendererState.controls as TrackballControls;
   if (ctrl && ctrl.target) {
     ctrl.target.copy(center);
   }
   rendererState.controls!.update();
+}
+
+// axis: 'a'|'b'|'c'|'-a'|'-b'|'-c'  →  snap camera to look along that axis
+function snapCameraToAxis(axis: string): void {
+  if (!rendererState.camera) return;
+
+  const ctrl = rendererState.controls as TrackballControls;
+  const target = (ctrl && ctrl.target) ? ctrl.target.clone() : new THREE.Vector3();
+
+  // Compute current camera distance from target so we preserve zoom level
+  const dist = rendererState.camera.position.distanceTo(target);
+  const d = Math.max(dist, 1);
+
+  let pos: THREE.Vector3;
+  let up: THREE.Vector3;
+  switch (axis) {
+    case 'a':  pos = new THREE.Vector3(d, 0, 0);  up = new THREE.Vector3(0, 0, 1); break;
+    case '-a': pos = new THREE.Vector3(-d, 0, 0); up = new THREE.Vector3(0, 0, 1); break;
+    case 'b':  pos = new THREE.Vector3(0, d, 0);  up = new THREE.Vector3(0, 0, 1); break;
+    case '-b': pos = new THREE.Vector3(0, -d, 0); up = new THREE.Vector3(0, 0, 1); break;
+    case 'c':  pos = new THREE.Vector3(0, 0, d);  up = new THREE.Vector3(0, 1, 0); break;
+    case '-c': pos = new THREE.Vector3(0, 0, -d); up = new THREE.Vector3(0, 1, 0); break;
+    default: return;
+  }
+
+  rendererState.camera.position.copy(target).add(pos);
+  rendererState.camera.up.copy(up);
+  rendererState.camera.lookAt(target);
+  rendererState.camera.updateProjectionMatrix();
+
+  if (ctrl && ctrl.target) {
+    ctrl.target.copy(target);
+  }
+  if (rendererState.controls) rendererState.controls.update();
 }
 
 function setProjectionMode(mode: string): void {
@@ -603,7 +644,7 @@ function setProjectionMode(mode: string): void {
   const height = Math.max(1, rect.height);
 
   const oldCamera = rendererState.camera;
-  const ctrl = rendererState.controls as OrbitControls | null;
+  const ctrl = rendererState.controls as TrackballControls | null;
   const previousTarget = ctrl && ctrl.target ? ctrl.target.clone() : null;
   const newCamera = createCamera(nextMode, width, height);
   newCamera.position.copy(oldCamera.position);
@@ -615,7 +656,7 @@ function setProjectionMode(mode: string): void {
   rendererState.camera = newCamera;
   rendererState.projectionMode = nextMode;
   applyControls(newCamera);
-  const newCtrl = rendererState.controls as OrbitControls | null;
+  const newCtrl = rendererState.controls as TrackballControls | null;
   if (newCtrl && newCtrl.target && previousTarget) {
     newCtrl.target.copy(previousTarget);
     newCamera.lookAt(previousTarget);
@@ -631,7 +672,7 @@ function getBondMeshes(): THREE.Mesh[] { return rendererState.bondMeshes; }
 function getDragPlane(): THREE.Plane { return rendererState.dragPlane!; }
 
 function setControlsEnabled(enabled: boolean): void {
-  const ctrl = rendererState.controls as OrbitControls | null;
+  const ctrl = rendererState.controls as TrackballControls | null;
   if (ctrl && ctrl.enabled !== undefined) {
     ctrl.enabled = enabled;
   }
@@ -749,6 +790,7 @@ export const renderer: RendererApi = {
   renderStructure,
   fitCamera,
   setProjectionMode,
+  snapCameraToAxis,
   getScale,
   getRaycaster,
   getMouse,

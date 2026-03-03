@@ -305,6 +305,16 @@ export function setup(callbacks: AppCallbacks): void {
   }
   setProjection(state.projectionMode || 'perspective');
 
+  // ── Axis view buttons ──────────────────────────────────────────────────────
+
+  for (const axis of ['a', 'b', 'c', '-a', '-b', '-c']) {
+    const id = 'btn-view-' + (axis.startsWith('-') ? 'n' + axis.slice(1) : axis);
+    const btn = document.getElementById(id) as HTMLButtonElement | null;
+    if (btn) {
+      btn.addEventListener('click', () => { renderer.snapCameraToAxis(axis); });
+    }
+  }
+
   // ── Atom size panel ────────────────────────────────────────────────────────
 
   const globalSlider = document.getElementById('atom-size-global-slider') as HTMLInputElement | null;
