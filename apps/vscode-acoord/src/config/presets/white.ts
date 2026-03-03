@@ -1,9 +1,9 @@
 import { DisplayConfig } from '../types';
 
-export const DARK_PRESET: DisplayConfig = {
-  id: 'preset-dark',
-  name: 'Dark Theme',
-  description: 'Dark background optimized for low-light environments',
+export const WHITE_PRESET: DisplayConfig = {
+  id: 'preset-white',
+  name: 'White',
+  description: 'Bright background optimized for light environments',
   isPreset: true,
   isReadOnly: true,
   version: 1,
@@ -12,39 +12,39 @@ export const DARK_PRESET: DisplayConfig = {
   updatedAt: 0,
   settings: {
     showAxes: true,
-    backgroundColor: '#0d1015',
+    backgroundColor: '#ffffff',
     unitCellColor: '#FF6600',
     unitCellThickness: 1,
     unitCellLineStyle: 'solid',
-    atomSizeUseDefaultSettings: true,
+    atomSizeUseDefaultSettings: false,
     atomSizeGlobal: 0.3,
     atomSizeByElement: {},
     atomSizeByAtom: {},
     manualScale: 1,
     autoScaleEnabled: false,
     atomSizeScale: 1,
-    bondThicknessScale: 1,
+    bondThicknessScale: 3,
     viewZoom: 1,
     scaleAtomsWithLattice: false,
     projectionMode: 'orthographic',
     lightingEnabled: true,
-    ambientIntensity: 0.4,
-    ambientColor: '#444444',
+    ambientIntensity: 0.5,
+    ambientColor: '#ffffff',
     shininess: 50,
     keyLight: {
-      intensity: 0.8,
-      position: { x: 0, y: 0, z: 10 },
-      color: '#ffffff'
+      intensity: 0.7,
+      color: '#CCCCCC',
+      position: { x: 0, y: 0, z: 10 }
     },
     fillLight: {
-      intensity: 0.1,
-      position: { x: -10, y: -5, z: 5 },
-      color: '#aaaaaa'
+      intensity: 0,
+      color: '#ffffff',
+      position: { x: -10, y: -5, z: 5 }
     },
     rimLight: {
-      intensity: 0.3,
-      position: { x: 0, y: 5, z: -10 },
-      color: '#ffffff'
+      intensity: 0,
+      color: '#ffffff',
+      position: { x: 0, y: 5, z: -10 }
     }
   }
 };

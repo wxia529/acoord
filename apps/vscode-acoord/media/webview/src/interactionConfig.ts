@@ -41,10 +41,10 @@ export function init(): void {
   // Save config
   if (btnSaveConfig) {
     btnSaveConfig.addEventListener('click', () => {
-      const name = prompt('Enter configuration name:', 'My Config');
-      if (!name) { return; }
-      const description = prompt('Enter description (optional):', '');
-      configHandler.saveAsUserConfig(name, description || undefined);
+      _vscode?.postMessage({
+        command: 'promptSaveDisplayConfig',
+        settings: state.extractDisplaySettings(),
+      });
     });
   }
 
@@ -66,24 +66,11 @@ export function init(): void {
   if (btnDeleteConfig) {
     btnDeleteConfig.addEventListener('click', () => {
       const configId = configSelect ? configSelect.value : null;
-      if (!configId) {
-        alert('Please select a configuration to delete');
-        return;
-      }
-
-      // Only user configs may be deleted (not presets)
-      const isUserConfig = state.availableConfigs.user.some((c) => c.id === configId);
-      if (!isUserConfig) {
-        alert('Cannot delete preset configurations');
-        return;
-      }
-
-      if (confirm('Are you sure you want to delete this configuration?')) {
-        _vscode?.postMessage({
-          command: 'deleteDisplayConfig',
-          configId,
-        });
-      }
+      if (!configId) { return; }
+      _vscode?.postMessage({
+        command: 'confirmDeleteDisplayConfig',
+        configId,
+      });
     });
   }
 
