@@ -1,33 +1,89 @@
 import { Structure } from '../models/structure';
 
-/**
- * Manages the undo stack for a single open document.
- * Each snapshot is a full clone of the structure at the time an edit begins.
- */
+const MAX_ATOMS_FOR_UNDO = 5000;
+const MAX_MEMORY_MB = 100;
+const ESTIMATED_BYTES_PER_ATOM = 200;
+
 export class UndoManager {
   private readonly stack: Structure[] = [];
+  private readonly maxDepth: number;
+  private readonly maxAtoms: number;
+  private warnedAboutSize = false;
 
-  constructor(private readonly maxDepth: number = 100) {}
+  constructor(maxDepth: number = 100, maxAtoms: number = MAX_ATOMS_FOR_UNDO) {
+    this.maxDepth = maxDepth;
+    this.maxAtoms = maxAtoms;
+  }
 
-  /** Push a deep clone of `structure` onto the stack before an edit. */
+  private estimateMemoryUsage(structure: Structure): number {
+    return structure.atoms.length * ESTIMATED_BYTES_PER_ATOM;
+  }
+
+  private canAffordUndo(structure: Structure): boolean {
+    const atomCount = structure.atoms.length;
+    if (atomCount > this.maxAtoms) {
+      if (!this.warnedAboutSize) {
+        console.warn(
+          `UndoManager: Structure has ${atomCount} atoms (max: ${this.maxAtoms}). ` +
+          `Undo disabled for this edit to prevent memory issues.`
+        );
+        this.warnedAboutSize = true;
+      }
+      return false;
+    }
+
+    const currentMemory = this.stack.reduce(
+      (sum, s) => sum + this.estimateMemoryUsage(s),
+      0
+    );
+    const newMemory = this.estimateMemoryUsage(structure);
+    const maxMemoryBytes = MAX_MEMORY_MB * 1024 * 1024;
+    
+    if (currentMemory + newMemory > maxMemoryBytes) {
+      while (
+        this.stack.length > 0 &&
+        currentMemory + newMemory > maxMemoryBytes
+      ) {
+        const removed = this.stack.shift()!;
+        const removedMemory = this.estimateMemoryUsage(removed);
+      }
+    }
+
+    return true;
+  }
+
   push(structure: Structure): void {
+    if (!this.canAffordUndo(structure)) {
+      return;
+    }
     this.stack.push(structure.clone());
     if (this.stack.length > this.maxDepth) {
       this.stack.shift();
     }
   }
 
-  /** Pop and return the most recent snapshot, or `null` if the stack is empty. */
   pop(): Structure | null {
     return this.stack.pop() ?? null;
   }
 
-  /** Discard all stored snapshots (e.g. after a trajectory frame change). */
   clear(): void {
     this.stack.length = 0;
+    this.warnedAboutSize = false;
   }
 
   get isEmpty(): boolean {
     return this.stack.length === 0;
+  }
+
+  get depth(): number {
+    return this.stack.length;
+  }
+
+  get estimatedMemoryMB(): number {
+    const bytes = this.stack.reduce(
+      (sum, s) => sum + this.estimateMemoryUsage(s),
+      0
+    );
+    return bytes / (1024 * 1024);
   }
 }
