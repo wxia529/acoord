@@ -23,7 +23,7 @@ export class Atom {
     this.x = x;
     this.y = y;
     this.z = z;
-    this.id = id || `atom_${Math.random().toString(36).substr(2, 9)}`;
+    this.id = id || `atom_${Math.random().toString(36).substring(2, 11)}`;
     this.color = color;
   }
 

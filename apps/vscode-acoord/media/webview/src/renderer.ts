@@ -64,6 +64,8 @@ interface RendererState {
   axesHelper: THREE.AxesHelper | null;
   /** Dirty flag: set true whenever the scene needs a re-render. */
   needsRender: boolean;
+  /** Status update interval handle for cleanup. */
+  statusInterval: ReturnType<typeof setInterval> | null;
 }
 
 const rendererState: RendererState = {
@@ -94,6 +96,7 @@ const rendererState: RendererState = {
   rimLight: null,
   axesHelper: null,
   needsRender: true,
+  statusInterval: null,
 };
 
 /** Mark the scene dirty so animate() will issue a render on the next frame. */
@@ -268,7 +271,7 @@ function init(canvas: HTMLCanvasElement, handlers: { setError: (m: string) => vo
   animate();
   markDirty();
 
-  setInterval(() => {
+  rendererState.statusInterval = setInterval(() => {
     const calls = rendererState.renderer ? rendererState.renderer.info.render.calls : 0;
     handlers.setStatus('Render OK. Draw calls: ' + calls + ' | Atoms: ' + rendererState.atomMeshes.size);
   }, 1000);
@@ -1019,3 +1022,70 @@ export const renderer: RendererApi = {
   updateAtomPosition,
   markDirty,
 };
+
+function dispose(): void {
+  if (rendererState.statusInterval) {
+    clearInterval(rendererState.statusInterval);
+    rendererState.statusInterval = null;
+  }
+  for (const mesh of rendererState.atomMeshes.values()) {
+    rendererState.scene?.remove(mesh);
+    disposeObject3D(mesh);
+  }
+  rendererState.atomMeshes.clear();
+  rendererState.atomInstanceIndex.clear();
+
+  for (const im of rendererState.atomInstancedMeshes) {
+    rendererState.scene?.remove(im);
+    disposeInstancedMesh(im);
+  }
+  rendererState.atomInstancedMeshes = [];
+
+  for (const mesh of rendererState.extraMeshes) {
+    rendererState.scene?.remove(mesh);
+    disposeObject3D(mesh);
+  }
+  rendererState.extraMeshes = [];
+
+  for (const mesh of rendererState.bondMeshes) {
+    rendererState.scene?.remove(mesh);
+    disposeObject3D(mesh);
+  }
+  rendererState.bondMeshes = [];
+  rendererState.bondLines = [];
+
+  for (const im of rendererState.bondInstancedMeshes) {
+    rendererState.scene?.remove(im);
+    disposeInstancedMesh(im);
+  }
+  rendererState.bondInstancedMeshes = [];
+
+  if (rendererState.unitCellGroup) {
+    rendererState.scene?.remove(rendererState.unitCellGroup);
+    disposeObject3D(rendererState.unitCellGroup);
+    rendererState.unitCellGroup = null;
+  }
+
+  if (rendererState.axesHelper) {
+    rendererState.scene?.remove(rendererState.axesHelper);
+    rendererState.axesHelper.dispose();
+    rendererState.axesHelper = null;
+  }
+
+  const ctrl = rendererState.controls as TrackballControls | null;
+  if (ctrl && ctrl.dispose) {
+    ctrl.dispose();
+  }
+  rendererState.controls = null;
+
+  if (rendererState.renderer) {
+    rendererState.renderer.dispose();
+    rendererState.renderer = null;
+  }
+
+  rendererState.scene = null;
+  rendererState.camera = null;
+  rendererState.raycaster = null;
+  rendererState.mouse = null;
+  rendererState.dragPlane = null;
+}

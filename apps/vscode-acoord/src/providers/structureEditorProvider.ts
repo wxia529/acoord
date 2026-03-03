@@ -24,6 +24,21 @@ export class StructureDocument implements vscode.CustomDocument {
   }
 }
 
+class EditorSession {
+  constructor(
+    readonly key: string,
+    readonly webviewPanel: vscode.WebviewPanel,
+    readonly renderer: ThreeJSRenderer,
+    readonly trajectoryManager: TrajectoryManager,
+    readonly undoManager: UndoManager,
+    displaySettings?: DisplaySettings
+  ) {
+    this.displaySettings = displaySettings;
+  }
+
+  displaySettings?: DisplaySettings;
+}
+
 /**
  * Custom editor provider for structure files
  */
@@ -33,11 +48,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       vscode.CustomDocumentContentChangeEvent<StructureDocument>
   >();
   readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
-  private webviewPanels = new Map<string, vscode.WebviewPanel>();
-  private renderers = new Map<string, ThreeJSRenderer>();
-  private trajectoryManagers = new Map<string, TrajectoryManager>();
-  private undoManagers = new Map<string, UndoManager>();
-  private displaySettings = new Map<string, DisplaySettings>();
+  private sessions = new Map<string, EditorSession>();
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -81,19 +92,21 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     // Store references
     const key = uri;
     const traj = new TrajectoryManager(frames, initialFrameIndex);
-    this.trajectoryManagers.set(key, traj);
-    this.undoManagers.set(key, new UndoManager());
-    this.webviewPanels.set(key, webviewPanel);
 
     const renderer = new ThreeJSRenderer(traj.activeStructure);
     renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
-    this.renderers.set(key, renderer);
 
     // Load default display config
     const defaultConfig = this.configManager.getCurrentConfig();
-    if (defaultConfig) {
-      this.displaySettings.set(key, defaultConfig.settings);
-    }
+    const session = new EditorSession(
+      key,
+      webviewPanel,
+      renderer,
+      traj,
+      new UndoManager(),
+      defaultConfig?.settings
+    );
+    this.sessions.set(key, session);
 
     // Setup webview
     webviewPanel.webview.options = {
@@ -121,15 +134,14 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
             return;
           }
           const idx = TrajectoryManager.defaultFrameIndex(updatedFrames);
-          const t = this.trajectoryManagers.get(key);
-          if (t) { t.set(updatedFrames, idx); }
-          this.undoManagers.get(key)?.clear();
+          session.trajectoryManager.set(updatedFrames, idx);
+          session.undoManager.clear();
           renderer.setStructure(updatedFrames[idx]);
           renderer.setShowUnitCell(!!updatedFrames[idx].unitCell);
           renderer.setTrajectoryFrameInfo(idx, updatedFrames.length);
           renderer.deselectAtom();
           renderer.deselectBond();
-          this.renderStructure(key, webviewPanel);
+          this.renderStructure(session);
         } catch (error) {
           vscode.window.showErrorMessage(
             `Failed to reload structure: ${error instanceof Error ? error.message : String(error)}`
@@ -139,15 +151,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     );
 
     // Initial render
-    this.renderStructure(key, webviewPanel);
+    this.renderStructure(session);
 
     // Cleanup on close
     webviewPanel.onDidDispose(() => {
-      this.webviewPanels.delete(key);
-      this.renderers.delete(key);
-      this.trajectoryManagers.delete(key);
-      this.undoManagers.delete(key);
-      this.displaySettings.delete(key);
+      this.sessions.delete(key);
       saveListener.dispose();
     });
   }
@@ -155,28 +163,46 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   private async handleWebviewMessage(
     message: any,
     key: string,
-    webviewPanel: vscode.WebviewPanel
+    _webviewPanel: vscode.WebviewPanel
   ) {
-    const renderer = this.renderers.get(key);
-    const traj = this.trajectoryManagers.get(key);
-    const undo = this.undoManagers.get(key);
-    if (!renderer || !traj) {
+    const session = this.sessions.get(key);
+    if (!session) {
       return;
     }
-    const structure = traj.activeStructure;
+
+    if (await this.handleCoreCommands(message, session)) {
+      return;
+    }
+    if (await this.handleSelectionAndCellCommands(message, session)) {
+      return;
+    }
+    if (await this.handleAtomEditCommands(message, session)) {
+      return;
+    }
+    if (await this.handleBondCommands(message, session)) {
+      return;
+    }
+    if (await this.handleDocumentCommands(message, session)) {
+      return;
+    }
+    await this.handleDisplayConfigCommands(message, session);
+  }
+
+  private async handleCoreCommands(message: any, session: EditorSession): Promise<boolean> {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
 
     switch (message.command) {
       case 'getState':
-        this.renderStructure(key, webviewPanel);
-        break;
+        this.renderStructure(session);
+        return true;
 
       case 'setTrajectoryFrame': {
         if (traj.frameCount <= 1) {
-          break;
+          return true;
         }
         const requestedIndex = Number(message.frameIndex);
         if (!Number.isFinite(requestedIndex)) {
-          break;
+          return true;
         }
         const nextIndex = Math.max(0, Math.min(traj.frameCount - 1, Math.floor(requestedIndex)));
         traj.setActiveIndex(nextIndex);
@@ -186,72 +212,31 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         renderer.setTrajectoryFrameInfo(nextIndex, traj.frameCount);
         renderer.deselectAtom();
         renderer.deselectBond();
-        undo?.clear();
-        this.renderStructure(key, webviewPanel);
-        break;
+        undo.clear();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'beginDrag':
-        if (message.atomId) {
-          undo?.push(structure);
+        if (message.atomId && !traj.isEditing) {
+          const editStructure = traj.beginEdit();
+          undo.push(editStructure);
         }
-        break;
+        return true;
 
-      case 'addAtom': {
-        const element = parseElement(String(message.element || ''));
-        if (!element) {
-          vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
-          break;
-        }
-        const atom = new Atom(
-          element,
-          message.x || 0,
-          message.y || 0,
-          message.z || 0
-        );
-        undo?.push(structure);
-        structure.addAtom(atom);
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
-      }
+      case 'undo':
+        this.undoLastEdit(session);
+        return true;
 
-      case 'deleteAtom': {
-        if (message.atomId) {
-          undo?.push(structure);
-          structure.removeAtom(message.atomId);
-          renderer.setStructure(structure);
-          renderer.deselectAtom();
-          renderer.deselectBond();
-          this.renderStructure(key, webviewPanel);
-        }
-        break;
-      }
+      default:
+        return false;
+    }
+  }
 
-      case 'deleteAtoms': {
-        const ids: string[] = Array.isArray(message.atomIds)
-          ? Array.from(
-            new Set(
-              message.atomIds.filter(
-                (id: unknown): id is string => typeof id === 'string' && id.length > 0
-              )
-            )
-          )
-          : [];
-        if (ids.length === 0) {
-          break;
-        }
-        undo?.push(structure);
-        for (const atomId of ids) {
-          structure.removeAtom(atomId);
-        }
-        renderer.setStructure(structure);
-        renderer.deselectAtom();
-        renderer.deselectBond();
-        this.renderStructure(key, webviewPanel);
-        break;
-      }
+  private async handleSelectionAndCellCommands(message: any, session: EditorSession): Promise<boolean> {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
 
+    switch (message.command) {
       case 'selectAtom': {
         if (message.atomId) {
           if (message.add) {
@@ -265,17 +250,17 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
             renderer.selectAtom(message.atomId);
           }
           renderer.deselectBond();
-          this.renderStructure(key, webviewPanel);
+          this.renderStructure(session);
         }
-        break;
+        return true;
       }
 
       case 'setSelection': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         renderer.setSelection(ids);
         renderer.deselectBond();
-        this.renderStructure(key, webviewPanel);
-        break;
+        this.renderStructure(session);
+        return true;
       }
 
       case 'selectBond': {
@@ -291,8 +276,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         } else {
           renderer.selectBond(bondKey);
         }
-        this.renderStructure(key, webviewPanel);
-        break;
+        this.renderStructure(session);
+        return true;
       }
 
       case 'setBondSelection': {
@@ -300,16 +285,14 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           ? message.bondKeys.filter((k: unknown) => typeof k === 'string')
           : [];
         renderer.setBondSelection(keys);
-        this.renderStructure(key, webviewPanel);
-        break;
+        this.renderStructure(session);
+        return true;
       }
 
       case 'toggleUnitCell': {
-        renderer.setShowUnitCell(
-          !renderer.getState().showUnitCell
-        );
-        this.renderStructure(key, webviewPanel);
-        break;
+        renderer.setShowUnitCell(!renderer.getState().showUnitCell);
+        this.renderStructure(session);
+        return true;
       }
 
       case 'setUnitCell': {
@@ -334,48 +317,53 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
         if (!isValid) {
           vscode.window.showErrorMessage('Invalid lattice parameters.');
-          break;
+          return true;
         }
 
-        undo?.push(structure);
-        const oldCell = structure.unitCell;
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
+        const oldCell = editStructure.unitCell;
         const nextCell = new UnitCell(a, b, c, alpha, beta, gamma);
         if (message.scaleAtoms && oldCell) {
-          for (const atom of structure.atoms) {
+          for (const atom of editStructure.atoms) {
             const frac = oldCell.cartesianToFractional(atom.x, atom.y, atom.z);
             const cart = nextCell.fractionalToCartesian(frac[0], frac[1], frac[2]);
             atom.setPosition(cart[0], cart[1], cart[2]);
           }
         }
-        structure.unitCell = nextCell;
-        structure.isCrystal = true;
-        if (!structure.supercell) {
-          structure.supercell = [1, 1, 1];
+        editStructure.unitCell = nextCell;
+        editStructure.isCrystal = true;
+        if (!editStructure.supercell) {
+          editStructure.supercell = [1, 1, 1];
         }
-        renderer.setStructure(structure);
+        renderer.setStructure(editStructure);
         renderer.setShowUnitCell(true);
-        this.renderStructure(key, webviewPanel);
-        break;
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'clearUnitCell': {
-        undo?.push(structure);
-        structure.unitCell = undefined;
-        structure.isCrystal = false;
-        structure.supercell = [1, 1, 1];
-        renderer.setStructure(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
+        editStructure.unitCell = undefined;
+        editStructure.isCrystal = false;
+        editStructure.supercell = [1, 1, 1];
+        renderer.setStructure(editStructure);
         renderer.setShowUnitCell(false);
-        this.renderStructure(key, webviewPanel);
-        break;
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'centerToUnitCell': {
-        if (!structure.unitCell) {
+        const centerStructure = traj.activeStructure;
+        if (!centerStructure.unitCell) {
           vscode.window.showErrorMessage('Centering requires a unit cell.');
-          break;
+          return true;
         }
-        if (structure.atoms.length === 0) {
-          break;
+        if (centerStructure.atoms.length === 0) {
+          return true;
         }
         const confirm = await vscode.window.showWarningMessage(
           'Center all atoms in the unit cell? This will move every atom.',
@@ -383,20 +371,21 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           'Center'
         );
         if (confirm !== 'Center') {
-          break;
+          return true;
         }
-        undo?.push(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
         let cx = 0;
         let cy = 0;
         let cz = 0;
-        for (const atom of structure.atoms) {
+        for (const atom of editStructure.atoms) {
           cx += atom.x;
           cy += atom.y;
           cz += atom.z;
         }
-        const count = structure.atoms.length;
+        const count = editStructure.atoms.length;
         const geomCenter: [number, number, number] = [cx / count, cy / count, cz / count];
-        const vectors = structure.unitCell.getLatticeVectors();
+        const vectors = editStructure.unitCell!.getLatticeVectors();
         const cellCenter: [number, number, number] = [
           0.5 * (vectors[0][0] + vectors[1][0] + vectors[2][0]),
           0.5 * (vectors[0][1] + vectors[1][1] + vectors[2][1]),
@@ -405,10 +394,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         const dx = cellCenter[0] - geomCenter[0];
         const dy = cellCenter[1] - geomCenter[1];
         const dz = cellCenter[2] - geomCenter[2];
-        structure.translate(dx, dy, dz);
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
+        editStructure.translate(dx, dy, dz);
+        renderer.setStructure(editStructure);
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'setSupercell': {
@@ -416,78 +406,158 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         const nx = Math.max(1, Math.floor(Number(sc[0]) || 1));
         const ny = Math.max(1, Math.floor(Number(sc[1]) || 1));
         const nz = Math.max(1, Math.floor(Number(sc[2]) || 1));
-        if (!structure.unitCell) {
-          structure.supercell = [1, 1, 1];
+        const scStructure = traj.activeStructure;
+        if (!scStructure.unitCell) {
+          scStructure.supercell = [1, 1, 1];
         } else {
-          structure.supercell = [nx, ny, nz];
+          scStructure.supercell = [nx, ny, nz];
         }
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
+        renderer.setStructure(scStructure);
+        this.renderStructure(session);
+        return true;
+      }
+
+      default:
+        return false;
+    }
+  }
+
+  private async handleAtomEditCommands(message: any, session: EditorSession): Promise<boolean> {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
+
+    switch (message.command) {
+      case 'addAtom': {
+        const element = parseElement(String(message.element || ''));
+        if (!element) {
+          vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
+          return true;
+        }
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        const atom = new Atom(
+          element,
+          message.x || 0,
+          message.y || 0,
+          message.z || 0
+        );
+        undo.push(editStructure);
+        editStructure.addAtom(atom);
+        renderer.setStructure(editStructure);
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
+      }
+
+      case 'deleteAtom': {
+        if (message.atomId) {
+          const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+          undo.push(editStructure);
+          editStructure.removeAtom(message.atomId);
+          renderer.setStructure(editStructure);
+          renderer.deselectAtom();
+          renderer.deselectBond();
+          traj.commitEdit();
+          this.renderStructure(session);
+        }
+        return true;
+      }
+
+      case 'deleteAtoms': {
+        const ids: string[] = Array.isArray(message.atomIds)
+          ? Array.from(
+            new Set(
+              message.atomIds.filter(
+                (id: unknown): id is string => typeof id === 'string' && id.length > 0
+              )
+            )
+          )
+          : [];
+        if (ids.length === 0) {
+          return true;
+        }
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
+        for (const atomId of ids) {
+          editStructure.removeAtom(atomId);
+        }
+        renderer.setStructure(editStructure);
+        renderer.deselectAtom();
+        renderer.deselectBond();
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'moveAtom': {
         if (message.atomId) {
-          const atom = structure.getAtom(message.atomId);
+          const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+          const atom = editStructure.getAtom(message.atomId);
           if (atom) {
             atom.setPosition(message.x, message.y, message.z);
-            renderer.setStructure(structure);
+            renderer.setStructure(editStructure);
             if (!message.preview) {
-              this.renderStructure(key, webviewPanel);
+              traj.commitEdit();
+              this.renderStructure(session);
             }
           }
         }
-        break;
+        return true;
       }
 
       case 'moveGroup': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         if (ids.length > 0) {
+          const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
           for (const id of ids) {
-            const atom = structure.getAtom(id);
+            const atom = editStructure.getAtom(id);
             if (atom) {
               atom.setPosition(atom.x + message.dx, atom.y + message.dy, atom.z + message.dz);
             }
           }
-          renderer.setStructure(structure);
+          renderer.setStructure(editStructure);
           if (!message.preview) {
-            this.renderStructure(key, webviewPanel);
+            traj.commitEdit();
+            this.renderStructure(session);
           }
         }
-        break;
+        return true;
       }
 
       case 'setAtomsPositions': {
         const updates: Array<{ id: string; x: number; y: number; z: number }> =
           Array.isArray(message.atomPositions) ? message.atomPositions : [];
         if (updates.length === 0) {
-          break;
+          return true;
         }
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
         for (const update of updates) {
-          const atom = structure.getAtom(update.id);
+          const atom = editStructure.getAtom(update.id);
           if (atom) {
             atom.setPosition(update.x, update.y, update.z);
           }
         }
-        renderer.setStructure(structure);
+        renderer.setStructure(editStructure);
         if (!message.preview) {
-          this.renderStructure(key, webviewPanel);
+          traj.commitEdit();
+          this.renderStructure(session);
         }
-        break;
+        return true;
       }
 
-      case 'endDrag': {
-        this.renderStructure(key, webviewPanel);
-        break;
-      }
+      case 'endDrag':
+        if (traj.isEditing) {
+          traj.commitEdit();
+        }
+        this.renderStructure(session);
+        return true;
 
       case 'setBondLength': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         if (ids.length >= 2 && typeof message.length === 'number') {
-          const atomA = structure.getAtom(ids[0]);
-          const atomB = structure.getAtom(ids[1]);
+          const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+          const atomA = editStructure.getAtom(ids[0]);
+          const atomB = editStructure.getAtom(ids[1]);
           if (atomA && atomB) {
-            undo?.push(structure);
+            undo.push(editStructure);
             const dx = atomB.x - atomA.x;
             const dy = atomB.y - atomA.y;
             const dz = atomB.z - atomA.z;
@@ -499,23 +569,25 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
                 atomA.y + dy * scale,
                 atomA.z + dz * scale
               );
-              renderer.setStructure(structure);
-              this.renderStructure(key, webviewPanel);
+              renderer.setStructure(editStructure);
+              traj.commitEdit();
+              this.renderStructure(session);
             }
           }
         }
-        break;
+        return true;
       }
 
       case 'copyAtoms': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         if (ids.length === 0) {
-          break;
+          return true;
         }
         const offset = message.offset || { x: 0.5, y: 0.5, z: 0.5 };
-        undo?.push(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
         for (const id of ids) {
-          const atom = structure.getAtom(id);
+          const atom = editStructure.getAtom(id);
           if (!atom) {
             continue;
           }
@@ -525,69 +597,116 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
             atom.y + (offset.y || 0),
             atom.z + (offset.z || 0)
           );
-          structure.addAtom(copy);
+          editStructure.addAtom(copy);
         }
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
+        renderer.setStructure(editStructure);
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'changeAtoms': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         if (ids.length === 0 || !message.element) {
-          break;
+          return true;
         }
-        undo?.push(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
         const element = parseElement(String(message.element));
         if (!element) {
           vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
-          break;
+          traj.commitEdit();
+          return true;
         }
         for (const id of ids) {
-          const atom = structure.getAtom(id);
+          const atom = editStructure.getAtom(id);
           if (atom) {
             atom.element = element;
           }
         }
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
+        renderer.setStructure(editStructure);
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'setAtomColor': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         const color = typeof message.color === 'string' ? message.color.trim() : '';
         if (ids.length === 0 || !/^#[0-9a-fA-F]{6}$/.test(color)) {
-          break;
+          return true;
         }
-        undo?.push(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
         for (const id of ids) {
-          const atom = structure.getAtom(id);
+          const atom = editStructure.getAtom(id);
           if (atom) {
             atom.color = color;
           }
         }
-        renderer.setStructure(structure);
-        this.renderStructure(key, webviewPanel);
-        break;
+        renderer.setStructure(editStructure);
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
+      case 'updateAtom': {
+        if (message.atomId) {
+          const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+          const atom = editStructure.getAtom(message.atomId);
+          if (atom) {
+            undo.push(editStructure);
+            if (message.element) {
+              const element = parseElement(String(message.element));
+              if (!element) {
+                vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
+              } else {
+                atom.element = element;
+              }
+            }
+            if (
+              typeof message.x === 'number' &&
+              typeof message.y === 'number' &&
+              typeof message.z === 'number'
+            ) {
+              atom.setPosition(message.x, message.y, message.z);
+            }
+            renderer.setStructure(editStructure);
+            traj.commitEdit();
+            this.renderStructure(session);
+          }
+        }
+        return true;
+      }
+
+      default:
+        return false;
+    }
+  }
+
+  private async handleBondCommands(message: any, session: EditorSession): Promise<boolean> {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
+
+    switch (message.command) {
       case 'createBond': {
         const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
         if (ids.length < 2) {
-          break;
+          return true;
         }
         const atomId1 = ids[0];
         const atomId2 = ids[1];
-        if (!structure.getAtom(atomId1) || !structure.getAtom(atomId2) || atomId1 === atomId2) {
-          break;
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        if (!editStructure.getAtom(atomId1) || !editStructure.getAtom(atomId2) || atomId1 === atomId2) {
+          traj.commitEdit();
+          return true;
         }
-        undo?.push(structure);
-        structure.addManualBond(atomId1, atomId2);
-        renderer.setStructure(structure);
+        undo.push(editStructure);
+        editStructure.addManualBond(atomId1, atomId2);
+        renderer.setStructure(editStructure);
         renderer.selectBond(Structure.bondKey(atomId1, atomId2));
-        this.renderStructure(key, webviewPanel);
-        break;
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'deleteBond': {
@@ -621,69 +740,48 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         }
 
         if (selectedPairs.length === 0) {
-          break;
+          return true;
         }
-        undo?.push(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
         for (const pair of selectedPairs) {
-          structure.removeBond(pair[0], pair[1]);
+          editStructure.removeBond(pair[0], pair[1]);
         }
-        renderer.setStructure(structure);
+        renderer.setStructure(editStructure);
         renderer.deselectBond();
-        this.renderStructure(key, webviewPanel);
-        break;
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
       case 'recalculateBonds': {
-        undo?.push(structure);
-        structure.manualBonds = [];
-        structure.suppressedAutoBonds = [];
-        renderer.setStructure(structure);
+        const editStructure = traj.isEditing ? traj.activeStructure : traj.beginEdit();
+        undo.push(editStructure);
+        editStructure.manualBonds = [];
+        editStructure.suppressedAutoBonds = [];
+        renderer.setStructure(editStructure);
         renderer.deselectBond();
-        this.renderStructure(key, webviewPanel);
-        break;
+        traj.commitEdit();
+        this.renderStructure(session);
+        return true;
       }
 
-      case 'updateAtom': {
-        if (message.atomId) {
-          const atom = structure.getAtom(message.atomId);
-          if (atom) {
-            undo?.push(structure);
-            if (message.element) {
-              const element = parseElement(String(message.element));
-              if (!element) {
-                vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
-              } else {
-                atom.element = element;
-              }
-            }
-            if (
-              typeof message.x === 'number' &&
-              typeof message.y === 'number' &&
-              typeof message.z === 'number'
-            ) {
-              atom.setPosition(message.x, message.y, message.z);
-            }
-            renderer.setStructure(structure);
-            this.renderStructure(key, webviewPanel);
-          }
-        }
-        break;
-      }
+      default:
+        return false;
+    }
+  }
 
-      case 'undo': {
-        this.undoLastEdit(key, webviewPanel);
-        break;
-      }
+  private async handleDocumentCommands(message: any, session: EditorSession): Promise<boolean> {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
 
-      case 'saveStructure': {
-        await this.saveStructure(key);
-        break;
-      }
+    switch (message.command) {
+      case 'saveStructure':
+        await this.saveStructure(session);
+        return true;
 
-      case 'saveStructureAs': {
-        await this.handleSaveStructureAs(key, webviewPanel);
-        break;
-      }
+      case 'saveStructureAs':
+        await this.handleSaveStructureAs(session);
+        return true;
 
       case 'saveRenderedImage': {
         const dataUrl = typeof message.dataUrl === 'string' ? message.dataUrl : '';
@@ -691,8 +789,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         if (!imageMatch || !imageMatch[1]) {
           const reason = 'Failed to export image: invalid PNG data.';
           vscode.window.showErrorMessage(reason);
-          webviewPanel.webview.postMessage({ command: 'imageSaveFailed', data: { reason } });
-          break;
+          session.webviewPanel.webview.postMessage({ command: 'imageSaveFailed', data: { reason } });
+          return true;
         }
 
         const rawName =
@@ -702,14 +800,14 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         const fileName = rawName.toLowerCase().endsWith('.png') ? rawName : `${rawName}.png`;
         const saveUri = await vscode.window.showSaveDialog({
           saveLabel: 'Save HD Image',
-          defaultUri: vscode.Uri.joinPath(vscode.Uri.file(path.dirname(key)), fileName),
+          defaultUri: vscode.Uri.joinPath(vscode.Uri.file(path.dirname(session.key)), fileName),
           filters: {
             'PNG Image': ['png'],
           },
         });
 
         if (!saveUri) {
-          break;
+          return true;
         }
 
         try {
@@ -717,112 +815,109 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           await vscode.workspace.fs.writeFile(saveUri, bytes);
           const savedName = path.basename(saveUri.fsPath);
           vscode.window.showInformationMessage(`Image exported to ${savedName}`);
-          webviewPanel.webview.postMessage({
+          session.webviewPanel.webview.postMessage({
             command: 'imageSaved',
             data: { fileName: savedName },
           });
         } catch (error) {
           const reason = `Failed to export image: ${error instanceof Error ? error.message : String(error)}`;
           vscode.window.showErrorMessage(reason);
-          webviewPanel.webview.postMessage({ command: 'imageSaveFailed', data: { reason } });
+          session.webviewPanel.webview.postMessage({ command: 'imageSaveFailed', data: { reason } });
         }
-        break;
+        return true;
       }
 
-      case 'openSource': {
+      case 'openSource':
         try {
-          const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(key));
+          const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(session.key));
           await vscode.window.showTextDocument(doc, { viewColumn: vscode.ViewColumn.Beside, preview: false });
         } catch (error) {
           vscode.window.showErrorMessage(
             `Failed to open source: ${error instanceof Error ? error.message : String(error)}`
           );
         }
-        break;
-      }
+        return true;
 
       case 'reloadStructure': {
         try {
-          const fileContent = await vscode.workspace.fs.readFile(vscode.Uri.file(key));
+          const fileContent = await vscode.workspace.fs.readFile(vscode.Uri.file(session.key));
           const content = new TextDecoder().decode(fileContent);
-          const updatedFrames = FileManager.loadStructures(key, content);
+          const updatedFrames = FileManager.loadStructures(session.key, content);
           if (!updatedFrames || updatedFrames.length === 0) {
-            break;
+            return true;
           }
           const idx = TrajectoryManager.defaultFrameIndex(updatedFrames);
           traj.set(updatedFrames, idx);
-          undo?.clear();
+          undo.clear();
           renderer.setStructure(updatedFrames[idx]);
           renderer.setTrajectoryFrameInfo(idx, updatedFrames.length);
           renderer.setShowUnitCell(!!updatedFrames[idx].unitCell);
           renderer.deselectAtom();
           renderer.deselectBond();
-          this.renderStructure(key, webviewPanel);
+          this.renderStructure(session);
         } catch (error) {
           vscode.window.showErrorMessage(
             `Failed to reload structure: ${error instanceof Error ? error.message : String(error)}`
           );
         }
-        break;
+        return true;
       }
 
-      case 'getDisplayConfigs': {
-        await this.handleGetDisplayConfigs(webviewPanel);
-        break;
-      }
-
-      case 'loadDisplayConfig': {
-        await this.handleLoadDisplayConfig(message.configId, webviewPanel, key);
-        break;
-      }
-
-      case 'promptSaveDisplayConfig': {
-        await this.handlePromptSaveDisplayConfig(message, webviewPanel, key);
-        break;
-      }
-
-      case 'saveDisplayConfig': {
-        await this.handleSaveDisplayConfig(message, webviewPanel, key);
-        break;
-      }
-
-      case 'getCurrentDisplaySettings': {
-        await this.handleGetCurrentDisplaySettings(webviewPanel, key);
-        break;
-      }
-
-      case 'updateDisplaySettings': {
-        this.handleUpdateDisplaySettings(message.settings, key);
-        break;
-      }
-
-      case 'exportDisplayConfigs': {
-        await this.handleExportDisplayConfigs(webviewPanel);
-        break;
-      }
-
-      case 'importDisplayConfigs': {
-        await this.handleImportDisplayConfigs(webviewPanel);
-        break;
-      }
-
-      case 'confirmDeleteDisplayConfig': {
-        await this.handleConfirmDeleteDisplayConfig(message.configId as string, webviewPanel);
-        break;
-      }
-
-      case 'deleteDisplayConfig': {
-        await this.handleDeleteDisplayConfig(message.configId as string, webviewPanel);
-        break;
-      }
+      default:
+        return false;
     }
   }
 
-  private undoLastEdit(key: string, webviewPanel: vscode.WebviewPanel) {
-    const undo = this.undoManagers.get(key);
-    const renderer = this.renderers.get(key);
-    const traj = this.trajectoryManagers.get(key);
-    if (!undo || undo.isEmpty || !renderer || !traj) {
+  private async handleDisplayConfigCommands(message: any, session: EditorSession): Promise<boolean> {
+    switch (message.command) {
+      case 'getDisplayConfigs':
+        await this.handleGetDisplayConfigs(session.webviewPanel);
+        return true;
+
+      case 'loadDisplayConfig':
+        await this.handleLoadDisplayConfig(message.configId, session);
+        return true;
+
+      case 'promptSaveDisplayConfig':
+        await this.handlePromptSaveDisplayConfig(message, session);
+        return true;
+
+      case 'saveDisplayConfig':
+        await this.handleSaveDisplayConfig(message, session.webviewPanel, session.key);
+        return true;
+
+      case 'getCurrentDisplaySettings':
+        await this.handleGetCurrentDisplaySettings(session.webviewPanel, session.key);
+        return true;
+
+      case 'updateDisplaySettings':
+        this.handleUpdateDisplaySettings(message.settings, session.key);
+        return true;
+
+      case 'exportDisplayConfigs':
+        await this.handleExportDisplayConfigs(session.webviewPanel);
+        return true;
+
+      case 'importDisplayConfigs':
+        await this.handleImportDisplayConfigs(session.webviewPanel);
+        return true;
+
+      case 'confirmDeleteDisplayConfig':
+        await this.handleConfirmDeleteDisplayConfig(message.configId as string, session.webviewPanel);
+        return true;
+
+      case 'deleteDisplayConfig':
+        await this.handleDeleteDisplayConfig(message.configId as string, session.webviewPanel);
+        return true;
+
+      default:
+        return false;
+    }
+  }
+
+  private undoLastEdit(session: EditorSession) {
+    const { renderer, trajectoryManager: traj, undoManager: undo } = session;
+    if (undo.isEmpty) {
       return;
     }
     const previous = undo.pop();
@@ -834,34 +929,24 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     renderer.setShowUnitCell(!!previous.unitCell);
     renderer.deselectAtom();
     renderer.deselectBond();
-    this.renderStructure(key, webviewPanel);
+    this.renderStructure(session);
   }
 
-  private renderStructure(
-    key: string,
-    webviewPanel: vscode.WebviewPanel
-  ) {
-    const renderer = this.renderers.get(key);
-    const traj = this.trajectoryManagers.get(key);
-    if (renderer && traj) {
-      renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
-      const message = renderer.getRenderMessage();
+  private renderStructure(session: EditorSession) {
+    const { renderer, trajectoryManager: traj, webviewPanel } = session;
+    renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
+    const message = renderer.getRenderMessage();
 
-      // Include current display settings in render message
-      const displaySettings = this.displaySettings.get(key);
-      if (displaySettings) {
-        message.displaySettings = displaySettings;
-      }
-
-      webviewPanel.webview.postMessage(message);
+    // Include current display settings in render message
+    if (session.displaySettings) {
+      message.displaySettings = session.displaySettings;
     }
+
+    webviewPanel.webview.postMessage(message);
   }
 
-  private async saveStructure(key: string) {
-    const traj = this.trajectoryManagers.get(key);
-    if (!traj) {
-      return;
-    }
+  private async saveStructure(session: EditorSession) {
+    const { key, trajectoryManager: traj } = session;
     try {
       await StructureDocumentManager.save(key, traj.activeStructure, traj.frames);
     } catch (error) {
@@ -871,11 +956,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
   }
 
-  private async handleSaveStructureAs(key: string, _webviewPanel: vscode.WebviewPanel) {
-    const traj = this.trajectoryManagers.get(key);
-    if (!traj) {
-      return;
-    }
+  private async handleSaveStructureAs(session: EditorSession) {
+    const { key, trajectoryManager: traj } = session;
     const structureToSave = traj.activeStructure;
     const trajectoryFrames = traj.frames;
 
@@ -960,7 +1042,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     document: StructureDocument,
     _cancellationToken: vscode.CancellationToken
   ): Thenable<void> {
-    return this.saveStructure(document.uri.fsPath);
+    const session = this.sessions.get(document.uri.fsPath);
+    return session ? this.saveStructure(session) : Promise.resolve();
   }
 
   async saveCustomDocumentAs(
@@ -968,10 +1051,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     destination: vscode.Uri,
     _cancellationToken: vscode.CancellationToken
   ): Promise<void> {
-    const traj = this.trajectoryManagers.get(document.uri.fsPath);
-    if (!traj) {
+    const session = this.sessions.get(document.uri.fsPath);
+    if (!session) {
       return;
     }
+    const traj = session.trajectoryManager;
     const format = FileManager.resolveFormat(destination.fsPath, 'xyz');
     try {
       let exportFrames: Structure[] = [traj.activeStructure];
@@ -1025,10 +1109,10 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   async notifyConfigChange(config: DisplayConfig): Promise<void> {
     // Only notify the currently active webview panel.
     // Broadcasting to all panels would overwrite per-editor config choices.
-    for (const [key, webviewPanel] of this.webviewPanels) {
-      if (webviewPanel.active) {
-        this.displaySettings.set(key, config.settings);
-        webviewPanel.webview.postMessage({
+    for (const session of this.sessions.values()) {
+      if (session.webviewPanel.active) {
+        session.displaySettings = config.settings;
+        session.webviewPanel.webview.postMessage({
           command: 'displayConfigChanged',
           config: config
         });
@@ -1036,11 +1120,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       }
     }
     // Fallback: if no panel is active, notify the most recently opened one
-    const entries = Array.from(this.webviewPanels.entries());
-    if (entries.length > 0) {
-      const [key, webviewPanel] = entries[entries.length - 1];
-      this.displaySettings.set(key, config.settings);
-      webviewPanel.webview.postMessage({
+    const sessions = Array.from(this.sessions.values());
+    if (sessions.length > 0) {
+      const session = sessions[sessions.length - 1];
+      session.displaySettings = config.settings;
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigChanged',
         config: config
       });
@@ -1049,8 +1133,10 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
   async getCurrentDisplaySettings(): Promise<DisplaySettings | null> {
     // Get settings from the first available webview
-    for (const [, settings] of this.displaySettings) {
-      return settings;
+    for (const session of this.sessions.values()) {
+      if (session.displaySettings) {
+        return session.displaySettings;
+      }
     }
     return null;
   }
@@ -1071,20 +1157,16 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
   }
 
-  private async handleLoadDisplayConfig(
-    configId: string,
-    webviewPanel: vscode.WebviewPanel,
-    key: string
-  ): Promise<void> {
+  private async handleLoadDisplayConfig(configId: string, session: EditorSession): Promise<void> {
     try {
       const config = await this.configManager.loadConfig(configId);
-      this.displaySettings.set(key, config.settings);
-      webviewPanel.webview.postMessage({
+      session.displaySettings = config.settings;
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigLoaded',
         config: config
       });
     } catch (error) {
-      webviewPanel.webview.postMessage({
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigError',
         error: String(error)
       });
@@ -1117,13 +1199,12 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
   private async handlePromptSaveDisplayConfig(
     message: any,
-    webviewPanel: vscode.WebviewPanel,
-    key: string
+    session: EditorSession
   ): Promise<void> {
     const messageSettings = message.settings as DisplaySettings | undefined;
-    const settings = messageSettings || this.displaySettings.get(key);
+    const settings = messageSettings || session.displaySettings;
     if (!settings) {
-      webviewPanel.webview.postMessage({
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigError',
         error: 'No display settings available to save'
       });
@@ -1147,13 +1228,13 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         settings,
         description || undefined
       );
-      webviewPanel.webview.postMessage({
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigSaved',
         config: config
       });
-      await this.handleGetDisplayConfigs(webviewPanel);
+      await this.handleGetDisplayConfigs(session.webviewPanel);
     } catch (error) {
-      webviewPanel.webview.postMessage({
+      session.webviewPanel.webview.postMessage({
         command: 'displayConfigError',
         error: String(error)
       });
@@ -1164,7 +1245,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     webviewPanel: vscode.WebviewPanel,
     key: string
   ): Promise<void> {
-    const settings = this.displaySettings.get(key);
+    const settings = this.sessions.get(key)?.displaySettings;
     if (settings) {
       webviewPanel.webview.postMessage({
         command: 'currentDisplaySettings',
@@ -1174,7 +1255,10 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   }
 
   private handleUpdateDisplaySettings(settings: DisplaySettings, key: string): void {
-    this.displaySettings.set(key, settings);
+    const session = this.sessions.get(key);
+    if (session) {
+      session.displaySettings = settings;
+    }
   }
 
   private async handleExportDisplayConfigs(webviewPanel: vscode.WebviewPanel): Promise<void> {
