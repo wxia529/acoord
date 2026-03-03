@@ -2,6 +2,8 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { ELEMENT_DATA, parseElement } from '../../utils/elementData';
+import { BOHR_TO_ANGSTROM } from '../../utils/constants';
+import { fractionalToCartesian } from '../../utils/parserUtils';
 import { StructureParser } from './structureParser';
 
 type QEUnit = 'angstrom' | 'bohr' | 'alat' | 'crystal';
@@ -22,8 +24,6 @@ interface ParsedPositionsBlock {
   atoms: ParsedAtom[];
   nextIndex: number;
 }
-
-const BOHR_TO_ANGSTROM = 0.529177210903;
 
 /**
  * Quantum ESPRESSO parser (.in/.pwi input, .out/.pwo log output)
@@ -488,11 +488,7 @@ export class QEParser implements StructureParser {
     if (!cellVectors) {
       return null;
     }
-    return [
-      value[0] * cellVectors[0][0] + value[1] * cellVectors[1][0] + value[2] * cellVectors[2][0],
-      value[0] * cellVectors[0][1] + value[1] * cellVectors[1][1] + value[2] * cellVectors[2][1],
-      value[0] * cellVectors[0][2] + value[1] * cellVectors[1][2] + value[2] * cellVectors[2][2],
-    ];
+    return fractionalToCartesian(value[0], value[1], value[2], cellVectors);
   }
 
   private detectPositionUnit(header: string): QEUnit {
@@ -641,19 +637,6 @@ export class QEParser implements StructureParser {
   }
 
   private unitCellFromVectors(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
+    return UnitCell.fromVectors(vectors);
   }
 }

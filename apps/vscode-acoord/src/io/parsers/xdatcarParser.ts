@@ -2,6 +2,7 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
+import { expandElements, fractionalToCartesian } from '../../utils/parserUtils';
 import { StructureParser } from './structureParser';
 
 interface XdatcarHeader {
@@ -224,6 +225,10 @@ export class XDATCARParser implements StructureParser {
       const x = Number.parseFloat(tokens[0]);
       const y = Number.parseFloat(tokens[1]);
       const z = Number.parseFloat(tokens[2]);
+      if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
+        i++;
+        continue;
+      }
       rows.push([x, y, z]);
       i++;
     }
@@ -237,15 +242,15 @@ export class XDATCARParser implements StructureParser {
 
   private buildFrame(header: XdatcarHeader, rows: number[][], frameIndex: number): Structure {
     const structure = new Structure(header.label || `XDATCAR frame ${frameIndex}`, true);
-    structure.unitCell = this.unitCellFromVectors(header.latticeVectors);
+    structure.unitCell = UnitCell.fromVectors(header.latticeVectors);
     structure.isCrystal = true;
 
-    const expandedElements = this.expandElements(header.elements, header.counts);
+    const expandedElements = expandElements(header.elements, header.counts);
     const atomCount = Math.min(rows.length, expandedElements.length);
     for (let i = 0; i < atomCount; i++) {
       let [x, y, z] = rows[i];
       if (header.coordinateMode === 'direct') {
-        [x, y, z] = this.fractionalToCartesian(x, y, z, header.latticeVectors);
+        [x, y, z] = fractionalToCartesian(x, y, z, header.latticeVectors);
       }
       structure.addAtom(new Atom(expandedElements[i], x, y, z));
     }
@@ -303,17 +308,6 @@ export class XDATCARParser implements StructureParser {
       .filter((value) => Number.isFinite(value) && value >= 0);
   }
 
-  private expandElements(elements: string[], counts: number[]): string[] {
-    const expanded: string[] = [];
-    for (let i = 0; i < counts.length; i++) {
-      const element = elements[i] || 'X';
-      for (let n = 0; n < counts[i]; n++) {
-        expanded.push(element);
-      }
-    }
-    return expanded;
-  }
-
   private tokenize(line: string): string[] {
     return (line || '').trim().split(/\s+/).filter((token) => token.length > 0);
   }
@@ -328,34 +322,4 @@ export class XDATCARParser implements StructureParser {
     return Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z);
   }
 
-  private fractionalToCartesian(
-    fx: number,
-    fy: number,
-    fz: number,
-    latticeVectors: number[][]
-  ): [number, number, number] {
-    const [a, b, c] = latticeVectors;
-    return [
-      fx * a[0] + fy * b[0] + fz * c[0],
-      fx * a[1] + fy * b[1] + fz * c[1],
-      fx * a[2] + fy * b[2] + fz * c[2],
-    ];
-  }
-
-  private unitCellFromVectors(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
-  }
 }

@@ -2,6 +2,7 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
+import { expandElements } from '../../utils/parserUtils';
 import { StructureParser } from './structureParser';
 
 /**
@@ -21,7 +22,7 @@ export class OUTCARParser implements StructureParser {
     const lines = content.split(/\r?\n/);
     const atomTypes = this.parseAtomTypes(lines);
     const counts = this.parseIonsPerType(lines);
-    const expandedSymbols = this.expandSymbols(atomTypes, counts);
+    const expandedSymbols = expandElements(atomTypes, counts);
 
     const frames: Structure[] = [];
     let currentLatticeVectors: number[][] | null = null;
@@ -131,20 +132,6 @@ export class OUTCARParser implements StructureParser {
     return [];
   }
 
-  private expandSymbols(symbols: string[], counts: number[]): string[] {
-    if (counts.length === 0) {
-      return [];
-    }
-    const expanded: string[] = [];
-    for (let i = 0; i < counts.length; i++) {
-      const symbol = symbols[i] || 'X';
-      for (let n = 0; n < counts[i]; n++) {
-        expanded.push(symbol);
-      }
-    }
-    return expanded;
-  }
-
   private parseLatticeVectors(
     lines: string[],
     startIndex: number
@@ -218,7 +205,7 @@ export class OUTCARParser implements StructureParser {
   ): Structure {
     const structure = new Structure(`OUTCAR frame ${frameIndex}`, true);
     if (latticeVectors) {
-      structure.unitCell = this.unitCellFromVectors(latticeVectors);
+      structure.unitCell = UnitCell.fromVectors(latticeVectors);
       structure.isCrystal = true;
     }
 
@@ -233,22 +220,5 @@ export class OUTCARParser implements StructureParser {
 
   private parseNumber(token: string): number {
     return Number.parseFloat((token || '').replace(/d/gi, 'e'));
-  }
-
-  private unitCellFromVectors(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
   }
 }

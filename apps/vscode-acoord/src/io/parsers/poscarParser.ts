@@ -2,6 +2,7 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
+import { expandElements, fractionalToCartesian } from '../../utils/parserUtils';
 import { StructureParser } from './structureParser';
 
 type CoordinateMode = 'direct' | 'cartesian';
@@ -24,11 +25,11 @@ export class POSCARParser implements StructureParser {
     const lines = content.split(/\r?\n/);
     const header = this.parseHeader(lines);
     const structure = new Structure(header.name, true);
-    structure.unitCell = this.unitCellFromVectors(header.latticeVectors);
+    structure.unitCell = UnitCell.fromVectors(header.latticeVectors);
     structure.isCrystal = true;
 
     const totalAtoms = header.counts.reduce((sum, count) => sum + count, 0);
-    const orderedElements = this.expandElements(header.elements, header.counts);
+    const orderedElements = expandElements(header.elements, header.counts);
 
     let lineIndex = header.atomStartLine;
     let atomIndex = 0;
@@ -52,7 +53,7 @@ export class POSCARParser implements StructureParser {
       }
 
       if (header.coordinateMode === 'direct') {
-        [x, y, z] = this.fractionalToCartesian(x, y, z, header.latticeVectors);
+        [x, y, z] = fractionalToCartesian(x, y, z, header.latticeVectors);
       }
 
       const element = orderedElements[atomIndex] || 'X';
@@ -333,46 +334,4 @@ export class POSCARParser implements StructureParser {
     return found;
   }
 
-  private expandElements(elements: string[], counts: number[]): string[] {
-    const expanded: string[] = [];
-    for (let i = 0; i < counts.length; i++) {
-      const element = elements[i] || 'X';
-      const count = Math.max(0, counts[i] || 0);
-      for (let n = 0; n < count; n++) {
-        expanded.push(element);
-      }
-    }
-    return expanded;
-  }
-
-  private fractionalToCartesian(
-    fx: number,
-    fy: number,
-    fz: number,
-    latticeVectors: number[][]
-  ): [number, number, number] {
-    const [a, b, c] = latticeVectors;
-    return [
-      fx * a[0] + fy * b[0] + fz * c[0],
-      fx * a[1] + fy * b[1] + fz * c[1],
-      fx * a[2] + fy * b[2] + fz * c[2],
-    ];
-  }
-
-  private unitCellFromVectors(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
-  }
 }
