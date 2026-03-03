@@ -153,20 +153,7 @@ export class XYZParser implements StructureParser {
   }
 
   private unitCellFromLattice(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
+    return UnitCell.fromVectors(vectors);
   }
 
   private parsePropertiesFromComment(comment: string): { speciesIndex: number; positionIndex: number } | null {

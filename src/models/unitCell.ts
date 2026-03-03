@@ -34,24 +34,23 @@ export class UnitCell {
 
   /**
    * Get volume in cubic angstroms
+   * Formula: V = a·b·c · sqrt(1 - cos²α - cos²β - cos²γ + 2·cosα·cosβ·cosγ)
    */
   getVolume(): number {
     const alphaRad = (this.alpha * Math.PI) / 180;
     const betaRad = (this.beta * Math.PI) / 180;
     const gammaRad = (this.gamma * Math.PI) / 180;
 
-    const cosProd =
-      Math.cos(alphaRad) * Math.cos(betaRad) * Math.cos(gammaRad);
-    const sinProd =
-      Math.sin(alphaRad) * Math.sin(betaRad) * Math.sin(gammaRad);
+    const ca = Math.cos(alphaRad);
+    const cb = Math.cos(betaRad);
+    const cg = Math.cos(gammaRad);
 
-    const volume =
+    return (
       this.a *
       this.b *
       this.c *
-      Math.sqrt(1 + 2 * cosProd - Math.pow(cosProd, 2) - sinProd);
-
-    return volume;
+      Math.sqrt(1 - ca * ca - cb * cb - cg * cg + 2 * ca * cb * cg)
+    );
   }
 
   /**
@@ -125,6 +124,29 @@ export class UnitCell {
     const y = fx * aVec[1] + fy * bVec[1] + fz * cVec[1];
     const z = fx * aVec[2] + fy * bVec[2] + fz * cVec[2];
     return [x, y, z];
+  }
+
+  /**
+   * Construct a UnitCell from three lattice vectors.
+   * Each vector is [x, y, z] in Angstroms.
+   * This is the canonical way to build a UnitCell from parsed data and
+   * eliminates the duplicate `unitCellFromVectors` helpers scattered across parsers.
+   */
+  static fromVectors(vectors: number[][]): UnitCell {
+    const [a, b, c] = vectors;
+    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
+    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
+
+    const cosAlpha = (b[0] * c[0] + b[1] * c[1] + b[2] * c[2]) / (cellB * cellC);
+    const cosBeta  = (a[0] * c[0] + a[1] * c[1] + a[2] * c[2]) / (cellA * cellC);
+    const cosGamma = (a[0] * b[0] + a[1] * b[1] + a[2] * b[2]) / (cellA * cellB);
+
+    const alpha = Math.acos(Math.max(-1, Math.min(1, cosAlpha))) * (180 / Math.PI);
+    const beta  = Math.acos(Math.max(-1, Math.min(1, cosBeta)))  * (180 / Math.PI);
+    const gamma = Math.acos(Math.max(-1, Math.min(1, cosGamma))) * (180 / Math.PI);
+
+    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
   }
 
   /**

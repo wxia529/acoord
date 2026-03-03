@@ -3,10 +3,9 @@ import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { DEFAULT_NUMERICAL_ORBITALS, ELEMENT_DATA, ElementInfo } from '../../utils/elementData';
 import { parseElement } from '../../utils/elementData';
+import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants';
+import { fractionalToCartesian } from '../../utils/parserUtils';
 import { StructureParser } from './structureParser';
-
-const BOHR_TO_ANGSTROM = 0.52917721092;
-const ANGSTROM_TO_BOHR = 1 / BOHR_TO_ANGSTROM;
 
 /**
  * ABACUS STRU file parser (basic support)
@@ -83,7 +82,7 @@ export class STRUParser implements StructureParser {
             vec.map((value) => value * latticeConstantBohr! * BOHR_TO_ANGSTROM)
           );
           structure.isCrystal = true;
-          structure.unitCell = this.unitCellFromLattice(latticeVectorsAng);
+          structure.unitCell = UnitCell.fromVectors(latticeVectorsAng);
         }
 
         while (i < lines.length) {
@@ -140,7 +139,7 @@ export class STRUParser implements StructureParser {
 
             if (coordMode.startsWith('direct')) {
               if (latticeVectorsAng) {
-                const cart = this.fracToCart(x, y, z, latticeVectorsAng);
+                const cart = fractionalToCartesian(x, y, z, latticeVectorsAng);
                 x = cart[0];
                 y = cart[1];
                 z = cart[2];
@@ -276,43 +275,19 @@ export class STRUParser implements StructureParser {
     return null;
   }
 
-  private unitCellFromLattice(vectors: number[][]): UnitCell {
-    const [a, b, c] = vectors;
-    const cellA = Math.sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
-    const cellB = Math.sqrt(b[0] * b[0] + b[1] * b[1] + b[2] * b[2]);
-    const cellC = Math.sqrt(c[0] * c[0] + c[1] * c[1] + c[2] * c[2]);
-
-    const dotAB = a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-    const dotAC = a[0] * c[0] + a[1] * c[1] + a[2] * c[2];
-    const dotBC = b[0] * c[0] + b[1] * c[1] + b[2] * c[2];
-
-    const gamma = Math.acos(dotAB / (cellA * cellB)) * (180 / Math.PI);
-    const beta = Math.acos(dotAC / (cellA * cellC)) * (180 / Math.PI);
-    const alpha = Math.acos(dotBC / (cellB * cellC)) * (180 / Math.PI);
-
-    return new UnitCell(cellA, cellB, cellC, alpha, beta, gamma);
-  }
-
-  private fracToCart(x: number, y: number, z: number, vectors: number[][]): [number, number, number] {
-    const cartX = x * vectors[0][0] + y * vectors[1][0] + z * vectors[2][0];
-    const cartY = x * vectors[0][1] + y * vectors[1][1] + z * vectors[2][1];
-    const cartZ = x * vectors[0][2] + y * vectors[1][2] + z * vectors[2][2];
-    return [cartX, cartY, cartZ];
-  }
-
   private getCenterOffset(mode: string, vectors: number[][] | null): [number, number, number] | null {
     if (!vectors) {return null;}
     if (mode.includes('center_xyz')) {
-      return this.fracToCart(0.5, 0.5, 0.5, vectors);
+      return fractionalToCartesian(0.5, 0.5, 0.5, vectors);
     }
     if (mode.includes('center_xy')) {
-      return this.fracToCart(0.5, 0.5, 0.0, vectors);
+      return fractionalToCartesian(0.5, 0.5, 0.0, vectors);
     }
     if (mode.includes('center_xz')) {
-      return this.fracToCart(0.5, 0.0, 0.5, vectors);
+      return fractionalToCartesian(0.5, 0.0, 0.5, vectors);
     }
     if (mode.includes('center_yz')) {
-      return this.fracToCart(0.0, 0.5, 0.5, vectors);
+      return fractionalToCartesian(0.0, 0.5, 0.5, vectors);
     }
     return null;
   }

@@ -1,0 +1,187 @@
+/**
+ * Trajectory playback module.
+ *
+ * Owns: updateTrajectoryUI, requestTrajectoryFrame, jumpToTrajectoryFrame,
+ *       stepTrajectoryFrame, restartTrajectoryPlaybackTimer, setTrajectoryPlaying,
+ *       and wires all Trajectory-tab UI controls.
+ *
+ * setup(callbacks) must be called once during app initialisation.
+ */
+import { state } from './state';
+import type { VsCodeApi } from './types';
+
+let _vscode: VsCodeApi | null = null;
+let trajectoryPlaybackTimer: ReturnType<typeof setInterval> | null = null;
+let trajectoryFrameRequestPending = false;
+
+// ── Core logic ─────────────────────────────────────────────────────────────────
+
+export function updateUI(frameIndex: number, frameCount: number): void {
+  const total = Number.isFinite(frameCount) ? Math.max(1, Math.floor(frameCount)) : 1;
+  const current = Number.isFinite(frameIndex)
+    ? Math.max(0, Math.min(total - 1, Math.floor(frameIndex)))
+    : 0;
+  state.trajectoryFrameIndex = current;
+  state.trajectoryFrameCount = total;
+
+  const statusFrame = document.getElementById('status-traj-frame') as HTMLElement | null;
+  const firstBtn = document.getElementById('btn-first-frame') as HTMLButtonElement | null;
+  const prevBtn = document.getElementById('btn-prev-frame') as HTMLButtonElement | null;
+  const nextBtn = document.getElementById('btn-next-frame') as HTMLButtonElement | null;
+  const lastBtn = document.getElementById('btn-last-frame') as HTMLButtonElement | null;
+  const frameInput = document.getElementById('traj-frame-input') as HTMLInputElement | null;
+  if (statusFrame) {
+    statusFrame.textContent = `Frame ${current + 1}/${total}`;
+  }
+  if (firstBtn) { firstBtn.disabled = total <= 1 || current <= 0; }
+  if (prevBtn) { prevBtn.disabled = total <= 1 || current <= 0; }
+  if (nextBtn) { nextBtn.disabled = total <= 1 || current >= total - 1; }
+  if (lastBtn) { lastBtn.disabled = total <= 1 || current >= total - 1; }
+  if (frameInput) {
+    frameInput.min = '1';
+    frameInput.max = String(total);
+    frameInput.disabled = total <= 1;
+    if (document.activeElement !== frameInput) {
+      frameInput.value = String(current + 1);
+    }
+  }
+
+  const playBtn = document.getElementById('btn-play-trajectory') as HTMLButtonElement | null;
+  const speedSlider = document.getElementById('traj-speed-slider') as HTMLInputElement | null;
+  const speedValue = document.getElementById('traj-speed-value') as HTMLElement | null;
+  if (total <= 1 && state.trajectoryPlaying) {
+    setPlaying(false);
+  }
+  if (playBtn) {
+    playBtn.textContent = state.trajectoryPlaying ? 'Pause' : 'Play';
+    playBtn.disabled = total <= 1;
+  }
+  if (speedSlider) {
+    speedSlider.value = String(state.trajectoryPlaybackFps || 8);
+    speedSlider.disabled = total <= 1;
+  }
+  if (speedValue) {
+    speedValue.textContent = `${state.trajectoryPlaybackFps || 8} fps`;
+  }
+}
+
+function requestTrajectoryFrame(frameIndex: number, force?: boolean): void {
+  if (!force && trajectoryFrameRequestPending) { return; }
+  trajectoryFrameRequestPending = true;
+  _vscode?.postMessage({ command: 'setTrajectoryFrame', frameIndex });
+}
+
+export function jumpToFrame(frameIndex: number): void {
+  const total = Math.max(1, Math.floor(state.trajectoryFrameCount || 1));
+  const nextIndex = Math.max(0, Math.min(total - 1, Math.floor(frameIndex)));
+  if (nextIndex === state.trajectoryFrameIndex) {
+    updateUI(state.trajectoryFrameIndex, state.trajectoryFrameCount);
+    return;
+  }
+  requestTrajectoryFrame(nextIndex, true);
+}
+
+function stepTrajectoryFrame(): void {
+  if (state.trajectoryFrameCount <= 1) { return; }
+  const nextIndex =
+    state.trajectoryFrameIndex + 1 >= state.trajectoryFrameCount
+      ? 0
+      : state.trajectoryFrameIndex + 1;
+  requestTrajectoryFrame(nextIndex);
+}
+
+function restartTrajectoryPlaybackTimer(): void {
+  if (trajectoryPlaybackTimer) {
+    clearInterval(trajectoryPlaybackTimer);
+    trajectoryPlaybackTimer = null;
+  }
+  if (!state.trajectoryPlaying || state.trajectoryFrameCount <= 1) { return; }
+  const fps = Math.max(1, Math.floor(state.trajectoryPlaybackFps || 8));
+  const intervalMs = Math.max(16, Math.round(1000 / fps));
+  trajectoryPlaybackTimer = setInterval(() => {
+    if (state.trajectoryFrameCount <= 1) {
+      setPlaying(false);
+      return;
+    }
+    stepTrajectoryFrame();
+  }, intervalMs);
+}
+
+export function setPlaying(playing: boolean): void {
+  state.trajectoryPlaying = !!playing && state.trajectoryFrameCount > 1;
+  restartTrajectoryPlaybackTimer();
+  updateUI(state.trajectoryFrameIndex, state.trajectoryFrameCount);
+}
+
+export function clearPending(): void {
+  trajectoryFrameRequestPending = false;
+}
+
+// ── UI wiring ──────────────────────────────────────────────────────────────────
+
+export function setup(vscode: VsCodeApi): void {
+  _vscode = vscode;
+
+  const firstFrameBtn = document.getElementById('btn-first-frame') as HTMLButtonElement | null;
+  const prevFrameBtn = document.getElementById('btn-prev-frame') as HTMLButtonElement | null;
+  const nextFrameBtn = document.getElementById('btn-next-frame') as HTMLButtonElement | null;
+  const lastFrameBtn = document.getElementById('btn-last-frame') as HTMLButtonElement | null;
+  const playTrajectoryBtn = document.getElementById('btn-play-trajectory') as HTMLButtonElement | null;
+  const frameInput = document.getElementById('traj-frame-input') as HTMLInputElement | null;
+  const speedSlider = document.getElementById('traj-speed-slider') as HTMLInputElement | null;
+
+  if (firstFrameBtn) {
+    firstFrameBtn.onclick = () => { jumpToFrame(0); };
+  }
+  if (prevFrameBtn) {
+    prevFrameBtn.onclick = () => { jumpToFrame(state.trajectoryFrameIndex - 1); };
+  }
+  if (nextFrameBtn) {
+    nextFrameBtn.onclick = () => { jumpToFrame(state.trajectoryFrameIndex + 1); };
+  }
+  if (lastFrameBtn) {
+    lastFrameBtn.onclick = () => { jumpToFrame(state.trajectoryFrameCount - 1); };
+  }
+  if (playTrajectoryBtn) {
+    playTrajectoryBtn.onclick = () => { setPlaying(!state.trajectoryPlaying); };
+  }
+  if (frameInput) {
+    const commitFrameInput = () => {
+      const total = Math.max(1, Math.floor(state.trajectoryFrameCount || 1));
+      const parsed = Number.parseInt(frameInput.value, 10);
+      if (!Number.isFinite(parsed)) {
+        updateUI(state.trajectoryFrameIndex, total);
+        return;
+      }
+      jumpToFrame(parsed - 1);
+    };
+    frameInput.addEventListener('change', commitFrameInput);
+    frameInput.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (event.key !== 'Enter') { return; }
+      event.preventDefault();
+      commitFrameInput();
+    });
+  }
+  if (speedSlider) {
+    speedSlider.addEventListener('input', (event: Event) => {
+      const target = event.target as HTMLInputElement;
+      const nextFps = Math.max(1, Math.min(30, Math.floor(Number(target.value) || 8)));
+      state.trajectoryPlaybackFps = nextFps;
+      if (state.trajectoryPlaying) {
+        restartTrajectoryPlaybackTimer();
+      }
+      updateUI(state.trajectoryFrameIndex, state.trajectoryFrameCount);
+    });
+  }
+
+  updateUI(state.trajectoryFrameIndex, state.trajectoryFrameCount);
+}
+
+// ── Cleanup ────────────────────────────────────────────────────────────────────
+
+window.addEventListener('beforeunload', () => {
+  if (trajectoryPlaybackTimer) {
+    clearInterval(trajectoryPlaybackTimer);
+    trajectoryPlaybackTimer = null;
+  }
+});

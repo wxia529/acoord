@@ -9,24 +9,35 @@ import { Atom } from '../models/atom';
 import { parseElement } from '../utils/elementData';
 import { ConfigManager } from '../config/configManager';
 import { DisplayConfig, DisplaySettings } from '../config/types';
+import { UndoManager } from './undoManager';
+import { TrajectoryManager } from './trajectoryManager';
+import { StructureDocumentManager } from './structureDocumentManager';
+
+/**
+ * Custom document representing a structure file opened in the editor
+ */
+export class StructureDocument implements vscode.CustomDocument {
+  constructor(readonly uri: vscode.Uri) {}
+
+  dispose(): void {
+    // No additional resources to release beyond what the provider tracks
+  }
+}
 
 /**
  * Custom editor provider for structure files
  */
-export class StructureEditorProvider implements vscode.CustomEditorProvider {
+export class StructureEditorProvider implements vscode.CustomEditorProvider<StructureDocument> {
   private readonly _onDidChangeCustomDocument = new vscode.EventEmitter<
-    vscode.CustomDocumentEditEvent<vscode.CustomDocument> |
-      vscode.CustomDocumentContentChangeEvent<vscode.CustomDocument>
+    vscode.CustomDocumentEditEvent<StructureDocument> |
+      vscode.CustomDocumentContentChangeEvent<StructureDocument>
   >();
   readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
   private webviewPanels = new Map<string, vscode.WebviewPanel>();
   private renderers = new Map<string, ThreeJSRenderer>();
-  private structures = new Map<string, Structure>();
-  private trajectories = new Map<string, Structure[]>();
-  private trajectoryFrameIndices = new Map<string, number>();
-  private undoStacks = new Map<string, Structure[]>();
+  private trajectoryManagers = new Map<string, TrajectoryManager>();
+  private undoManagers = new Map<string, UndoManager>();
   private displaySettings = new Map<string, DisplaySettings>();
-  private readonly maxUndoDepth = 100;
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -37,12 +48,12 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     uri: vscode.Uri,
     openContext: vscode.CustomDocumentOpenContext,
     _token: vscode.CancellationToken
-  ): Promise<any> {
-    return { uri };
+  ): Promise<StructureDocument> {
+    return new StructureDocument(uri);
   }
 
   async resolveCustomEditor(
-    document: any,
+    document: StructureDocument,
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
@@ -54,9 +65,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     // Try to load structure from file
     let frames: Structure[];
     try {
-      const fileContent = await vscode.workspace.fs.readFile(document.uri);
-      const content = new TextDecoder().decode(fileContent);
-      frames = FileManager.loadStructures(uri, content);
+      frames = await StructureDocumentManager.load(document.uri);
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to load structure: ${error instanceof Error ? error.message : String(error)}`
@@ -67,17 +76,17 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
       vscode.window.showErrorMessage('Failed to load structure: no frame found.');
       return;
     }
-    const initialFrameIndex = this.getDefaultTrajectoryFrameIndex(frames);
-    const structure = frames[initialFrameIndex];
+    const initialFrameIndex = TrajectoryManager.defaultFrameIndex(frames);
 
     // Store references
     const key = uri;
-    this.setTrajectoryState(key, frames, initialFrameIndex);
-    this.undoStacks.set(key, []);
+    const traj = new TrajectoryManager(frames, initialFrameIndex);
+    this.trajectoryManagers.set(key, traj);
+    this.undoManagers.set(key, new UndoManager());
     this.webviewPanels.set(key, webviewPanel);
 
-    const renderer = new ThreeJSRenderer(structure);
-    renderer.setTrajectoryFrameInfo(initialFrameIndex, frames.length);
+    const renderer = new ThreeJSRenderer(traj.activeStructure);
+    renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
     this.renderers.set(key, renderer);
 
     // Load default display config
@@ -111,12 +120,13 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           if (!updatedFrames || updatedFrames.length === 0) {
             return;
           }
-          const initialFrameIndex = this.getDefaultTrajectoryFrameIndex(updatedFrames);
-          this.setTrajectoryState(key, updatedFrames, initialFrameIndex);
-          this.undoStacks.set(key, []);
-          renderer.setStructure(updatedFrames[initialFrameIndex]);
-          renderer.setShowUnitCell(!!updatedFrames[initialFrameIndex].unitCell);
-          renderer.setTrajectoryFrameInfo(initialFrameIndex, updatedFrames.length);
+          const idx = TrajectoryManager.defaultFrameIndex(updatedFrames);
+          const t = this.trajectoryManagers.get(key);
+          if (t) { t.set(updatedFrames, idx); }
+          this.undoManagers.get(key)?.clear();
+          renderer.setStructure(updatedFrames[idx]);
+          renderer.setShowUnitCell(!!updatedFrames[idx].unitCell);
+          renderer.setTrajectoryFrameInfo(idx, updatedFrames.length);
           renderer.deselectAtom();
           renderer.deselectBond();
           this.renderStructure(key, webviewPanel);
@@ -135,10 +145,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     webviewPanel.onDidDispose(() => {
       this.webviewPanels.delete(key);
       this.renderers.delete(key);
-      this.structures.delete(key);
-      this.trajectories.delete(key);
-      this.trajectoryFrameIndices.delete(key);
-      this.undoStacks.delete(key);
+      this.trajectoryManagers.delete(key);
+      this.undoManagers.delete(key);
       this.displaySettings.delete(key);
       saveListener.dispose();
     });
@@ -150,10 +158,12 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     webviewPanel: vscode.WebviewPanel
   ) {
     const renderer = this.renderers.get(key);
-    const structure = this.structures.get(key);
-    if (!renderer || !structure) {
+    const traj = this.trajectoryManagers.get(key);
+    const undo = this.undoManagers.get(key);
+    if (!renderer || !traj) {
       return;
     }
+    const structure = traj.activeStructure;
 
     switch (message.command) {
       case 'getState':
@@ -161,31 +171,29 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         break;
 
       case 'setTrajectoryFrame': {
-        const frames = this.trajectories.get(key) || [];
-        if (frames.length <= 1) {
+        if (traj.frameCount <= 1) {
           break;
         }
         const requestedIndex = Number(message.frameIndex);
         if (!Number.isFinite(requestedIndex)) {
           break;
         }
-        const nextIndex = Math.max(0, Math.min(frames.length - 1, Math.floor(requestedIndex)));
-        this.trajectoryFrameIndices.set(key, nextIndex);
-        const nextStructure = frames[nextIndex];
-        this.structures.set(key, nextStructure);
+        const nextIndex = Math.max(0, Math.min(traj.frameCount - 1, Math.floor(requestedIndex)));
+        traj.setActiveIndex(nextIndex);
+        const nextStructure = traj.activeStructure;
         renderer.setStructure(nextStructure);
         renderer.setShowUnitCell(!!nextStructure.unitCell);
-        renderer.setTrajectoryFrameInfo(nextIndex, frames.length);
+        renderer.setTrajectoryFrameInfo(nextIndex, traj.frameCount);
         renderer.deselectAtom();
         renderer.deselectBond();
-        this.undoStacks.set(key, []);
+        undo?.clear();
         this.renderStructure(key, webviewPanel);
         break;
       }
 
       case 'beginDrag':
         if (message.atomId) {
-          this.pushUndoSnapshot(key, structure);
+          undo?.push(structure);
         }
         break;
 
@@ -201,7 +209,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           message.y || 0,
           message.z || 0
         );
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         structure.addAtom(atom);
         renderer.setStructure(structure);
         this.renderStructure(key, webviewPanel);
@@ -210,7 +218,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
 
       case 'deleteAtom': {
         if (message.atomId) {
-          this.pushUndoSnapshot(key, structure);
+          undo?.push(structure);
           structure.removeAtom(message.atomId);
           renderer.setStructure(structure);
           renderer.deselectAtom();
@@ -233,7 +241,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (ids.length === 0) {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         for (const atomId of ids) {
           structure.removeAtom(atomId);
         }
@@ -277,7 +285,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (message.add && bondKey) {
           const current = renderer.getState().selectedBondKeys || [];
           const next = current.includes(bondKey)
-            ? current.filter((key) => key !== bondKey)
+            ? current.filter((k) => k !== bondKey)
             : [...current, bondKey];
           renderer.setBondSelection(next);
         } else {
@@ -289,7 +297,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
 
       case 'setBondSelection': {
         const keys: string[] = Array.isArray(message.bondKeys)
-          ? message.bondKeys.filter((key: unknown) => typeof key === 'string')
+          ? message.bondKeys.filter((k: unknown) => typeof k === 'string')
           : [];
         renderer.setBondSelection(keys);
         this.renderStructure(key, webviewPanel);
@@ -329,7 +337,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           break;
         }
 
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         const oldCell = structure.unitCell;
         const nextCell = new UnitCell(a, b, c, alpha, beta, gamma);
         if (message.scaleAtoms && oldCell) {
@@ -351,7 +359,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
       }
 
       case 'clearUnitCell': {
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         structure.unitCell = undefined;
         structure.isCrystal = false;
         structure.supercell = [1, 1, 1];
@@ -377,7 +385,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (confirm !== 'Center') {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         let cx = 0;
         let cy = 0;
         let cz = 0;
@@ -479,7 +487,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           const atomA = structure.getAtom(ids[0]);
           const atomB = structure.getAtom(ids[1]);
           if (atomA && atomB) {
-            this.pushUndoSnapshot(key, structure);
+            undo?.push(structure);
             const dx = atomB.x - atomA.x;
             const dy = atomB.y - atomA.y;
             const dz = atomB.z - atomA.z;
@@ -505,7 +513,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           break;
         }
         const offset = message.offset || { x: 0.5, y: 0.5, z: 0.5 };
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         for (const id of ids) {
           const atom = structure.getAtom(id);
           if (!atom) {
@@ -529,7 +537,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (ids.length === 0 || !message.element) {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         const element = parseElement(String(message.element));
         if (!element) {
           vscode.window.showErrorMessage(`Unknown element: ${message.element}`);
@@ -552,7 +560,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (ids.length === 0 || !/^#[0-9a-fA-F]{6}$/.test(color)) {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         for (const id of ids) {
           const atom = structure.getAtom(id);
           if (atom) {
@@ -574,7 +582,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (!structure.getAtom(atomId1) || !structure.getAtom(atomId2) || atomId1 === atomId2) {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         structure.addManualBond(atomId1, atomId2);
         renderer.setStructure(structure);
         renderer.selectBond(Structure.bondKey(atomId1, atomId2));
@@ -585,11 +593,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
       case 'deleteBond': {
         const selectedPairs: Array<[string, string]> = [];
         if (Array.isArray(message.bondKeys)) {
-          for (const key of message.bondKeys) {
-            if (typeof key !== 'string') {
+          for (const bk of message.bondKeys) {
+            if (typeof bk !== 'string') {
               continue;
             }
-            const pair = Structure.bondKeyToPair(key);
+            const pair = Structure.bondKeyToPair(bk);
             if (pair) {
               selectedPairs.push(pair);
             }
@@ -615,7 +623,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (selectedPairs.length === 0) {
           break;
         }
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         for (const pair of selectedPairs) {
           structure.removeBond(pair[0], pair[1]);
         }
@@ -626,7 +634,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
       }
 
       case 'recalculateBonds': {
-        this.pushUndoSnapshot(key, structure);
+        undo?.push(structure);
         structure.manualBonds = [];
         structure.suppressedAutoBonds = [];
         renderer.setStructure(structure);
@@ -639,7 +647,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         if (message.atomId) {
           const atom = structure.getAtom(message.atomId);
           if (atom) {
-            this.pushUndoSnapshot(key, structure);
+            undo?.push(structure);
             if (message.element) {
               const element = parseElement(String(message.element));
               if (!element) {
@@ -673,82 +681,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
       }
 
       case 'saveStructureAs': {
-        const structureToSave = this.structures.get(key);
-        const trajectoryFrames = this.trajectories.get(key) || (structureToSave ? [structureToSave] : []);
-        if (!structureToSave) {
-          break;
-        }
-        const formatOptions = [
-          { id: 'cif', label: 'CIF (.cif)' },
-          { id: 'xyz', label: 'XYZ (.xyz)' },
-          { id: 'xdatcar', label: 'XDATCAR (.xdatcar)' },
-          { id: 'poscar', label: 'POSCAR' },
-          { id: 'vasp', label: 'VASP (.vasp)' },
-          { id: 'pdb', label: 'PDB (.pdb)' },
-          { id: 'gjf', label: 'Gaussian input (.gjf)' },
-          { id: 'inp', label: 'ORCA input (.inp)' },
-          { id: 'in', label: 'QE input (.in)' },
-          { id: 'stru', label: 'ABACUS STRU (.stru)' },
-        ];
-        const selected = await vscode.window.showQuickPick(formatOptions, {
-          placeHolder: 'Select export format',
-          matchOnDescription: true,
-          ignoreFocusOut: true,
-        });
-        if (!selected) {
-          break;
-        }
-        const selectedFormat = selected.id;
-        let exportFrames: Structure[] = [structureToSave];
-        if ((selectedFormat === 'xyz' || selectedFormat === 'xdatcar') && trajectoryFrames.length > 1) {
-          const chosen = await this.pickTrajectoryExportFrames(
-            key,
-            trajectoryFrames,
-            structureToSave,
-            selectedFormat.toUpperCase()
-          );
-          if (!chosen) {
-            break;
-          }
-          exportFrames = chosen;
-        }
-
-        const baseName = path.basename(key, path.extname(key));
-        const isPoscarFormat = ['poscar', 'vasp'].includes(selectedFormat.toLowerCase());
-        const defaultFileName = isPoscarFormat
-          ? baseName || 'structure'
-          : `${baseName || 'structure'}.${selectedFormat}`;
-        const saveOptions: vscode.SaveDialogOptions = {
-          saveLabel: 'Save Structure As',
-          defaultUri: vscode.Uri.joinPath(vscode.Uri.file(path.dirname(key)), defaultFileName),
-        };
-        if (!isPoscarFormat) {
-          saveOptions.filters = {
-            'Structure Files': [selectedFormat],
-          };
-        }
-
-        const uri = await vscode.window.showSaveDialog(saveOptions);
-        if (!uri) {
-          break;
-        }
-        try {
-          if (selectedFormat === 'xyz' && exportFrames.length > 1) {
-            for (const frame of exportFrames) {
-              FileManager.ensureStructureName(frame, uri.fsPath);
-            }
-          }
-          FileManager.ensureStructureName(exportFrames[0], uri.fsPath);
-          const content =
-            selectedFormat === 'xyz' && exportFrames.length > 1
-              ? FileManager.saveStructures(exportFrames, selectedFormat)
-              : FileManager.saveStructure(exportFrames[0], selectedFormat);
-          await vscode.workspace.fs.writeFile(uri, new TextEncoder().encode(content));
-        } catch (error) {
-          vscode.window.showErrorMessage(
-            `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
-          );
-        }
+        await this.handleSaveStructureAs(key, webviewPanel);
         break;
       }
 
@@ -816,12 +749,12 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
           if (!updatedFrames || updatedFrames.length === 0) {
             break;
           }
-          const initialFrameIndex = this.getDefaultTrajectoryFrameIndex(updatedFrames);
-          this.setTrajectoryState(key, updatedFrames, initialFrameIndex);
-          this.undoStacks.set(key, []);
-          renderer.setStructure(updatedFrames[initialFrameIndex]);
-          renderer.setTrajectoryFrameInfo(initialFrameIndex, updatedFrames.length);
-          renderer.setShowUnitCell(!!updatedFrames[initialFrameIndex].unitCell);
+          const idx = TrajectoryManager.defaultFrameIndex(updatedFrames);
+          traj.set(updatedFrames, idx);
+          undo?.clear();
+          renderer.setStructure(updatedFrames[idx]);
+          renderer.setTrajectoryFrameInfo(idx, updatedFrames.length);
+          renderer.setShowUnitCell(!!updatedFrames[idx].unitCell);
           renderer.deselectAtom();
           renderer.deselectBond();
           this.renderStructure(key, webviewPanel);
@@ -860,90 +793,18 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     }
   }
 
-  private setTrajectoryState(key: string, frames: Structure[], activeIndex: number) {
-    const normalizedFrames = frames.length > 0 ? frames : [new Structure('')];
-    const index = Math.max(0, Math.min(normalizedFrames.length - 1, Math.floor(activeIndex || 0)));
-    this.trajectories.set(key, normalizedFrames);
-    this.trajectoryFrameIndices.set(key, index);
-    this.structures.set(key, normalizedFrames[index]);
-  }
-
-  private getDefaultTrajectoryFrameIndex(frames: Structure[]): number {
-    if (!frames || frames.length === 0) {
-      return 0;
-    }
-    return Math.max(0, frames.length - 1);
-  }
-
-  private async pickTrajectoryExportFrames(
-    key: string,
-    trajectoryFrames: Structure[],
-    currentStructure: Structure,
-    formatLabel: string
-  ): Promise<Structure[] | null> {
-    if (trajectoryFrames.length <= 1) {
-      return [currentStructure];
-    }
-    const currentIndex = this.trajectoryFrameIndices.get(key) ?? 0;
-    const selected = await vscode.window.showQuickPick(
-      [
-        {
-          id: 'current',
-          label: `Current Frame (${currentIndex + 1}/${trajectoryFrames.length})`,
-        },
-        {
-          id: 'all',
-          label: `Whole Trajectory (${trajectoryFrames.length} frames)`,
-        },
-      ],
-      {
-        placeHolder: `Select ${formatLabel} export scope`,
-        ignoreFocusOut: true,
-      }
-    );
-    if (!selected) {
-      return null;
-    }
-    if (selected.id === 'all') {
-      return trajectoryFrames;
-    }
-    return [currentStructure];
-  }
-
-  private updateCurrentFrame(key: string, structure: Structure) {
-    this.structures.set(key, structure);
-    const frames = this.trajectories.get(key);
-    if (!frames || frames.length === 0) {
-      return;
-    }
-    const index = this.trajectoryFrameIndices.get(key) ?? 0;
-    if (index >= 0 && index < frames.length) {
-      frames[index] = structure;
-    }
-  }
-
-  private pushUndoSnapshot(key: string, structure: Structure) {
-    const stack = this.undoStacks.get(key);
-    if (!stack) {
-      return;
-    }
-    stack.push(structure.clone());
-    if (stack.length > this.maxUndoDepth) {
-      stack.shift();
-    }
-  }
-
   private undoLastEdit(key: string, webviewPanel: vscode.WebviewPanel) {
-    const stack = this.undoStacks.get(key);
+    const undo = this.undoManagers.get(key);
     const renderer = this.renderers.get(key);
-    if (!stack || stack.length === 0 || !renderer) {
+    const traj = this.trajectoryManagers.get(key);
+    if (!undo || undo.isEmpty || !renderer || !traj) {
       return;
     }
-    const previous = stack.pop();
+    const previous = undo.pop();
     if (!previous) {
       return;
     }
-    this.updateCurrentFrame(key, previous);
+    traj.updateActiveFrame(previous);
     renderer.setStructure(previous);
     renderer.setShowUnitCell(!!previous.unitCell);
     renderer.deselectAtom();
@@ -956,51 +817,99 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     webviewPanel: vscode.WebviewPanel
   ) {
     const renderer = this.renderers.get(key);
-    if (renderer) {
-      const frames = this.trajectories.get(key);
-      const frameCount = frames && frames.length > 0 ? frames.length : 1;
-      const frameIndex = this.trajectoryFrameIndices.get(key) ?? 0;
-      renderer.setTrajectoryFrameInfo(frameIndex, frameCount);
+    const traj = this.trajectoryManagers.get(key);
+    if (renderer && traj) {
+      renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
       const message = renderer.getRenderMessage();
-      
+
       // Include current display settings in render message
       const displaySettings = this.displaySettings.get(key);
       if (displaySettings) {
         message.displaySettings = displaySettings;
       }
-      
+
       webviewPanel.webview.postMessage(message);
     }
   }
 
   private async saveStructure(key: string) {
-    const structure = this.structures.get(key);
-    if (!structure) {
+    const traj = this.trajectoryManagers.get(key);
+    if (!traj) {
       return;
     }
-
     try {
-      const format = FileManager.resolveFormat(key, 'xyz');
-      const frames = this.trajectories.get(key) || [structure];
-      if (format === 'xyz' && frames.length > 1) {
-        for (const frame of frames) {
-          FileManager.ensureStructureName(frame, key);
-        }
-      } else {
-        FileManager.ensureStructureName(structure, key);
-      }
-      const content =
-        format === 'xyz' && frames.length > 1
-          ? FileManager.saveStructures(frames, format)
-          : FileManager.saveStructure(structure, format);
-      const uri = vscode.Uri.file(key);
-      await vscode.workspace.fs.writeFile(
-        uri,
-        new TextEncoder().encode(content)
-      );
+      await StructureDocumentManager.save(key, traj.activeStructure, traj.frames);
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to save structure: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
+  }
+
+  private async handleSaveStructureAs(key: string, _webviewPanel: vscode.WebviewPanel) {
+    const traj = this.trajectoryManagers.get(key);
+    if (!traj) {
+      return;
+    }
+    const structureToSave = traj.activeStructure;
+    const trajectoryFrames = traj.frames;
+
+    const formatOptions = [
+      { id: 'cif', label: 'CIF (.cif)' },
+      { id: 'xyz', label: 'XYZ (.xyz)' },
+      { id: 'xdatcar', label: 'XDATCAR (.xdatcar)' },
+      { id: 'poscar', label: 'POSCAR' },
+      { id: 'vasp', label: 'VASP (.vasp)' },
+      { id: 'pdb', label: 'PDB (.pdb)' },
+      { id: 'gjf', label: 'Gaussian input (.gjf)' },
+      { id: 'inp', label: 'ORCA input (.inp)' },
+      { id: 'in', label: 'QE input (.in)' },
+      { id: 'stru', label: 'ABACUS STRU (.stru)' },
+    ];
+    const selected = await vscode.window.showQuickPick(formatOptions, {
+      placeHolder: 'Select export format',
+      matchOnDescription: true,
+      ignoreFocusOut: true,
+    });
+    if (!selected) {
+      return;
+    }
+    const selectedFormat = selected.id;
+    let exportFrames: Structure[] = [structureToSave];
+    if ((selectedFormat === 'xyz' || selectedFormat === 'xdatcar') && trajectoryFrames.length > 1) {
+      const chosen = await StructureDocumentManager.pickTrajectoryExportFrames(
+        trajectoryFrames,
+        structureToSave,
+        traj.activeIndex,
+        selectedFormat.toUpperCase()
+      );
+      if (!chosen) {
+        return;
+      }
+      exportFrames = chosen;
+    }
+
+    const defaultFileName = StructureDocumentManager.defaultSaveAsFileName(key, selectedFormat);
+    const isPoscarFormat = ['poscar', 'vasp'].includes(selectedFormat.toLowerCase());
+    const saveOptions: vscode.SaveDialogOptions = {
+      saveLabel: 'Save Structure As',
+      defaultUri: vscode.Uri.joinPath(vscode.Uri.file(path.dirname(key)), defaultFileName),
+    };
+    if (!isPoscarFormat) {
+      saveOptions.filters = {
+        'Structure Files': [selectedFormat],
+      };
+    }
+
+    const uri = await vscode.window.showSaveDialog(saveOptions);
+    if (!uri) {
+      return;
+    }
+    try {
+      await StructureDocumentManager.saveAs(uri, exportFrames);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
       );
     }
   }
@@ -1010,77 +919,42 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'styles.css')
     );
-    const threeUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.context.extensionUri,
-        'media',
-        'three',
-        'three.min.js'
-      )
-    );
-    const orbitControlsUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this.context.extensionUri,
-        'media',
-        'three',
-        'OrbitControls.js'
-      )
-    );
-    const stateUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'state.js')
-    );
-    const configHandlerUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'configHandler.js')
-    );
-    const rendererUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'renderer.js')
-    );
-    const interactionUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'interaction.js')
-    );
-    const appUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.context.extensionUri, 'media', 'webview', 'app.js')
+    const webviewUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(this.context.extensionUri, 'out', 'webview', 'webview.js')
     );
 
     const templatePath = path.join(this.context.extensionPath, 'media', 'webview', 'index.html');
     let html = fs.readFileSync(templatePath, 'utf8');
     html = html.replace(/\{\{csp\}\}/g, csp);
     html = html.replace(/\{\{stylesUri\}\}/g, styleUri.toString());
-    html = html.replace(/\{\{threeUri\}\}/g, threeUri.toString());
-    html = html.replace(/\{\{orbitControlsUri\}\}/g, orbitControlsUri.toString());
-    html = html.replace(/\{\{stateUri\}\}/g, stateUri.toString());
-    html = html.replace(/\{\{configHandlerUri\}\}/g, configHandlerUri.toString());
-    html = html.replace(/\{\{rendererUri\}\}/g, rendererUri.toString());
-    html = html.replace(/\{\{interactionUri\}\}/g, interactionUri.toString());
-    html = html.replace(/\{\{appUri\}\}/g, appUri.toString());
+    html = html.replace(/\{\{webviewUri\}\}/g, webviewUri.toString());
     return html;
   }
 
   saveCustomDocument(
-    document: any,
+    document: StructureDocument,
     _cancellationToken: vscode.CancellationToken
   ): Thenable<void> {
     return this.saveStructure(document.uri.fsPath);
   }
 
   async saveCustomDocumentAs(
-    document: any,
+    document: StructureDocument,
     destination: vscode.Uri,
     _cancellationToken: vscode.CancellationToken
   ): Promise<void> {
-    const structure = this.structures.get(document.uri.fsPath);
-    if (!structure) {
+    const traj = this.trajectoryManagers.get(document.uri.fsPath);
+    if (!traj) {
       return;
     }
     const format = FileManager.resolveFormat(destination.fsPath, 'xyz');
     try {
-      const frames = this.trajectories.get(document.uri.fsPath) || [structure];
-      let exportFrames: Structure[] = [structure];
-      if ((format === 'xyz' || format === 'xdatcar') && frames.length > 1) {
-        const chosen = await this.pickTrajectoryExportFrames(
-          document.uri.fsPath,
-          frames,
-          structure,
+      let exportFrames: Structure[] = [traj.activeStructure];
+      if ((format === 'xyz' || format === 'xdatcar') && traj.frameCount > 1) {
+        const chosen = await StructureDocumentManager.pickTrajectoryExportFrames(
+          traj.frames,
+          traj.activeStructure,
+          traj.activeIndex,
           format.toUpperCase()
         );
         if (!chosen) {
@@ -1088,17 +962,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
         }
         exportFrames = chosen;
       }
-      if ((format === 'xyz' || format === 'xdatcar') && exportFrames.length > 1) {
-        for (const frame of exportFrames) {
-          FileManager.ensureStructureName(frame, destination.fsPath);
-        }
-      }
-      FileManager.ensureStructureName(exportFrames[0], destination.fsPath);
-      const content =
-        (format === 'xyz' || format === 'xdatcar') && exportFrames.length > 1
-          ? FileManager.saveStructures(exportFrames, format)
-          : FileManager.saveStructure(exportFrames[0], format);
-      await vscode.workspace.fs.writeFile(destination, new TextEncoder().encode(content));
+      await StructureDocumentManager.saveAs(destination, exportFrames);
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
@@ -1107,7 +971,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
   }
 
   revertCustomDocument(
-    document: any,
+    document: StructureDocument,
     _cancellationToken: vscode.CancellationToken
   ): Thenable<void> {
     return Promise.resolve();
@@ -1135,7 +999,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
 
   async notifyConfigChange(config: DisplayConfig): Promise<void> {
     // Notify all webviews about the config change
-    for (const [key, webviewPanel] of this.webviewPanels) {
+    for (const [, webviewPanel] of this.webviewPanels) {
       webviewPanel.webview.postMessage({
         command: 'displayConfigChanged',
         config: config
@@ -1145,7 +1009,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider {
 
   async getCurrentDisplaySettings(): Promise<DisplaySettings | null> {
     // Get settings from the first available webview
-    for (const [key, settings] of this.displaySettings) {
+    for (const [, settings] of this.displaySettings) {
       return settings;
     }
     return null;
