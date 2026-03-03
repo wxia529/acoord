@@ -4,6 +4,7 @@ import * as configHandler from './configHandler';
 import * as appTrajectory from './appTrajectory';
 import { setup as setupEdit } from './appEdit';
 import { setup as setupLattice, updateLatticeUI, updateAtomSizePanel } from './appLattice';
+import { setup as setupView } from './appView';
 import { setup as setupTools } from './appTools';
 import { init as initInteraction } from './interaction';
 import { initVscode as initInteractionConfigVscode } from './interactionConfig';
@@ -1001,6 +1002,7 @@ function setupUI(): void {
   appTrajectory.setup(vscode);
   setupEdit(callbacks);
   setupLattice(callbacks);
+  setupView(callbacks);
   setupTools(callbacks);
 
   updateBondSelectionUI();
