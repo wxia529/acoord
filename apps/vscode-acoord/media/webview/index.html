@@ -13,13 +13,6 @@
     <button id="btn-delete-atom">Delete</button>
     <button id="btn-copy-atom">Copy</button>
     <button id="btn-unit-cell">Unit Cell</button>
-    <div class="toolbar-field">
-      <label for="proj-select">Projection</label>
-      <select id="proj-select">
-        <option value="perspective">Perspective</option>
-        <option value="orthographic">Orthographic</option>
-      </select>
-    </div>
     <button id="btn-reset">Reset</button>
     <button id="btn-undo">Undo</button>
     <button id="btn-save">Save</button>
@@ -48,6 +41,7 @@
       <div class="tab-nav" role="tablist" aria-label="Sidebar tabs">
         <button class="tab-button active" data-tab-target="tab-edit" type="button">Edit</button>
         <button class="tab-button" data-tab-target="tab-lattice" type="button">Lattice</button>
+        <button class="tab-button" data-tab-target="tab-view" type="button">View</button>
         <button class="tab-button" data-tab-target="tab-display" type="button">Display</button>
         <button class="tab-button" data-tab-target="tab-tools" type="button">Tools</button>
         <button class="tab-button" data-tab-target="tab-trajectory" type="button">Trajectory</button>
@@ -163,6 +157,32 @@
           <div class="panel">
             <div class="panel-title">Center at Cell</div>
             <button id="btn-center-cell" type="button">Center At Cell</button>
+          </div>
+        </div>
+
+        <div class="tab-pane" id="tab-view">
+          <div class="panel">
+            <div class="panel-title">Projection</div>
+            <div class="input-group">
+              <select id="proj-select">
+                <option value="perspective">Perspective</option>
+                <option value="orthographic">Orthographic</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-title">Axis Views</div>
+            <div class="input-group">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button id="btn-view-a" class="axis-button" type="button" title="View along a-axis (+X)">a</button>
+                <button id="btn-view-b" class="axis-button" type="button" title="View along b-axis (+Y)">b</button>
+                <button id="btn-view-c" class="axis-button" type="button" title="View along c-axis (+Z)">c</button>
+                <button id="btn-view-na" class="axis-button" type="button" title="View along -a-axis (-X)">-a</button>
+                <button id="btn-view-nb" class="axis-button" type="button" title="View along -b-axis (-Y)">-b</button>
+                <button id="btn-view-nc" class="axis-button" type="button" title="View along -c-axis (-Z)">-c</button>
+              </div>
+            </div>
           </div>
         </div>
 
