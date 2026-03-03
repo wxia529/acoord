@@ -1069,8 +1069,8 @@ function setupInteraction(): void {
 function start(): void {
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
-  // Init configHandler with vscode, showStatus callback, and updateConfigSelector
-  configHandler.init(vscode, setStatus, updateConfigSelector);
+  // Init configHandler with vscode, showStatus callback, updateConfigSelector and rerenderCurrentStructure
+  configHandler.init(vscode, setStatus, updateConfigSelector, rerenderCurrentStructure);
   // Init interactionConfig with vscode (must happen before interaction.init() calls initConfig())
   initInteractionConfigVscode(vscode);
 

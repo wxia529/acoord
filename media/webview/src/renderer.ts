@@ -25,6 +25,10 @@ export interface RendererApi {
   updateLighting(): void;
   updateDisplaySettings(): void;
   exportHighResolutionImage(options?: { scale?: number }): { dataUrl: string; width: number; height: number } | null;
+  /** Update an atom's visual position in both the hit-test mesh and InstancedMesh, and mark dirty. */
+  updateAtomPosition(atomId: string, position: THREE.Vector3): void;
+  /** Mark the renderer dirty so the next animate() frame will re-render. */
+  markDirty(): void;
 }
 
 interface RendererState {
@@ -32,9 +36,16 @@ interface RendererState {
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera | null;
   renderer: THREE.WebGLRenderer | null;
   controls: TrackballControls | { update: () => void; enabled?: boolean; target?: THREE.Vector3; dispose?: () => void } | null;
+  /** Invisible per-atom meshes used only for raycasting and drag interaction. */
   atomMeshes: Map<string, THREE.Mesh>;
+  /** Instanced meshes that visually render atoms (one per radius group). */
+  atomInstancedMeshes: THREE.InstancedMesh[];
+  /** Maps atom id to its instanced mesh + instance index for matrix updates during drag. */
+  atomInstanceIndex: Map<string, { im: THREE.InstancedMesh; index: number }>;
   bondMeshes: THREE.Mesh[];
   bondLines: THREE.Mesh[];
+  /** Instanced meshes that visually render bonds (one per radius group). */
+  bondInstancedMeshes: THREE.InstancedMesh[];
   unitCellGroup: THREE.Group | null;
   raycaster: THREE.Raycaster | null;
   mouse: THREE.Vector2 | null;
@@ -51,6 +62,8 @@ interface RendererState {
   fillLight: THREE.DirectionalLight | null;
   rimLight: THREE.DirectionalLight | null;
   axesHelper: THREE.AxesHelper | null;
+  /** Dirty flag: set true whenever the scene needs a re-render. */
+  needsRender: boolean;
 }
 
 const rendererState: RendererState = {
@@ -59,8 +72,11 @@ const rendererState: RendererState = {
   renderer: null,
   controls: null,
   atomMeshes: new Map(),
+  atomInstancedMeshes: [],
+  atomInstanceIndex: new Map(),
   bondMeshes: [],
   bondLines: [],
+  bondInstancedMeshes: [],
   unitCellGroup: null,
   raycaster: null,
   mouse: null,
@@ -77,7 +93,13 @@ const rendererState: RendererState = {
   fillLight: null,
   rimLight: null,
   axesHelper: null,
+  needsRender: true,
 };
+
+/** Mark the scene dirty so animate() will issue a render on the next frame. */
+function markDirty(): void {
+  rendererState.needsRender = true;
+}
 
 function resolveLightColor(value: unknown, fallback: string): string {
   const color = typeof value === 'string' ? value.trim() : '';
@@ -112,14 +134,17 @@ function setObjectShininess(object: THREE.Object3D | null, shininess: number): v
 
 function applySurfaceShininess(): void {
   const shininess = getSurfaceShininess();
-  for (const mesh of rendererState.atomMeshes.values()) {
-    setObjectShininess(mesh, shininess);
+  // Update instanced atom meshes (visual rendering meshes).
+  for (const im of rendererState.atomInstancedMeshes) {
+    setObjectShininess(im, shininess);
   }
+  // Update non-selectable extra atom meshes.
   for (const mesh of rendererState.extraMeshes) {
     setObjectShininess(mesh, shininess);
   }
-  for (const mesh of rendererState.bondLines) {
-    setObjectShininess(mesh, shininess);
+  // Update instanced bond meshes.
+  for (const im of rendererState.bondInstancedMeshes) {
+    setObjectShininess(im, shininess);
   }
 }
 
@@ -154,6 +179,8 @@ function applyControls(camera: THREE.Camera): void {
   controls.zoomSpeed = 1.2;
   controls.panSpeed = 0.8;
   controls.staticMoving = true;
+  // Re-render whenever the camera moves via controls.
+  controls.addEventListener('change', markDirty);
   rendererState.controls = controls;
 }
 
@@ -239,6 +266,7 @@ function init(canvas: HTMLCanvasElement, handlers: { setError: (m: string) => vo
   requestAnimationFrame(() => onResize());
   setTimeout(() => onResize(), 150);
   animate();
+  markDirty();
 
   setInterval(() => {
     const calls = rendererState.renderer ? rendererState.renderer.info.render.calls : 0;
@@ -250,6 +278,8 @@ function animate(): void {
   requestAnimationFrame(animate);
   if (!rendererState.renderer || !rendererState.controls) return;
   rendererState.controls.update();
+  if (!rendererState.needsRender) return;
+  rendererState.needsRender = false;
   updateLightsForCamera();
   rendererState.renderer.render(rendererState.scene!, rendererState.camera!);
 }
@@ -296,6 +326,7 @@ function onResize(): void {
   if (ctrl && ctrl.handleResize) {
     ctrl.handleResize();
   }
+  markDirty();
 }
 
 function getAutoScales(atoms: Atom[]): { scale: number; sizeScale: number } {
@@ -362,6 +393,12 @@ function disposeObject3D(object: THREE.Object3D | null): void {
     if (mesh.geometry) mesh.geometry.dispose();
     disposeMaterial(mesh.material as THREE.Material | THREE.Material[]);
   });
+}
+
+function disposeInstancedMesh(im: THREE.InstancedMesh | null): void {
+  if (!im) return;
+  if (im.geometry) im.geometry.dispose();
+  disposeMaterial(im.material as THREE.Material | THREE.Material[]);
 }
 
 function createUnitCellEdgeMesh(start: THREE.Vector3, end: THREE.Vector3, radius: number, color: string): THREE.Mesh | null {
@@ -442,6 +479,13 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
     disposeObject3D(mesh);
   }
   rendererState.atomMeshes.clear();
+  rendererState.atomInstanceIndex.clear();
+
+  for (const im of rendererState.atomInstancedMeshes) {
+    rendererState.scene!.remove(im);
+    disposeInstancedMesh(im);
+  }
+  rendererState.atomInstancedMeshes = [];
 
   for (const mesh of rendererState.extraMeshes) {
     rendererState.scene!.remove(mesh);
@@ -456,6 +500,12 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
   rendererState.bondLines = [];
   rendererState.bondMeshes = [];
 
+  for (const im of rendererState.bondInstancedMeshes) {
+    rendererState.scene!.remove(im);
+    disposeInstancedMesh(im);
+  }
+  rendererState.bondInstancedMeshes = [];
+
   if (rendererState.unitCellGroup) {
     rendererState.scene!.remove(rendererState.unitCellGroup);
     disposeObject3D(rendererState.unitCellGroup);
@@ -469,31 +519,107 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
   const surfaceShininess = getSurfaceShininess();
 
   if (renderAtoms) {
-    for (const atom of renderAtoms) {
-      if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) continue;
-      const selectable = atom.selectable !== false;
-      const isSelected = selectable && (!!atom.selected || selectedSet.has(atom.id));
+    // --- Instanced rendering for selectable atoms ---
+    // Group atoms by rounded radius so that all atoms sharing the same visual
+    // radius can share a single InstancedMesh (one draw call per group).
+    const selectableAtoms = renderAtoms.filter((atom) => {
+      if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) return false;
+      return atom.selectable !== false;
+    });
+    const nonSelectableAtoms = renderAtoms.filter((atom) => {
+      if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) return false;
+      return atom.selectable === false;
+    });
+
+    // Build instanced meshes for selectable atoms grouped by radius key.
+    if (selectableAtoms.length > 0) {
+      // Map: radiusKey → list of atoms
+      const byRadius = new Map<number, typeof selectableAtoms>();
+      for (const atom of selectableAtoms) {
+        const isSelected = !!atom.selected || selectedSet.has(atom.id);
+        const configuredRadius = getConfiguredAtomRadius(atom, baseAtomsById);
+        const sphereRadius = Math.max(configuredRadius * sizeScale, 0.12) * (isSelected ? 1.12 : 1);
+        // Round to 3 decimal places as map key.
+        const key = Math.round(sphereRadius * 1000) / 1000;
+        if (!byRadius.has(key)) byRadius.set(key, []);
+        byRadius.get(key)!.push(atom);
+      }
+
+      const dummy = new THREE.Object3D();
+      const _color = new THREE.Color();
+
+      for (const [radiusKey, atoms] of byRadius) {
+        // Shared geometry for this radius group (16-segment sphere is a good
+        // balance between quality and triangle count; was 32 before).
+        const geo = new THREE.SphereGeometry(radiusKey, 16, 12);
+        // Use a single shared material; per-instance color is handled via
+        // instanceColor buffer — MeshPhongMaterial supports it.
+        const mat = new THREE.MeshPhongMaterial({
+          specular: new THREE.Color(0x333333),
+          shininess: surfaceShininess,
+        });
+        const im = new THREE.InstancedMesh(geo, mat, atoms.length);
+        im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(atoms.length * 3), 3);
+
+        for (let i = 0; i < atoms.length; i++) {
+          const atom = atoms[i];
+          const isSelected = !!atom.selected || selectedSet.has(atom.id);
+          dummy.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
+          dummy.updateMatrix();
+          im.setMatrixAt(i, dummy.matrix);
+          _color.set(isSelected ? '#f6d55c' : atom.color);
+          im.setColorAt(i, _color);
+
+          // Invisible hit-test mesh: small sphere, same radius, raycastable.
+          // Using a very low-poly geometry keeps construction fast.
+          const hitGeo = new THREE.SphereGeometry(radiusKey, 6, 4);
+          const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+          const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+          hitMesh.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
+          hitMesh.userData = { atomId: atom.id };
+          rendererState.scene!.add(hitMesh);
+          rendererState.atomMeshes.set(atom.id, hitMesh);
+          rendererState.atomInstanceIndex.set(atom.id, { im, index: i });
+        }
+
+        im.instanceMatrix.needsUpdate = true;
+        if (im.instanceColor) im.instanceColor.needsUpdate = true;
+        rendererState.scene!.add(im);
+        rendererState.atomInstancedMeshes.push(im);
+      }
+    }
+
+    // Non-selectable atoms (e.g. ghost/extra atoms) — kept as individual meshes
+    // since they are typically few and don't need selection/drag support.
+    for (const atom of nonSelectableAtoms) {
       const configuredRadius = getConfiguredAtomRadius(atom, baseAtomsById);
-      const sphereRadius = Math.max(configuredRadius * sizeScale, 0.12) * (isSelected ? 1.12 : 1);
-      const geometry = new THREE.SphereGeometry(sphereRadius, 32, 32);
+      const sphereRadius = Math.max(configuredRadius * sizeScale, 0.12);
+      const geometry = new THREE.SphereGeometry(sphereRadius, 16, 12);
       const material = new THREE.MeshPhongMaterial({
-        color: new THREE.Color(isSelected ? '#f6d55c' : atom.color),
+        color: new THREE.Color(atom.color),
         specular: new THREE.Color(0x333333),
         shininess: surfaceShininess,
       });
       const mesh = new THREE.Mesh(geometry, material);
       mesh.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
       rendererState.scene!.add(mesh);
-      if (selectable) {
-        mesh.userData = { atomId: atom.id };
-        rendererState.atomMeshes.set(atom.id, mesh);
-      } else {
-        rendererState.extraMeshes.push(mesh);
-      }
+      rendererState.extraMeshes.push(mesh);
     }
   }
 
   if (renderBonds) {
+    // Pre-compute all bond half-cylinder data, then group by radius key for instancing.
+    interface BondHalf {
+      from: THREE.Vector3;
+      to: THREE.Vector3;
+      halfLen: number;
+      color: string;
+      bondRadius: number;
+      emissive: string;
+      bondKey: string | undefined;
+    }
+    const bondHalves: BondHalf[] = [];
+
     for (const bond of renderBonds) {
       const isSelectedBond = !!bond.selected;
       const highlightBond =
@@ -501,44 +627,87 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
         !!(bond.atomId1 && bond.atomId2 && selectedSet.has(bond.atomId1) && selectedSet.has(bond.atomId2));
       const start = new THREE.Vector3(bond.start[0] * scale, bond.start[1] * scale, bond.start[2] * scale);
       const end = new THREE.Vector3(bond.end[0] * scale, bond.end[1] * scale, bond.end[2] * scale);
-      const direction = end.clone().sub(start);
-      const length = direction.length();
+      const length = start.distanceTo(end);
       const bondThicknessScale = Number.isFinite(state.bondThicknessScale) ? state.bondThicknessScale : 1;
       const bondRadius = Math.max(bond.radius * sizeScale * bondThicknessScale, 0.03) * (highlightBond ? 1.35 : 1);
-
       const midpoint = start.clone().add(end).multiplyScalar(0.5);
-      const directionNormalized = direction.clone().normalize();
+      const emissive = isSelectedBond ? '#704214' : '#000000';
 
-      const makeCylinder = (from: THREE.Vector3, to: THREE.Vector3, halfLen: number, color: string): THREE.Mesh => {
-        const geo = new THREE.CylinderGeometry(bondRadius, bondRadius, halfLen, 8);
-        const mat = new THREE.MeshPhongMaterial({
-          color: new THREE.Color(color),
-          specular: new THREE.Color(0x333333),
-          emissive: new THREE.Color(isSelectedBond ? '#704214' : '#000000'),
-          shininess: surfaceShininess,
-        });
-        const cyl = new THREE.Mesh(geo, mat);
-        cyl.position.copy(from.clone().add(to).multiplyScalar(0.5));
-        if (directionNormalized.length() > 0.0001) {
-          const axis = new THREE.Vector3(0, 1, 0);
-          const rotAxis = axis.clone().cross(directionNormalized);
-          if (rotAxis.length() > 0.0001) {
-            const angle = Math.acos(axis.dot(directionNormalized));
-            cyl.setRotationFromAxisAngle(rotAxis.normalize(), angle);
+      bondHalves.push({ from: start, to: midpoint, halfLen: length / 2, color: bond.color1 || bond.color, bondRadius, emissive, bondKey: bond.key });
+      bondHalves.push({ from: midpoint, to: end,   halfLen: length / 2, color: bond.color2 || bond.color, bondRadius, emissive, bondKey: bond.key });
+    }
+
+    // Group bond halves by (bondRadius, emissive) key for instancing.
+    const byBondRadius = new Map<string, BondHalf[]>();
+    for (const half of bondHalves) {
+      const key = `${Math.round(half.bondRadius * 1000)}_${half.emissive}`;
+      if (!byBondRadius.has(key)) byBondRadius.set(key, []);
+      byBondRadius.get(key)!.push(half);
+    }
+
+    const dummy = new THREE.Object3D();
+    const _color = new THREE.Color();
+    const _up = new THREE.Vector3(0, 1, 0);
+    const _axis = new THREE.Vector3();
+    const _quat = new THREE.Quaternion();
+
+    for (const [, halves] of byBondRadius) {
+      const firstHalf = halves[0];
+      // Use half-length = 1 in geometry; we scale each instance via matrix.
+      const geo = new THREE.CylinderGeometry(firstHalf.bondRadius, firstHalf.bondRadius, 1, 8);
+      const mat = new THREE.MeshPhongMaterial({
+        specular: new THREE.Color(0x333333),
+        emissive: new THREE.Color(firstHalf.emissive),
+        shininess: surfaceShininess,
+      });
+      const im = new THREE.InstancedMesh(geo, mat, halves.length);
+      im.instanceColor = new THREE.InstancedBufferAttribute(new Float32Array(halves.length * 3), 3);
+
+      for (let i = 0; i < halves.length; i++) {
+        const half = halves[i];
+        const center = half.from.clone().add(half.to).multiplyScalar(0.5);
+        const dir = half.to.clone().sub(half.from).normalize();
+
+        dummy.position.copy(center);
+        if (dir.length() > 0.0001) {
+          _axis.crossVectors(_up, dir);
+          if (_axis.length() > 0.0001) {
+            const angle = Math.acos(Math.max(-1, Math.min(1, _up.dot(dir))));
+            _quat.setFromAxisAngle(_axis.normalize(), angle);
+            dummy.quaternion.copy(_quat);
+          } else {
+            // Parallel or anti-parallel to Y
+            dummy.quaternion.set(0, 0, 0, 1);
+            if (_up.dot(dir) < 0) {
+              dummy.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
+            }
           }
         }
-        return cyl;
-      };
+        // Scale Y to actual half-length (geometry unit-length along Y).
+        dummy.scale.set(1, half.halfLen, 1);
+        dummy.updateMatrix();
+        im.setMatrixAt(i, dummy.matrix);
+        _color.set(half.color);
+        im.setColorAt(i, _color);
 
-      const cylinder1 = makeCylinder(start, midpoint, length / 2, bond.color1 || bond.color);
-      if (bond.key) { cylinder1.userData = { bondKey: bond.key }; rendererState.bondMeshes.push(cylinder1); }
-      rendererState.scene!.add(cylinder1);
-      rendererState.bondLines.push(cylinder1);
+        // Invisible hit-test mesh for bond selection.
+        if (half.bondKey) {
+          const hitGeo = new THREE.CylinderGeometry(firstHalf.bondRadius, firstHalf.bondRadius, half.halfLen, 4);
+          const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+          const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+          hitMesh.position.copy(center);
+          hitMesh.quaternion.copy(dummy.quaternion);
+          hitMesh.userData = { bondKey: half.bondKey };
+          rendererState.scene!.add(hitMesh);
+          rendererState.bondMeshes.push(hitMesh);
+          rendererState.bondLines.push(hitMesh);
+        }
+      }
 
-      const cylinder2 = makeCylinder(midpoint, end, length / 2, bond.color2 || bond.color);
-      if (bond.key) { cylinder2.userData = { bondKey: bond.key }; rendererState.bondMeshes.push(cylinder2); }
-      rendererState.scene!.add(cylinder2);
-      rendererState.bondLines.push(cylinder2);
+      im.instanceMatrix.needsUpdate = true;
+      if (im.instanceColor) im.instanceColor.needsUpdate = true;
+      rendererState.scene!.add(im);
+      rendererState.bondInstancedMeshes.push(im);
     }
   }
 
@@ -562,6 +731,7 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
   if (options && options.fitCamera) {
     fitCamera();
   }
+  markDirty();
 }
 
 function fitCamera(): void {
@@ -597,6 +767,7 @@ function fitCamera(): void {
     ctrl.target.copy(center);
   }
   rendererState.controls!.update();
+  markDirty();
 }
 
 // axis: 'a'|'b'|'c'|'-a'|'-b'|'-c'  →  snap camera to look along that axis
@@ -631,6 +802,7 @@ function snapCameraToAxis(axis: string): void {
     ctrl.target.copy(target);
   }
   if (rendererState.controls) rendererState.controls.update();
+  markDirty();
 }
 
 function setProjectionMode(mode: string): void {
@@ -696,8 +868,24 @@ function updateLighting(): void {
   rendererState.rimLight.color.set(resolveLightColor(state.rimLight?.color, '#ffffff'));
   applySurfaceShininess();
   updateLightsForCamera();
+  markDirty();
 }
 
+/**
+ * Apply lightweight display-setting changes that do NOT require rebuilding geometry.
+ *
+ * Handled here (mutate existing scene objects):
+ *   - showAxes         – toggle axes helper visibility
+ *   - backgroundColor  – set scene background color
+ *   - unitCellColor    – recolor existing unit-cell mesh materials
+ *
+ * NOT handled here (require a full renderStructure() call to rebuild geometry):
+ *   - unitCellThickness  – tube radius is baked into BufferGeometry at render time
+ *   - unitCellLineStyle  – dashed vs. solid uses different material/geometry types
+ *
+ * Callers that change thickness or line style must call renderStructure() directly
+ * (see interactionDisplay.ts rerenderStructure).
+ */
 function updateDisplaySettings(): void {
   if (rendererState.axesHelper) {
     rendererState.axesHelper.visible = state.showAxes !== false;
@@ -718,6 +906,7 @@ function updateDisplaySettings(): void {
       }
     });
   }
+  markDirty();
 }
 
 function exportHighResolutionImage(options?: { scale?: number }): { dataUrl: string; width: number; height: number } | null {
@@ -785,6 +974,31 @@ function exportHighResolutionImage(options?: { scale?: number }): { dataUrl: str
   }
 }
 
+function updateAtomPosition(atomId: string, position: THREE.Vector3): void {
+  // Update hit-test mesh position (used for raycasting and box-select).
+  const hitMesh = rendererState.atomMeshes.get(atomId);
+  if (hitMesh) {
+    hitMesh.position.copy(position);
+  }
+  // Update the corresponding instance in the InstancedMesh so the visual moves too.
+  const entry = rendererState.atomInstanceIndex.get(atomId);
+  if (entry) {
+    const { im, index } = entry;
+    const matrix = new THREE.Matrix4();
+    im.getMatrixAt(index, matrix);
+    // Decompose, replace translation, recompose.
+    const pos = new THREE.Vector3();
+    const quat = new THREE.Quaternion();
+    const sca = new THREE.Vector3();
+    matrix.decompose(pos, quat, sca);
+    pos.copy(position);
+    matrix.compose(pos, quat, sca);
+    im.setMatrixAt(index, matrix);
+    im.instanceMatrix.needsUpdate = true;
+  }
+  markDirty();
+}
+
 export const renderer: RendererApi = {
   init,
   renderStructure,
@@ -802,4 +1016,6 @@ export const renderer: RendererApi = {
   updateLighting,
   updateDisplaySettings,
   exportHighResolutionImage,
+  updateAtomPosition,
+  markDirty,
 };

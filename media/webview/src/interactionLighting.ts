@@ -1,5 +1,6 @@
 import { state } from './state';
 import { renderer } from './renderer';
+import { updateSettings } from './configHandler';
 
 export interface LightPickerState {
   activeLightPicker: string | null;
@@ -73,6 +74,7 @@ export function applyFromEvent(event: PointerEvent, canvas: HTMLCanvasElement): 
   lightObj.z = Math.round(zSign * zNorm * length);
   updateLightSliderUI(pickerState.activeLightPicker, lightObj);
   renderer.updateLighting();
+  updateSettings();
 }
 
 export function deactivatePicker(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => void): void {
@@ -97,6 +99,7 @@ function setupLightSliders(prefix: string): void {
       lightObj.intensity = parseFloat(intensitySlider.value);
       if (intensityValue) intensityValue.textContent = lightObj.intensity.toFixed(1);
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (xSlider) {
@@ -106,6 +109,7 @@ function setupLightSliders(prefix: string): void {
       lightObj.x = parseInt(xSlider.value);
       if (xValue) xValue.textContent = String(lightObj.x);
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (ySlider) {
@@ -115,6 +119,7 @@ function setupLightSliders(prefix: string): void {
       lightObj.y = parseInt(ySlider.value);
       if (yValue) yValue.textContent = String(lightObj.y);
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (zSlider) {
@@ -124,6 +129,7 @@ function setupLightSliders(prefix: string): void {
       lightObj.z = parseInt(zSlider.value);
       if (zValue) zValue.textContent = String(lightObj.z);
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (colorPicker) {
@@ -132,6 +138,7 @@ function setupLightSliders(prefix: string): void {
       if (!lightObj) return;
       lightObj.color = colorPicker.value;
       renderer.updateLighting();
+      updateSettings();
     });
   }
 }
@@ -164,6 +171,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
     lightingEnabled.addEventListener('change', () => {
       state.lightingEnabled = lightingEnabled.checked;
       renderer.updateLighting();
+      updateSettings();
     });
   }
 
@@ -178,19 +186,21 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
       state.ambientIntensity = parseFloat(ambientSlider.value);
       if (ambientValue) ambientValue.textContent = state.ambientIntensity.toFixed(1);
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (shininessSlider) {
     const initialShininess = Number.isFinite(state.shininess)
-      ? Math.max(30, Math.min(100, Number(state.shininess)))
+      ? Math.max(0, Math.min(200, Number(state.shininess)))
       : 50;
     state.shininess = initialShininess;
     shininessSlider.value = String(initialShininess);
     if (shininessValue) shininessValue.textContent = String(Math.round(initialShininess));
     shininessSlider.addEventListener('input', () => {
-      state.shininess = Math.max(30, Math.min(100, Number(shininessSlider.value) || 50));
+      state.shininess = Math.max(0, Math.min(200, Number(shininessSlider.value) || 50));
       if (shininessValue) shininessValue.textContent = String(Math.round(state.shininess));
       renderer.updateLighting();
+      updateSettings();
     });
   }
   if (ambientColorPicker) {
@@ -198,6 +208,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
     ambientColorPicker.addEventListener('input', () => {
       state.ambientColor = ambientColorPicker.value;
       renderer.updateLighting();
+      updateSettings();
     });
   }
 
@@ -245,6 +256,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
 
       renderer.updateLighting();
       setActiveLightPicker(null, canvas, onSetStatus);
+      updateSettings();
     });
   }
 }

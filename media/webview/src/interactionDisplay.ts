@@ -52,6 +52,7 @@ export function init(): void {
       state.unitCellColor = latticeColorPicker.value;
       latticeColorText.value = latticeColorPicker.value;
       renderer.updateDisplaySettings();
+      updateSettings();
     });
 
     latticeColorText.addEventListener('change', () => {
@@ -60,6 +61,7 @@ export function init(): void {
         state.unitCellColor = color;
         latticeColorPicker.value = color;
         renderer.updateDisplaySettings();
+        updateSettings();
       }
     });
   }
@@ -73,6 +75,7 @@ export function init(): void {
       state.unitCellThickness = nextThickness;
       if (latticeThicknessValue) latticeThicknessValue.textContent = nextThickness.toFixed(1);
       rerenderStructure();
+      updateSettings();
     });
   }
 
@@ -81,6 +84,7 @@ export function init(): void {
     latticeLineStyle.addEventListener('change', () => {
       state.unitCellLineStyle = latticeLineStyle.value === 'dashed' ? 'dashed' : 'solid';
       rerenderStructure();
+      updateSettings();
     });
   }
 }

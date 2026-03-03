@@ -998,8 +998,23 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   // === Display Configuration Methods ===
 
   async notifyConfigChange(config: DisplayConfig): Promise<void> {
-    // Notify all webviews about the config change
-    for (const [, webviewPanel] of this.webviewPanels) {
+    // Only notify the currently active webview panel.
+    // Broadcasting to all panels would overwrite per-editor config choices.
+    for (const [key, webviewPanel] of this.webviewPanels) {
+      if (webviewPanel.active) {
+        this.displaySettings.set(key, config.settings);
+        webviewPanel.webview.postMessage({
+          command: 'displayConfigChanged',
+          config: config
+        });
+        return;
+      }
+    }
+    // Fallback: if no panel is active, notify the most recently opened one
+    const entries = Array.from(this.webviewPanels.entries());
+    if (entries.length > 0) {
+      const [key, webviewPanel] = entries[entries.length - 1];
+      this.displaySettings.set(key, config.settings);
       webviewPanel.webview.postMessage({
         command: 'displayConfigChanged',
         config: config
