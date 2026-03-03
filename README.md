@@ -70,7 +70,7 @@ Input and output:
 - Measure: select 2 atoms for bond length, 3 atoms for bond angle.
 - Adjust Distance: select at least two atoms; the last selected is the reference, and the rest move together along the reference-to-nearest-adsorbate direction to the target distance.
 - Scale: enable Auto scale or adjust Manual scale and Atom size.
-- Lighting: click "Pick in Canvas" under Key/Fill/Rim and drag in viewport to set light direction.
+- Lighting: adjust ambient/key/fill/rim intensity and color, tune surface shininess, or click "Pick in Canvas" under Key/Fill/Rim and drag in viewport to set light direction.
 - Slider values: double-click the numeric value label, type a number, and press Enter to apply.
 
 
