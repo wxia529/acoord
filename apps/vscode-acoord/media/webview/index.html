@@ -190,7 +190,7 @@
           </div>
 
           <div class="panel">
-            <div class="panel-title">Atom Size (Å)</div>
+            <div class="panel-title">Atom & Bond Size</div>
             <div class="input-group">
               <label>Global: <span id="atom-size-global-value">0.30 Å</span></label>
               <input type="range" id="atom-size-global-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
@@ -205,6 +205,10 @@
               <label>Selected (<span id="atom-size-selected-count">0</span>): <span id="atom-size-selected-value">0.30 Å</span></label>
               <input type="range" id="atom-size-selected-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
               <button id="btn-atom-size-reset-selected" type="button">Reset to default</button>
+            </div>
+            <div class="input-group">
+              <label>Bond thickness: <span id="bond-size-value">1.0</span>x</label>
+              <input type="range" id="bond-size-slider" min="0.3" max="5" step="0.1" value="1" />
             </div>
             <div class="input-group">
               <button id="atom-size-element-toggle" type="button" class="atom-size-element-toggle">By Element ▼</button>
@@ -227,10 +231,6 @@
             <div class="input-group">
               <label>Atom size: <span id="size-value">1.00</span>x</label>
               <input type="range" id="size-slider" min="0.5" max="3" step="0.05" value="1" />
-            </div>
-            <div class="input-group">
-              <label>Bond thickness: <span id="bond-size-value">1.0</span>x</label>
-              <input type="range" id="bond-size-slider" min="0.3" max="5" step="0.1" value="1" />
             </div>
           </div>
 
@@ -275,11 +275,23 @@
               <label>Ambient Intensity: <span id="ambient-value">0.5</span></label>
               <input type="range" id="ambient-slider" min="0" max="2" step="0.1" value="0.5" />
             </div>
+            <div class="input-group">
+              <label>Ambient Color</label>
+              <input type="color" id="ambient-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
+            </div>
+            <div class="input-group">
+              <label>Surface Shininess: <span id="shininess-value">50</span></label>
+              <input type="range" id="shininess-slider" min="30" max="100" step="1" value="50" />
+            </div>
             <div class="light-sub-panel">
               <div class="light-sub-title">Key Light</div>
               <div class="input-group">
-                <label>Intensity: <span id="key-intensity-value">0.8</span></label>
-                <input type="range" id="key-intensity-slider" min="0" max="3" step="0.1" value="0.8" />
+                <label>Intensity: <span id="key-intensity-value">0.7</span></label>
+                <input type="range" id="key-intensity-slider" min="0" max="3" step="0.1" value="0.7" />
+              </div>
+              <div class="input-group">
+                <label>Color</label>
+                <input type="color" id="key-color-picker" value="#CCCCCC" style="width:40px;height:32px;border:none;cursor:pointer;" />
               </div>
               <div class="input-group">
                 <label>X: <span id="key-x-value">0</span></label>
@@ -302,6 +314,10 @@
                 <input type="range" id="fill-intensity-slider" min="0" max="3" step="0.1" value="0" />
               </div>
               <div class="input-group">
+                <label>Color</label>
+                <input type="color" id="fill-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
+              </div>
+              <div class="input-group">
                 <label>X: <span id="fill-x-value">-10</span></label>
                 <input type="range" id="fill-x-slider" min="-50" max="50" step="1" value="-10" />
               </div>
@@ -320,6 +336,10 @@
               <div class="input-group">
                 <label>Intensity: <span id="rim-intensity-value">0</span></label>
                 <input type="range" id="rim-intensity-slider" min="0" max="3" step="0.1" value="0" />
+              </div>
+              <div class="input-group">
+                <label>Color</label>
+                <input type="color" id="rim-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
               </div>
               <div class="input-group">
                 <label>X: <span id="rim-x-value">0</span></label>

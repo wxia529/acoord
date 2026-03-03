@@ -28,6 +28,53 @@
     axesHelper: null,
   };
 
+  function resolveLightColor(value, fallback) {
+    const color = typeof value === 'string' ? value.trim() : '';
+    if (/^#[0-9A-Fa-f]{6}$/.test(color)) {
+      return color;
+    }
+    return fallback;
+  }
+
+  function getSurfaceShininess() {
+    const value = Number(state.shininess);
+    if (!Number.isFinite(value)) {
+      return 50;
+    }
+    return Math.max(30, Math.min(100, value));
+  }
+
+  function setObjectShininess(object, shininess) {
+    if (!object || !object.traverse) {
+      return;
+    }
+    object.traverse((node) => {
+      if (!node.material) {
+        return;
+      }
+      const materials = Array.isArray(node.material) ? node.material : [node.material];
+      for (const material of materials) {
+        if (material && 'shininess' in material) {
+          material.shininess = shininess;
+          material.needsUpdate = true;
+        }
+      }
+    });
+  }
+
+  function applySurfaceShininess() {
+    const shininess = getSurfaceShininess();
+    for (const mesh of rendererState.atomMeshes.values()) {
+      setObjectShininess(mesh, shininess);
+    }
+    for (const mesh of rendererState.extraMeshes) {
+      setObjectShininess(mesh, shininess);
+    }
+    for (const mesh of rendererState.bondLines) {
+      setObjectShininess(mesh, shininess);
+    }
+  }
+
   function getOrthoFrustum(width, height) {
     const aspect = width / height;
     const viewSize = Math.max(1, rendererState.orthoSize || 30);
@@ -116,19 +163,31 @@
     }
 
     // Three-point lighting setup
-    rendererState.ambientLight = new THREE.AmbientLight(0xffffff, state.ambientIntensity ?? 0.5);
+    rendererState.ambientLight = new THREE.AmbientLight(
+      resolveLightColor(state.ambientColor, '#ffffff'),
+      state.ambientIntensity ?? 0.5
+    );
     scene.add(rendererState.ambientLight);
 
     // Key light (main light source)
-    rendererState.keyLight = new THREE.DirectionalLight(0xffffff, state.keyLight?.intensity ?? 0.8);
+    rendererState.keyLight = new THREE.DirectionalLight(
+      resolveLightColor(state.keyLight?.color, '#CCCCCC'),
+      state.keyLight?.intensity ?? 0.7
+    );
     scene.add(rendererState.keyLight);
 
     // Fill light (softens shadows)
-    rendererState.fillLight = new THREE.DirectionalLight(0xffffff, state.fillLight?.intensity ?? 0);
+    rendererState.fillLight = new THREE.DirectionalLight(
+      resolveLightColor(state.fillLight?.color, '#ffffff'),
+      state.fillLight?.intensity ?? 0
+    );
     scene.add(rendererState.fillLight);
 
     // Rim light (creates edge highlight)
-    rendererState.rimLight = new THREE.DirectionalLight(0xffffff, state.rimLight?.intensity ?? 0);
+    rendererState.rimLight = new THREE.DirectionalLight(
+      resolveLightColor(state.rimLight?.color, '#ffffff'),
+      state.rimLight?.intensity ?? 0
+    );
     scene.add(rendererState.rimLight);
 
     // Initialize light positions using the same function as animation loop
@@ -429,6 +488,7 @@
     const renderAtoms = data.renderAtoms || data.atoms;
     const renderBonds = data.renderBonds || data.bonds;
     const baseAtomsById = new Map((data.atoms || []).map((atom) => [atom.id, atom]));
+    const surfaceShininess = getSurfaceShininess();
 
     if (renderAtoms) {
       for (const atom of renderAtoms) {
@@ -443,7 +503,7 @@
         const material = new THREE.MeshPhongMaterial({
           color: new THREE.Color(isSelected ? '#f6d55c' : atom.color),
           specular: new THREE.Color(0x333333),
-          shininess: 30,
+          shininess: surfaceShininess,
         });
         const mesh = new THREE.Mesh(geometry, material);
         mesh.position.set(
@@ -496,7 +556,7 @@
           color: new THREE.Color(bond.color1 || bond.color),
           specular: new THREE.Color(0x333333),
           emissive: new THREE.Color(isSelectedBond ? '#704214' : '#000000'),
-          shininess: 30,
+          shininess: surfaceShininess,
         });
         const cylinder1 = new THREE.Mesh(geometry1, material1);
         const midPoint1 = start.clone().add(midpoint).multiplyScalar(0.5);
@@ -523,7 +583,7 @@
           color: new THREE.Color(bond.color2 || bond.color),
           specular: new THREE.Color(0x333333),
           emissive: new THREE.Color(isSelectedBond ? '#704214' : '#000000'),
-          shininess: 30,
+          shininess: surfaceShininess,
         });
         const cylinder2 = new THREE.Mesh(geometry2, material2);
         const midPoint2 = midpoint.clone().add(end).multiplyScalar(0.5);
@@ -670,9 +730,14 @@
     const enabled = state.lightingEnabled !== false;
     
     rendererState.ambientLight.intensity = enabled ? (state.ambientIntensity ?? 0.5) : 0;
-    rendererState.keyLight.intensity = enabled ? (state.keyLight?.intensity ?? 0.8) : 0;
+    rendererState.keyLight.intensity = enabled ? (state.keyLight?.intensity ?? 0.7) : 0;
     rendererState.fillLight.intensity = enabled ? (state.fillLight?.intensity ?? 0) : 0;
     rendererState.rimLight.intensity = enabled ? (state.rimLight?.intensity ?? 0) : 0;
+    rendererState.ambientLight.color.set(resolveLightColor(state.ambientColor, '#ffffff'));
+    rendererState.keyLight.color.set(resolveLightColor(state.keyLight?.color, '#CCCCCC'));
+    rendererState.fillLight.color.set(resolveLightColor(state.fillLight?.color, '#ffffff'));
+    rendererState.rimLight.color.set(resolveLightColor(state.rimLight?.color, '#ffffff'));
+    applySurfaceShininess();
 
     // Also update positions
     updateLightsForCamera();

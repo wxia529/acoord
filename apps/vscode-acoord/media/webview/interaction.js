@@ -401,10 +401,41 @@
       // Ambient intensity
       const ambientSlider = document.getElementById('ambient-slider');
       const ambientValue = document.getElementById('ambient-value');
+      const ambientColorPicker = document.getElementById('ambient-color-picker');
+      const shininessSlider = document.getElementById('shininess-slider');
+      const shininessValue = document.getElementById('shininess-value');
       if (ambientSlider) {
         ambientSlider.addEventListener('input', () => {
           state.ambientIntensity = parseFloat(ambientSlider.value);
           if (ambientValue) ambientValue.textContent = state.ambientIntensity.toFixed(1);
+          if (window.ACoordRenderer && window.ACoordRenderer.updateLighting) {
+            window.ACoordRenderer.updateLighting();
+          }
+        });
+      }
+      if (shininessSlider) {
+        const initialShininess = Number.isFinite(state.shininess)
+          ? Math.max(30, Math.min(100, Number(state.shininess)))
+          : 50;
+        state.shininess = initialShininess;
+        shininessSlider.value = String(initialShininess);
+        if (shininessValue) {
+          shininessValue.textContent = String(Math.round(initialShininess));
+        }
+        shininessSlider.addEventListener('input', () => {
+          state.shininess = Math.max(30, Math.min(100, Number(shininessSlider.value) || 50));
+          if (shininessValue) {
+            shininessValue.textContent = String(Math.round(state.shininess));
+          }
+          if (window.ACoordRenderer && window.ACoordRenderer.updateLighting) {
+            window.ACoordRenderer.updateLighting();
+          }
+        });
+      }
+      if (ambientColorPicker) {
+        ambientColorPicker.value = state.ambientColor || '#ffffff';
+        ambientColorPicker.addEventListener('input', () => {
+          state.ambientColor = ambientColorPicker.value;
           if (window.ACoordRenderer && window.ACoordRenderer.updateLighting) {
             window.ACoordRenderer.updateLighting();
           }
@@ -433,20 +464,25 @@
       const btnResetLighting = document.getElementById('btn-reset-lighting');
       if (btnResetLighting) {
         btnResetLighting.addEventListener('click', () => {
-          state.keyLight = { intensity: 0.8, x: 0, y: 0, z: 10 };
-          state.fillLight = { intensity: 0, x: -10, y: -5, z: 5 };
-          state.rimLight = { intensity: 0, x: 0, y: 5, z: -10 };
+          state.keyLight = { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' };
+          state.fillLight = { intensity: 0, x: -10, y: -5, z: 5, color: '#ffffff' };
+          state.rimLight = { intensity: 0, x: 0, y: 5, z: -10, color: '#ffffff' };
           state.ambientIntensity = 0.5;
+          state.ambientColor = '#ffffff';
+          state.shininess = 50;
           state.lightingEnabled = true;
 
           // Update UI
           if (lightingEnabled) lightingEnabled.checked = true;
           if (ambientSlider) ambientSlider.value = '0.5';
           if (ambientValue) ambientValue.textContent = '0.5';
+          if (ambientColorPicker) ambientColorPicker.value = '#ffffff';
+          if (shininessSlider) shininessSlider.value = '50';
+          if (shininessValue) shininessValue.textContent = '50';
 
-          updateLightSliderUI('key', { intensity: 0.8, x: 0, y: 0, z: 10 });
-          updateLightSliderUI('fill', { intensity: 0, x: -10, y: -5, z: 5 });
-          updateLightSliderUI('rim', { intensity: 0, x: 0, y: 5, z: -10 });
+          updateLightSliderUI('key', { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' });
+          updateLightSliderUI('fill', { intensity: 0, x: -10, y: -5, z: 5, color: '#ffffff' });
+          updateLightSliderUI('rim', { intensity: 0, x: 0, y: 5, z: -10, color: '#ffffff' });
 
           if (window.ACoordRenderer && window.ACoordRenderer.updateLighting) {
             window.ACoordRenderer.updateLighting();
@@ -465,6 +501,7 @@
       const yValue = document.getElementById(`${prefix}-y-value`);
       const zSlider = document.getElementById(`${prefix}-z-slider`);
       const zValue = document.getElementById(`${prefix}-z-value`);
+      const colorPicker = document.getElementById(`${prefix}-color-picker`);
 
       if (intensitySlider) {
         intensitySlider.addEventListener('input', () => {
@@ -502,6 +539,15 @@
           }
         });
       }
+      if (colorPicker) {
+        colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff');
+        colorPicker.addEventListener('input', () => {
+          lightObj.color = colorPicker.value;
+          if (window.ACoordRenderer && window.ACoordRenderer.updateLighting) {
+            window.ACoordRenderer.updateLighting();
+          }
+        });
+      }
     }
 
     function updateLightSliderUI(prefix, lightObj) {
@@ -513,6 +559,7 @@
       const yValue = document.getElementById(`${prefix}-y-value`);
       const zSlider = document.getElementById(`${prefix}-z-slider`);
       const zValue = document.getElementById(`${prefix}-z-value`);
+      const colorPicker = document.getElementById(`${prefix}-color-picker`);
 
       if (intensitySlider) intensitySlider.value = lightObj.intensity;
       if (intensityValue) intensityValue.textContent = lightObj.intensity.toFixed(1);
@@ -522,6 +569,7 @@
       if (yValue) yValue.textContent = lightObj.y;
       if (zSlider) zSlider.value = lightObj.z;
       if (zValue) zValue.textContent = lightObj.z;
+      if (colorPicker) colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff');
     }
 
     // Initialize lighting panel

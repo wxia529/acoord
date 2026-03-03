@@ -8,6 +8,10 @@ All notable changes to this project will be documented in this file.
 - Added canvas-based light direction picking for Key/Fill/Rim lights via "Pick in Canvas".
 - Fixed lighting defaults/updates to preserve zero values for X/Y/Z and intensity controls.
 - Changed Key Light default direction to (0, 0, 10).
+- Updated lighting defaults: Ambient Intensity = 0.4 and Key Light Intensity = 0.7.
+- Added light color controls for ambient/key/fill/rim lights.
+- Updated default Key Light color to #CCCCCC.
+- Added surface shininess control for atom/bond material gloss.
 - Added inline numeric edit for slider values (double-click value label, press Enter to apply).
 
 ## 0.1.10

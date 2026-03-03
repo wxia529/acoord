@@ -40,11 +40,13 @@
     atomSizeByElement: {},
     atomSizeByAtom: {},
     atomSizeElementExpanded: false,
+    shininess: 50,
     // Lighting settings
     lightingEnabled: true,
     ambientIntensity: 0.5,
-    keyLight: { intensity: 0.8, x: 0, y: 0, z: 10 },
-    fillLight: { intensity: 0, x: -10, y: -5, z: 5 },
-    rimLight: { intensity: 0, x: 0, y: 5, z: -10 },
+    ambientColor: '#ffffff',
+    keyLight: { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' },
+    fillLight: { intensity: 0, x: -10, y: -5, z: 5, color: '#ffffff' },
+    rimLight: { intensity: 0, x: 0, y: 5, z: -10, color: '#ffffff' },
   };
 })();
