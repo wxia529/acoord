@@ -41,11 +41,24 @@ export class ConfigManager {
 
   private async initializePresets(): Promise<void> {
     const manifest = await this.storage.loadManifest();
+
+    const builtinPresetIds = new Set(BUILTIN_PRESETS.map((preset) => preset.id));
+    const removedPresetIds = manifest.configs
+      .filter((c: ConfigMeta) => c.isPreset && !builtinPresetIds.has(c.id))
+      .map((c: ConfigMeta) => c.id);
+    manifest.configs = manifest.configs.filter(
+      (c: ConfigMeta) => !c.isPreset || builtinPresetIds.has(c.id)
+    );
+    for (const removedId of removedPresetIds) {
+      await this.storage.deleteConfigSafe(removedId);
+    }
     
     for (const preset of BUILTIN_PRESETS) {
-      const existing = manifest.configs.find((c: ConfigMeta) => c.id === preset.id);
-      if (!existing) {
-        await this.storage.saveConfig(preset);
+      await this.storage.saveConfig(preset);
+      const existingIndex = manifest.configs.findIndex((c: ConfigMeta) => c.id === preset.id);
+      if (existingIndex >= 0) {
+        manifest.configs[existingIndex] = this.toMeta(preset);
+      } else {
         manifest.configs.push(this.toMeta(preset));
       }
     }

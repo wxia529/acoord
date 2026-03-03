@@ -776,6 +776,11 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         break;
       }
 
+      case 'promptSaveDisplayConfig': {
+        await this.handlePromptSaveDisplayConfig(message, webviewPanel, key);
+        break;
+      }
+
       case 'saveDisplayConfig': {
         await this.handleSaveDisplayConfig(message, webviewPanel, key);
         break;
@@ -788,6 +793,26 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
       case 'updateDisplaySettings': {
         this.handleUpdateDisplaySettings(message.settings, key);
+        break;
+      }
+
+      case 'exportDisplayConfigs': {
+        await this.handleExportDisplayConfigs(webviewPanel);
+        break;
+      }
+
+      case 'importDisplayConfigs': {
+        await this.handleImportDisplayConfigs(webviewPanel);
+        break;
+      }
+
+      case 'confirmDeleteDisplayConfig': {
+        await this.handleConfirmDeleteDisplayConfig(message.configId as string, webviewPanel);
+        break;
+      }
+
+      case 'deleteDisplayConfig': {
+        await this.handleDeleteDisplayConfig(message.configId as string, webviewPanel);
         break;
       }
     }
@@ -1090,6 +1115,51 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
   }
 
+  private async handlePromptSaveDisplayConfig(
+    message: any,
+    webviewPanel: vscode.WebviewPanel,
+    key: string
+  ): Promise<void> {
+    const messageSettings = message.settings as DisplaySettings | undefined;
+    const settings = messageSettings || this.displaySettings.get(key);
+    if (!settings) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: 'No display settings available to save'
+      });
+      return;
+    }
+
+    const name = await vscode.window.showInputBox({
+      prompt: 'Enter configuration name',
+      placeHolder: 'My Display Config'
+    });
+    if (!name) { return; }
+
+    const description = await vscode.window.showInputBox({
+      prompt: 'Enter description (optional)',
+      placeHolder: 'Description of this configuration'
+    });
+
+    try {
+      const config = await this.configManager.saveUserConfig(
+        name,
+        settings,
+        description || undefined
+      );
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigSaved',
+        config: config
+      });
+      await this.handleGetDisplayConfigs(webviewPanel);
+    } catch (error) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: String(error)
+      });
+    }
+  }
+
   private async handleGetCurrentDisplaySettings(
     webviewPanel: vscode.WebviewPanel,
     key: string
@@ -1105,5 +1175,84 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
   private handleUpdateDisplaySettings(settings: DisplaySettings, key: string): void {
     this.displaySettings.set(key, settings);
+  }
+
+  private async handleExportDisplayConfigs(webviewPanel: vscode.WebviewPanel): Promise<void> {
+    try {
+      const configs = await this.configManager.listConfigs();
+      const allConfigs = [...configs.presets, ...configs.user];
+      const items = allConfigs.map(c => ({
+        label: c.name,
+        description: c.isPreset ? 'Preset' : 'User Config',
+        picked: false,
+        id: c.id
+      }));
+
+      const selected = await vscode.window.showQuickPick(items, {
+        canPickMany: true,
+        placeHolder: 'Select configurations to export'
+      });
+
+      if (!selected || selected.length === 0) { return; }
+      await this.configManager.exportConfigs(selected.map(s => s.id!));
+    } catch (error) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: String(error)
+      });
+    }
+  }
+
+  private async handleImportDisplayConfigs(webviewPanel: vscode.WebviewPanel): Promise<void> {
+    try {
+      await this.configManager.importConfigs();
+      // Refresh the config list in the webview after import
+      await this.handleGetDisplayConfigs(webviewPanel);
+    } catch (error) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: String(error)
+      });
+    }
+  }
+
+  private async handleConfirmDeleteDisplayConfig(configId: string, webviewPanel: vscode.WebviewPanel): Promise<void> {
+    if (!configId) { return; }
+    try {
+      const configs = await this.configManager.listConfigs();
+      const target = configs.user.find((c) => c.id === configId);
+      if (!target) {
+        vscode.window.showErrorMessage('Only user configurations can be deleted');
+        return;
+      }
+
+      const confirm = await vscode.window.showWarningMessage(
+        `Are you sure you want to delete "${target.name}"?`,
+        { modal: true },
+        'Delete'
+      );
+      if (confirm !== 'Delete') { return; }
+
+      await this.handleDeleteDisplayConfig(configId, webviewPanel);
+    } catch (error) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: String(error)
+      });
+    }
+  }
+
+  private async handleDeleteDisplayConfig(configId: string, webviewPanel: vscode.WebviewPanel): Promise<void> {
+    if (!configId) { return; }
+    try {
+      await this.configManager.deleteConfig(configId);
+      // Refresh the config list in the webview after deletion
+      await this.handleGetDisplayConfigs(webviewPanel);
+    } catch (error) {
+      webviewPanel.webview.postMessage({
+        command: 'displayConfigError',
+        error: String(error)
+      });
+    }
   }
 }
