@@ -1,7 +1,34 @@
-import type { AppState, LightConfig, DisplaySettings, AvailableConfigs, NormalizedLightConfig } from './types';
+import type { AppState, LightConfig, DisplaySettings, AvailableConfigs } from './types';
 
-function flattenLight(light: LightConfig | NormalizedLightConfig): LightConfig {
-  const pos = (light as NormalizedLightConfig).position;
+/** Default display settings used when a loaded config omits a field. */
+const DISPLAY_DEFAULTS: Required<DisplaySettings> = {
+  showAxes: true,
+  backgroundColor: '#0d1015',
+  unitCellColor: '#FF6600',
+  unitCellThickness: 1,
+  unitCellLineStyle: 'solid',
+  atomSizeUseDefaultSettings: true,
+  atomSizeGlobal: 0.3,
+  atomSizeByElement: {},
+  atomSizeByAtom: {},
+  manualScale: 1,
+  autoScaleEnabled: false,
+  atomSizeScale: 1,
+  bondThicknessScale: 1,
+  viewZoom: 1,
+  scaleAtomsWithLattice: false,
+  projectionMode: 'orthographic',
+  lightingEnabled: true,
+  ambientIntensity: 0.5,
+  ambientColor: '#ffffff',
+  shininess: 50,
+  keyLight: { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' },
+  fillLight: { intensity: 0, x: -10, y: -5, z: 5, color: '#ffffff' },
+  rimLight: { intensity: 0, x: 0, y: 5, z: -10, color: '#ffffff' },
+};
+
+function flattenLight(light: LightConfig | { intensity: number; color: string; position: { x: number; y: number; z: number } }): LightConfig {
+  const pos = (light as { position?: { x: number; y: number; z: number } }).position;
   if (pos && typeof pos.x === 'number') {
     return { intensity: light.intensity, color: light.color, x: pos.x, y: pos.y, z: pos.z };
   }
@@ -68,24 +95,9 @@ export const state: AppState = {
   isLoadingConfig: false,
 
   extractDisplaySettings(): DisplaySettings {
-    const normalizeLight = (light: LightConfig | undefined) => {
-      if (!light) return { intensity: 0, color: '#ffffff', position: { x: 0, y: 0, z: 0 } };
-      if (light.position && typeof (light.position as {x:number}).x === 'number') {
-        return {
-          intensity: light.intensity,
-          color: light.color,
-          position: {
-            x: (light.position as {x:number;y:number;z:number}).x,
-            y: (light.position as {x:number;y:number;z:number}).y,
-            z: (light.position as {x:number;y:number;z:number}).z,
-          },
-        };
-      }
-      return {
-        intensity: light.intensity,
-        color: light.color,
-        position: { x: light.x, y: light.y, z: light.z },
-      };
+    const flattenToSettings = (light: LightConfig | undefined): LightConfig => {
+      if (!light) return { intensity: 0, color: '#ffffff', x: 0, y: 0, z: 0 };
+      return { intensity: light.intensity, color: light.color, x: light.x, y: light.y, z: light.z };
     };
 
     return {
@@ -109,36 +121,37 @@ export const state: AppState = {
       ambientIntensity: this.ambientIntensity,
       ambientColor: this.ambientColor,
       shininess: this.shininess,
-      keyLight: normalizeLight(this.keyLight),
-      fillLight: normalizeLight(this.fillLight),
-      rimLight: normalizeLight(this.rimLight),
+      keyLight: flattenToSettings(this.keyLight),
+      fillLight: flattenToSettings(this.fillLight),
+      rimLight: flattenToSettings(this.rimLight),
     };
   },
 
   applyDisplaySettings(settings: DisplaySettings): void {
     if (!settings) return;
-    this.showAxes = settings.showAxes ?? this.showAxes;
-    this.backgroundColor = settings.backgroundColor ?? this.backgroundColor;
-    this.unitCellColor = settings.unitCellColor ?? this.unitCellColor;
-    this.unitCellThickness = settings.unitCellThickness ?? this.unitCellThickness;
-    this.unitCellLineStyle = settings.unitCellLineStyle ?? this.unitCellLineStyle;
-    this.atomSizeUseDefaultSettings = settings.atomSizeUseDefaultSettings ?? this.atomSizeUseDefaultSettings;
-    this.atomSizeGlobal = settings.atomSizeGlobal ?? this.atomSizeGlobal;
-    this.atomSizeByElement = settings.atomSizeByElement ?? this.atomSizeByElement;
-    this.atomSizeByAtom = settings.atomSizeByAtom ?? this.atomSizeByAtom;
-    this.manualScale = settings.manualScale ?? this.manualScale;
-    this.autoScaleEnabled = settings.autoScaleEnabled ?? this.autoScaleEnabled;
-    this.atomSizeScale = settings.atomSizeScale ?? this.atomSizeScale;
-    this.bondThicknessScale = settings.bondThicknessScale ?? this.bondThicknessScale;
-    this.viewZoom = settings.viewZoom ?? this.viewZoom;
-    this.scaleAtomsWithLattice = settings.scaleAtomsWithLattice ?? this.scaleAtomsWithLattice;
-    this.projectionMode = settings.projectionMode ?? this.projectionMode;
-    this.lightingEnabled = settings.lightingEnabled ?? this.lightingEnabled;
-    this.ambientIntensity = settings.ambientIntensity ?? this.ambientIntensity;
-    this.ambientColor = settings.ambientColor ?? this.ambientColor;
-    this.shininess = settings.shininess ?? this.shininess;
-    if (settings.keyLight) { this.keyLight = flattenLight(settings.keyLight); }
-    if (settings.fillLight) { this.fillLight = flattenLight(settings.fillLight); }
-    if (settings.rimLight) { this.rimLight = flattenLight(settings.rimLight); }
+    const d = DISPLAY_DEFAULTS;
+    this.showAxes = settings.showAxes ?? d.showAxes;
+    this.backgroundColor = settings.backgroundColor ?? d.backgroundColor;
+    this.unitCellColor = settings.unitCellColor ?? d.unitCellColor;
+    this.unitCellThickness = settings.unitCellThickness ?? d.unitCellThickness;
+    this.unitCellLineStyle = settings.unitCellLineStyle ?? d.unitCellLineStyle;
+    this.atomSizeUseDefaultSettings = settings.atomSizeUseDefaultSettings ?? d.atomSizeUseDefaultSettings;
+    this.atomSizeGlobal = settings.atomSizeGlobal ?? d.atomSizeGlobal;
+    this.atomSizeByElement = settings.atomSizeByElement ?? d.atomSizeByElement;
+    this.atomSizeByAtom = settings.atomSizeByAtom ?? d.atomSizeByAtom;
+    this.manualScale = settings.manualScale ?? d.manualScale;
+    this.autoScaleEnabled = settings.autoScaleEnabled ?? d.autoScaleEnabled;
+    this.atomSizeScale = settings.atomSizeScale ?? d.atomSizeScale;
+    this.bondThicknessScale = settings.bondThicknessScale ?? d.bondThicknessScale;
+    this.viewZoom = settings.viewZoom ?? d.viewZoom;
+    this.scaleAtomsWithLattice = settings.scaleAtomsWithLattice ?? d.scaleAtomsWithLattice;
+    this.projectionMode = settings.projectionMode ?? d.projectionMode;
+    this.lightingEnabled = settings.lightingEnabled ?? d.lightingEnabled;
+    this.ambientIntensity = settings.ambientIntensity ?? d.ambientIntensity;
+    this.ambientColor = settings.ambientColor ?? d.ambientColor;
+    this.shininess = settings.shininess ?? d.shininess;
+    this.keyLight = settings.keyLight ? flattenLight(settings.keyLight) : { ...d.keyLight };
+    this.fillLight = settings.fillLight ? flattenLight(settings.fillLight) : { ...d.fillLight };
+    this.rimLight = settings.rimLight ? flattenLight(settings.rimLight) : { ...d.rimLight };
   },
 };

@@ -10,11 +10,7 @@ export interface Position3D {
 export interface LightConfig {
   intensity: number;
   color: string;
-  // Support both nested position and flat format
-  position?: Position3D;
-  x?: number;
-  y?: number;
-  z?: number;
+  position: Position3D;
 }
 
 // Display Settings - Core configuration data

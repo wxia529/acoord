@@ -63,13 +63,6 @@ export interface LightConfig {
   x: number;
   y: number;
   z: number;
-  position?: { x: number; y: number; z: number };
-}
-
-export interface NormalizedLightConfig {
-  intensity: number;
-  color: string;
-  position: { x: number; y: number; z: number };
 }
 
 export interface DisplaySettings {
@@ -93,9 +86,9 @@ export interface DisplaySettings {
   ambientIntensity?: number;
   ambientColor?: string;
   shininess?: number;
-  keyLight?: LightConfig | NormalizedLightConfig;
-  fillLight?: LightConfig | NormalizedLightConfig;
-  rimLight?: LightConfig | NormalizedLightConfig;
+  keyLight?: LightConfig;
+  fillLight?: LightConfig;
+  rimLight?: LightConfig;
 }
 
 export interface ConfigEntry {

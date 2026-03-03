@@ -5,16 +5,19 @@ import type { VsCodeApi, DisplaySettings } from './types';
 let _vscode: VsCodeApi | null = null;
 let _showStatus: ((msg: string) => void) | null = null;
 let _updateConfigSelectorFn: (() => void) | null = null;
+let _rerenderStructureFn: (() => void) | null = null;
 let _settingsTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function init(
   vscode: VsCodeApi,
   showStatus: (msg: string) => void,
-  updateConfigSelectorFn: () => void
+  updateConfigSelectorFn: () => void,
+  rerenderStructureFn?: () => void
 ): void {
   _vscode = vscode;
   _showStatus = showStatus;
   _updateConfigSelectorFn = updateConfigSelectorFn;
+  _rerenderStructureFn = rerenderStructureFn ?? null;
 }
 
 function postMessage(message: unknown): void {
@@ -76,6 +79,9 @@ function handleConfigLoaded(config: { id: string; name: string; settings: Displa
 
   updateUI();
   renderer.updateDisplaySettings();
+  renderer.updateLighting();
+  // Rerender the full structure so lattice thickness/line-style changes take effect
+  _rerenderStructureFn?.();
   updateConfigUI();
 
   if (_showStatus) {
@@ -134,15 +140,9 @@ export function handleMessage(message: { command: string; [key: string]: unknown
 }
 
 export function updateUI(): void {
-  const getLightValue = (light: { intensity?: number; color?: string; x?: number; y?: number; z?: number; position?: { x: number; y: number; z: number } } | null | undefined, prop: string): number | string => {
+  const getLightValue = (light: { intensity?: number; color?: string; x?: number; y?: number; z?: number } | null | undefined, prop: string): number | string => {
     if (!light) return 0;
-    if (prop === 'intensity' || prop === 'color') {
-      return (light as Record<string, unknown>)[prop] as number | string ?? 0;
-    }
-    if (light.position && typeof (light.position as Record<string, unknown>)[prop] === 'number') {
-      return (light.position as Record<string, number>)[prop];
-    }
-    return (light as Record<string, unknown>)[prop] as number ?? 0;
+    return (light as Record<string, unknown>)[prop] as number | string ?? 0;
   };
 
   const setInput = (id: string, value: unknown): void => {

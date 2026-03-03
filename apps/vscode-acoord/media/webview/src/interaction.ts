@@ -186,7 +186,8 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
             for (const id of state.selectedAtomIds) {
               const selectedMesh = renderer.getAtomMeshes().get(id);
               if (selectedMesh) {
-                selectedMesh.position.add(delta);
+                const newPos = selectedMesh.position.clone().add(delta);
+                renderer.updateAtomPosition(id, newPos);
               }
             }
             if (handlers.onDragGroup) {
@@ -197,7 +198,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
           const delta = nextPosition.clone().sub(mesh.position);
           const normalDelta = normal.clone().multiplyScalar(delta.dot(normal));
           nextPosition.sub(normalDelta);
-          mesh.position.copy(nextPosition);
+          renderer.updateAtomPosition(state.dragAtomId, nextPosition);
           handlers.onDragAtom(state.dragAtomId, nextPosition);
         }
 
