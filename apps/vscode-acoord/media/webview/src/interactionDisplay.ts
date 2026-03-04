@@ -1,6 +1,13 @@
 import { structureStore, displayStore } from './state';
 import { renderer } from './renderer';
 import { updateSettings } from './configHandler';
+import { debounce } from './utils/performance';
+
+// Debounced rerender to prevent excessive rendering during slider input (16ms = 60fps)
+const debouncedRerenderStructure = debounce((): void => {
+  if (!structureStore.currentStructure) return;
+  renderer.renderStructure(structureStore.currentStructure);
+}, 16);
 
 export function init(): void {
   const showAxes = document.getElementById('show-axes') as HTMLInputElement | null;
@@ -11,13 +18,6 @@ export function init(): void {
   const latticeThicknessSlider = document.getElementById('lattice-thickness-slider') as HTMLInputElement | null;
   const latticeThicknessValue = document.getElementById('lattice-thickness-value');
   const latticeLineStyle = document.getElementById('lattice-line-style') as HTMLSelectElement | null;
-
-  const rerenderStructure = (): void => {
-    if (!structureStore.currentStructure) return;
-    // Dynamically imported to avoid circular dep at module load time.
-    // renderer.renderStructure is safe to call here since this runs only on user events.
-    renderer.renderStructure(structureStore.currentStructure);
-  };
 
   if (showAxes) {
     showAxes.checked = displayStore.showAxes !== false;
@@ -74,7 +74,7 @@ export function init(): void {
       const nextThickness = Math.max(0.5, Math.min(6, parseFloat(latticeThicknessSlider.value) || 1));
       displayStore.unitCellThickness = nextThickness;
       if (latticeThicknessValue) latticeThicknessValue.textContent = nextThickness.toFixed(1);
-      rerenderStructure();
+      debouncedRerenderStructure();
       updateSettings();
     });
   }
@@ -83,7 +83,7 @@ export function init(): void {
     latticeLineStyle.value = displayStore.unitCellLineStyle === 'dashed' ? 'dashed' : 'solid';
     latticeLineStyle.addEventListener('change', () => {
       displayStore.unitCellLineStyle = latticeLineStyle.value === 'dashed' ? 'dashed' : 'solid';
-      rerenderStructure();
+      debouncedRerenderStructure();
       updateSettings();
     });
   }

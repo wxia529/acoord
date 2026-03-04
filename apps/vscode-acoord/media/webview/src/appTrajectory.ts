@@ -9,10 +9,21 @@
  */
 import { trajectoryStore } from './state';
 import type { VsCodeApi } from './types';
+import { debounce } from './utils/performance';
 
 let _vscode: VsCodeApi | null = null;
 let trajectoryPlaybackTimer: ReturnType<typeof setInterval> | null = null;
 let trajectoryFrameRequestPending = false;
+
+// Debounced version of requestTrajectoryFrame for slider input (16ms = 60fps)
+const debouncedRequestTrajectoryFrame = debounce(
+  function (frameIndex: number): void {
+    if (trajectoryFrameRequestPending) { return; }
+    trajectoryFrameRequestPending = true;
+    _vscode?.postMessage({ command: 'setTrajectoryFrame', frameIndex });
+  },
+  16
+);
 
 // ── Core logic ─────────────────────────────────────────────────────────────────
 
@@ -146,7 +157,8 @@ export function setup(vscode: VsCodeApi): void {
     playTrajectoryBtn.onclick = () => { setPlaying(!trajectoryStore.trajectoryPlaying); };
   }
   if (frameInput) {
-    const commitFrameInput = () => {
+    // Debounced frame input commit (prevents flooding during typing)
+    const debouncedCommitFrameInput = debounce(() => {
       const total = Math.max(1, Math.floor(trajectoryStore.trajectoryFrameCount || 1));
       const parsed = Number.parseInt(frameInput.value, 10);
       if (!Number.isFinite(parsed)) {
@@ -154,8 +166,13 @@ export function setup(vscode: VsCodeApi): void {
         return;
       }
       jumpToFrame(parsed - 1);
+    }, 100);
+
+    const commitFrameInput = () => {
+      debouncedCommitFrameInput();
     };
     frameInput.addEventListener('change', commitFrameInput);
+    frameInput.addEventListener('input', commitFrameInput); // Debounced input for smoother UX
     frameInput.addEventListener('keydown', (event: KeyboardEvent) => {
       if (event.key !== 'Enter') { return; }
       event.preventDefault();
