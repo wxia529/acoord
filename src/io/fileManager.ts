@@ -10,13 +10,13 @@ import {
   OUTCARParser,
   PDBParser,
   STRUParser,
-  StructureParser,
+  BaseStructureParser,
 } from './parsers';
 
 /**
  * File extension to parser mapping
  */
-const PARSER_MAP: Record<string, StructureParser> = {
+const PARSER_MAP: Record<string, BaseStructureParser> = {
   xyz: new XYZParser(),
   cif: new CIFParser(),
   poscar: new POSCARParser(),
@@ -69,9 +69,7 @@ export class FileManager {
     }
 
     try {
-      const structures = parser.parseTrajectory
-        ? parser.parseTrajectory(content)
-        : [parser.parse(content)];
+      const structures = parser.parseTrajectory(content);
       for (const structure of structures) {
         this.ensureStructureName(structure, filePath);
       }
@@ -108,11 +106,7 @@ export class FileManager {
       throw new Error(`Unsupported export format: ${ext}`);
     }
 
-    if (structures.length > 1 && parser.serializeTrajectory) {
-      return parser.serializeTrajectory(structures);
-    }
-
-    return parser.serialize(structures[0]);
+    return parser.serializeTrajectory(structures);
   }
 
   static ensureStructureName(structure: Structure, filePath?: string) {

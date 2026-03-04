@@ -2,7 +2,7 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * XYZ file format parser
@@ -12,7 +12,7 @@ import { StructureParser } from './structureParser';
  * <element> <x> <y> <z>
  * ...
  */
-export class XYZParser implements StructureParser {
+export class XYZParser extends BaseStructureParser {
   parse(content: string): Structure {
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {

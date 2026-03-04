@@ -3,13 +3,13 @@ import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
 import { expandElements } from '../../utils/parserUtils';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * OUTCAR parser (VASP)
  * Reads ionic frames from `POSITION ... TOTAL-FORCE` blocks.
  */
-export class OUTCARParser implements StructureParser {
+export class OUTCARParser extends BaseStructureParser {
   parse(content: string): Structure {
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {

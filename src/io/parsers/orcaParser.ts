@@ -1,14 +1,14 @@
 import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { parseElement } from '../../utils/elementData';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * ORCA input file parser (.inp)
  * Minimal support: * xyz charge mult ... *
  * Lattice data (if any) is ignored.
  */
-export class ORCAParser implements StructureParser {
+export class ORCAParser extends BaseStructureParser {
   parse(content: string): Structure {
     const lines = content.split(/\r?\n/);
     const startIndex = lines.findIndex((line) =>

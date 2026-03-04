@@ -2,12 +2,12 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * PDB file format parser (basic support for CRYST1 and ATOM/HETATM)
  */
-export class PDBParser implements StructureParser {
+export class PDBParser extends BaseStructureParser {
   parse(content: string): Structure {
     const lines = content.split(/\r?\n/);
     const structure = new Structure('');

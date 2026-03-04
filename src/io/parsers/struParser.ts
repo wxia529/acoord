@@ -5,12 +5,12 @@ import { DEFAULT_NUMERICAL_ORBITALS, ELEMENT_DATA, ElementInfo } from '../../uti
 import { parseElement } from '../../utils/elementData';
 import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants';
 import { fractionalToCartesian } from '../../utils/parserUtils';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * ABACUS STRU file parser (basic support)
  */
-export class STRUParser implements StructureParser {
+export class STRUParser extends BaseStructureParser {
   parse(content: string): Structure {
     const lines = content.split(/\r?\n/);
     const structure = new Structure('');

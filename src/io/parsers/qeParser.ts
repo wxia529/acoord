@@ -4,7 +4,7 @@ import { UnitCell } from '../../models/unitCell';
 import { ELEMENT_DATA, parseElement } from '../../utils/elementData';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants';
 import { fractionalToCartesian } from '../../utils/parserUtils';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 type QEUnit = 'angstrom' | 'bohr' | 'alat' | 'crystal';
 
@@ -30,7 +30,7 @@ interface ParsedPositionsBlock {
  * - parse: supports pw.x input and output coordinates/cell
  * - serialize: writes pw.x input format
  */
-export class QEParser implements StructureParser {
+export class QEParser extends BaseStructureParser {
   parse(content: string): Structure {
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {

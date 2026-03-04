@@ -96,9 +96,11 @@ export class Structure {
   /**
    * Get list of bonds based on covalent radii
    */
+  private static readonly BOND_TOLERANCE = 1.1; // 10% tolerance for covalent radii comparison
+
   getBonds(): Array<{ atomId1: string; atomId2: string; distance: number; manual: boolean }> {
     const bonds: Array<{ atomId1: string; atomId2: string; distance: number; manual: boolean }> = [];
-    const tolerance = 1.1; // 10% tolerance
+    const tolerance = Structure.BOND_TOLERANCE;
     const suppressed = new Set(this.suppressedAutoBonds.map(([a, b]) => Structure.bondKey(a, b)));
     const seen = new Set<string>();
 
