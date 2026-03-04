@@ -3,7 +3,7 @@ import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
 import { expandElements, fractionalToCartesian } from '../../utils/parserUtils';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 type CoordinateMode = 'direct' | 'cartesian';
 
@@ -20,7 +20,7 @@ interface ParsedHeader {
 /**
  * POSCAR / CONTCAR parser (VASP)
  */
-export class POSCARParser implements StructureParser {
+export class POSCARParser extends BaseStructureParser {
   parse(content: string): Structure {
     const lines = content.split(/\r?\n/);
     const header = this.parseHeader(lines);

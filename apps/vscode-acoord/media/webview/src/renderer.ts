@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import { state } from './state';
 import type { Atom, Bond, Structure, UiHooks } from './types';
+import { clampAtomSize, getBaseAtomId } from './utils/atomSize';
+
+// Camera auto-scaling constants
+const CAMERA_TARGET_DIMENSION = 30;
+const CAMERA_SCALE_MIN = 0.05;
+const CAMERA_SCALE_MAX = 5;
+const CAMERA_SIZE_SCALE_MIN = 1.5;
+const CAMERA_SIZE_SCALE_MAX = 6;
 
 // Restore Three.js r128-era rendering behavior.
 // r155+ defaults to sRGB output + color management which darkens the scene
@@ -344,21 +352,9 @@ function getAutoScales(atoms: Atom[]): { scale: number; sizeScale: number } {
   }
   const maxDim = Math.max(maxX - minX, maxY - minY, maxZ - minZ);
   if (!Number.isFinite(maxDim) || maxDim <= 0) return { scale: 1, sizeScale: 1 };
-  const target = 30;
-  const scale = Math.min(Math.max(target / maxDim, 0.05), 5);
-  const sizeScale = Math.min(Math.max(10 / Math.sqrt(maxDim), 1.5), 6);
+  const scale = Math.min(Math.max(CAMERA_TARGET_DIMENSION / maxDim, CAMERA_SCALE_MIN), CAMERA_SCALE_MAX);
+  const sizeScale = Math.min(Math.max(10 / Math.sqrt(maxDim), CAMERA_SIZE_SCALE_MIN), CAMERA_SIZE_SCALE_MAX);
   return { scale, sizeScale };
-}
-
-function clampAtomSize(value: unknown, fallback: number): number {
-  const parsed = Number(value);
-  if (!Number.isFinite(parsed)) return fallback;
-  return Math.max(0.1, Math.min(2.0, parsed));
-}
-
-function getBaseAtomId(atomId: string): string {
-  if (typeof atomId !== 'string') return '';
-  return atomId.split('::')[0];
 }
 
 function getConfiguredAtomRadius(atom: Atom, baseAtomsById: Map<string, Atom>): number {

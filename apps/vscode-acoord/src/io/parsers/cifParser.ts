@@ -2,13 +2,13 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * CIF file format parser (basic implementation)
  * Crystallographic Information File
  */
-export class CIFParser implements StructureParser {
+export class CIFParser extends BaseStructureParser {
   parse(content: string): Structure {
     const structure = new Structure('', true);
     const lines = content.split(/\r?\n/);

@@ -2,13 +2,13 @@ import { Structure } from '../../models/structure';
 import { Atom } from '../../models/atom';
 import { UnitCell } from '../../models/unitCell';
 import { parseElement } from '../../utils/elementData';
-import { StructureParser } from './structureParser';
+import { BaseStructureParser } from './structureParser';
 
 /**
  * Gaussian input file format parser (GJF/COM)
  * Minimal support: title, charge/multiplicity, atom lines, and TV lattice vectors.
  */
-export class GJFParser implements StructureParser {
+export class GJFParser extends BaseStructureParser {
   parse(content: string): Structure {
     const lines = content.split(/\r?\n/);
     let idx = 0;
