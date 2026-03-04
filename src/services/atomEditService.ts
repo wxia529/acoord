@@ -150,7 +150,7 @@ export class AtomEditService {
     this.undoManager.push(editStructure);
     for (const id of atomIds) {
       const atom = editStructure.getAtom(id);
-      if (!atom) continue;
+      if (!atom) {continue;}
       
       const copy = new Atom(
         atom.element,

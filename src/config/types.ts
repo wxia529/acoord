@@ -14,23 +14,20 @@ export interface LightConfig {
 }
 
 // Display Settings - Core configuration data
-export interface DisplaySettings {
-  // Display Options
+// This is the extension-side runtime type that extends the wire type
+import type { WireDisplaySettings } from '../shared/protocol';
+
+export interface DisplaySettings extends Required<WireDisplaySettings> {
+  // Make all wire fields required in the extension
   showAxes: boolean;
   backgroundColor: string;
-
-  // Unit Cell
   unitCellColor: string;
   unitCellThickness: number;
   unitCellLineStyle: 'solid' | 'dashed';
-
-  // Atom Size
   atomSizeUseDefaultSettings: boolean;
   atomSizeGlobal: number;
   atomSizeByElement: Record<string, number>;
   atomSizeByAtom: Record<string, number>;
-
-  // Scaling
   manualScale: number;
   autoScaleEnabled: boolean;
   atomSizeScale: number;
@@ -38,15 +35,31 @@ export interface DisplaySettings {
   viewZoom: number;
   scaleAtomsWithLattice: boolean;
   projectionMode: 'orthographic' | 'perspective';
-
-  // Lighting
   lightingEnabled: boolean;
   ambientIntensity: number;
   ambientColor: string;
   shininess: number;
-  keyLight: LightConfig;
-  fillLight: LightConfig;
-  rimLight: LightConfig;
+  keyLight: {
+    intensity: number;
+    color: string;
+    x: number;
+    y: number;
+    z: number;
+  };
+  fillLight: {
+    intensity: number;
+    color: string;
+    x: number;
+    y: number;
+    z: number;
+  };
+  rimLight: {
+    intensity: number;
+    color: string;
+    x: number;
+    y: number;
+    z: number;
+  };
 }
 
 // Display Configuration Object

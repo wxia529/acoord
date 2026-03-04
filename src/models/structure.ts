@@ -412,7 +412,7 @@ export class Structure {
         if (ox === 0 && oy === 0 && oz === 0) {
           // Same cell - only check atoms with higher index to avoid duplicates
           for (const atom2 of this.getNeighboringAtoms(atom1, grid, cellSize, maxBondLength)) {
-            if (atom1.id >= atom2.id) continue;
+            if (atom1.id >= atom2.id) {continue;}
 
             const data2 = atomData.get(atom2.id)!;
             const radius2 = data2.radius;
@@ -425,7 +425,7 @@ export class Structure {
 
             if (distanceSq < bondLength * bondLength) {
               const key = Structure.bondKey(atom1.id, atom2.id);
-              if (suppressed.has(key) || seen.has(key)) continue;
+              if (suppressed.has(key) || seen.has(key)) {continue;}
               bonds.push({
                 atomId1: atom1.id,
                 atomId2: atom2.id,
@@ -456,7 +456,7 @@ export class Structure {
 
             if (distanceSq < bondLength * bondLength) {
               const key = Structure.bondKey(atom1.id, atom2.id);
-              if (suppressed.has(key) || seen.has(key)) continue;
+              if (suppressed.has(key) || seen.has(key)) {continue;}
               bonds.push({
                 atomId1: atom1.id,
                 atomId2: atom2.id,

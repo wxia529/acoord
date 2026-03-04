@@ -17,6 +17,7 @@
 	},
 	"exclude": [
 		"media",
-		"node_modules"
+		"node_modules",
+		"src/test"
 	]
 }

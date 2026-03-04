@@ -34,7 +34,7 @@ export class BondService {
 
     if (bondKeys && Array.isArray(bondKeys)) {
       for (const bk of bondKeys) {
-        if (typeof bk !== 'string') continue;
+        if (typeof bk !== 'string') {continue;}
         const pair = Structure.bondKeyToPair(bk);
         if (pair) {
           selectedPairs.push(pair);

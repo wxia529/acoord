@@ -26,9 +26,9 @@ export interface WireAtom {
 }
 
 export interface WireBond {
-  key?: string;
-  atomId1?: string;
-  atomId2?: string;
+  key: string;
+  atomId1: string;
+  atomId2: string;
   start: [number, number, number];
   end: [number, number, number];
   radius: number;

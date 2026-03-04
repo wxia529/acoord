@@ -33,18 +33,24 @@ export const DEFAULT_PRESET: DisplayConfig = {
     shininess: 50,
     keyLight: {
       intensity: 0.7,
-      position: { x: 0, y: 0, z: 10 },
-      color: '#CCCCCC'
+      color: '#CCCCCC',
+      x: 0,
+      y: 0,
+      z: 10
     },
     fillLight: {
       intensity: 0,
-      position: { x: -10, y: -5, z: 5 },
-      color: '#ffffff'
+      color: '#ffffff',
+      x: -10,
+      y: -5,
+      z: 5
     },
     rimLight: {
       intensity: 0,
-      position: { x: 0, y: 5, z: -10 },
-      color: '#ffffff'
+      color: '#ffffff',
+      x: 0,
+      y: 5,
+      z: -10
     }
   }
 };
