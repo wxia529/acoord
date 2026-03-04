@@ -1,102 +1,36 @@
 // Shared type declarations for the ACoord webview
+//
+// Data types that travel over postMessage are defined once in the shared
+// protocol and re-exported here under their short names so the rest of
+// the webview code can keep using `Atom`, `Bond`, etc. unchanged.
 
-export interface Atom {
-  id: string;
-  element: string;
-  color: string;
-  position: [number, number, number];
-  radius: number;
-  selected?: boolean;
-  selectable?: boolean;
-}
+import type {
+  WireAtom,
+  WireBond,
+  WireUnitCellEdge,
+  WireUnitCellParams,
+  WireUnitCell,
+  WireLightConfig,
+  WireDisplaySettings,
+  WireConfigEntry,
+  WireRenderData,
+} from '../../../src/shared/protocol';
 
-export interface Bond {
-  key?: string;
-  atomId1?: string;
-  atomId2?: string;
-  start: [number, number, number];
-  end: [number, number, number];
-  radius: number;
-  color: string;
-  color1?: string;
-  color2?: string;
-  selected?: boolean;
-}
+// Re-export wire types under the short names used throughout the webview.
+export type Atom = WireAtom;
+export type Bond = WireBond;
+export type UnitCellEdge = WireUnitCellEdge;
+export type UnitCellParams = WireUnitCellParams;
+export type UnitCell = WireUnitCell;
+export type LightConfig = WireLightConfig;
+export type DisplaySettings = WireDisplaySettings;
+export type ConfigEntry = WireConfigEntry;
 
-export interface UnitCellEdge {
-  start: [number, number, number];
-  end: [number, number, number];
-}
-
-export interface UnitCellParams {
-  a: number;
-  b: number;
-  c: number;
-  alpha: number;
-  beta: number;
-  gamma: number;
-}
-
-export interface UnitCell {
-  edges: UnitCellEdge[];
-}
-
-export interface Structure {
-  atoms: Atom[];
-  bonds?: Bond[];
-  renderAtoms?: Atom[];
-  renderBonds?: Bond[];
-  unitCell?: UnitCell;
-  unitCellParams?: UnitCellParams;
-  selectedAtomId?: string;
-  selectedAtomIds?: string[];
-  selectedBondKeys?: string[];
-  selectedBondKey?: string;
-  supercell?: [number, number, number];
-  trajectoryFrameIndex?: number;
-  trajectoryFrameCount?: number;
-}
-
-export interface LightConfig {
-  intensity: number;
-  color: string;
-  x: number;
-  y: number;
-  z: number;
-}
-
-export interface DisplaySettings {
-  showAxes?: boolean;
-  backgroundColor?: string;
-  unitCellColor?: string;
-  unitCellThickness?: number;
-  unitCellLineStyle?: string;
-  atomSizeUseDefaultSettings?: boolean;
-  atomSizeGlobal?: number;
-  atomSizeByElement?: Record<string, number>;
-  atomSizeByAtom?: Record<string, number>;
-  manualScale?: number;
-  autoScaleEnabled?: boolean;
-  atomSizeScale?: number;
-  bondThicknessScale?: number;
-  viewZoom?: number;
-  scaleAtomsWithLattice?: boolean;
-  projectionMode?: string;
-  lightingEnabled?: boolean;
-  ambientIntensity?: number;
-  ambientColor?: string;
-  shininess?: number;
-  keyLight?: LightConfig;
-  fillLight?: LightConfig;
-  rimLight?: LightConfig;
-}
-
-export interface ConfigEntry {
-  id: string;
-  name: string;
-  description?: string;
-  settings?: DisplaySettings;
-}
+/**
+ * `Structure` is the data shape stored by the webview after receiving a
+ * render message.  It is now identical to `WireRenderData`.
+ */
+export type Structure = WireRenderData;
 
 export interface AvailableConfigs {
   presets: ConfigEntry[];

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import { ConfigManager } from '../config/configManager';
 import { DisplaySettings } from '../config/types';
+import type { WireDisplaySettings } from '../shared/protocol';
 
 export class DisplayConfigService {
   constructor(private configManager: ConfigManager) {}
@@ -43,7 +44,7 @@ export class DisplayConfigService {
     return null;
   }
 
-  updateDisplaySettings(settings: DisplaySettings, session: any): void {
+  updateDisplaySettings(settings: WireDisplaySettings, session: any): void {
     session.displaySettings = settings;
   }
 }
