@@ -221,81 +221,44 @@ export class RenderMessageBuilder {
       return [];
     }
 
-    const atoms = structure.atoms;
-    const vectors = unitCell.getLatticeVectors();
-    const offsets: Array<[number, number, number]> = [];
-
-    for (let ox = -1; ox <= 1; ox++) {
-      for (let oy = -1; oy <= 1; oy++) {
-        for (let oz = -1; oz <= 1; oz++) {
-          offsets.push([ox, oy, oz]);
-        }
-      }
-    }
-
-    const isHalfSpace = (ox: number, oy: number, oz: number) =>
-      ox > 0 || (ox === 0 && oy > 0) || (ox === 0 && oy === 0 && oz > 0);
-
+    // Use optimized spatial hash implementation from Structure
+    const periodicBonds = structure.getPeriodicBonds();
     const bonds: WireBond[] = [];
-    const tolerance = 1.1;
-    const suppressed = new Set(
-      (structure.suppressedAutoBonds || []).map(([a, b]) => Structure.bondKey(a, b))
-    );
-    const manual = new Set(
-      (structure.manualBonds || []).map(([a, b]) => Structure.bondKey(a, b))
-    );
 
-    for (let i = 0; i < atoms.length; i++) {
-      const atomA = atoms[i];
-      const symbolA = parseElement(atomA.element) || atomA.element;
-      const radiusA = ELEMENT_DATA[symbolA]?.covalentRadius || 1.5;
+    for (const bond of periodicBonds) {
+      const atom1 = structure.getAtom(bond.atomId1);
+      const atom2 = structure.getAtom(bond.atomId2);
+      if (!atom1 || !atom2) continue;
 
-      for (let j = 0; j < atoms.length; j++) {
-        const atomB = atoms[j];
-        const bondKey = Structure.bondKey(atomA.id, atomB.id);
-        const symbolB = parseElement(atomB.element) || atomB.element;
-        const radiusB = ELEMENT_DATA[symbolB]?.covalentRadius || 1.5;
-        const bondLength = (radiusA + radiusB) * tolerance;
+      const symbolA = parseElement(atom1.element) || atom1.element;
+      const symbolB = parseElement(atom2.element) || atom2.element;
+      const infoA = ELEMENT_DATA[symbolA];
+      const infoB = ELEMENT_DATA[symbolB];
 
-        for (const [ox, oy, oz] of offsets) {
-          if (ox === 0 && oy === 0 && oz === 0) {
-            if (j <= i) {
-              continue;
-            }
-          } else if (!isHalfSpace(ox, oy, oz)) {
-            continue;
-          }
-
-          const dx =
-            atomB.x + ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0] - atomA.x;
-          const dy =
-            atomB.y + ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1] - atomA.y;
-          const dz =
-            atomB.z + ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2] - atomA.z;
-
-          const distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-          const autoBond = distance < bondLength;
-          const manualBaseBond = manual.has(bondKey) && ox === 0 && oy === 0 && oz === 0 && j > i;
-          if ((autoBond && !suppressed.has(bondKey)) || manualBaseBond) {
-            const symbolA = parseElement(atomA.element) || atomA.element;
-            const symbolB = parseElement(atomB.element) || atomB.element;
-            const infoA = ELEMENT_DATA[symbolA];
-            const infoB = ELEMENT_DATA[symbolB];
-            bonds.push({
-              key: bondKey,
-              atomId1: atomA.id,
-              atomId2: atomB.id,
-              start: [atomA.x, atomA.y, atomA.z] as [number, number, number],
-              end: [atomA.x + dx, atomA.y + dy, atomA.z + dz] as [number, number, number],
-              radius: 0.04,
-              color: '#C0C0C0',
-              color1: atomA.color || infoA?.color || '#C0C0C0',
-              color2: atomB.color || infoB?.color || '#C0C0C0',
-              selected: this.state.selectedBondKeys.includes(bondKey),
-            });
-          }
-        }
+      // Calculate end position based on periodic image
+      let endPos: [number, number, number];
+      if (bond.image && (bond.image[0] !== 0 || bond.image[1] !== 0 || bond.image[2] !== 0)) {
+        const vectors = unitCell.getLatticeVectors();
+        const offsetX = bond.image[0] * vectors[0][0] + bond.image[1] * vectors[1][0] + bond.image[2] * vectors[2][0];
+        const offsetY = bond.image[0] * vectors[0][1] + bond.image[1] * vectors[1][1] + bond.image[2] * vectors[2][1];
+        const offsetZ = bond.image[0] * vectors[0][2] + bond.image[1] * vectors[1][2] + bond.image[2] * vectors[2][2];
+        endPos = [atom2.x + offsetX, atom2.y + offsetY, atom2.z + offsetZ] as [number, number, number];
+      } else {
+        endPos = [atom2.x, atom2.y, atom2.z] as [number, number, number];
       }
+
+      bonds.push({
+        key: Structure.bondKey(bond.atomId1, bond.atomId2),
+        atomId1: bond.atomId1,
+        atomId2: bond.atomId2,
+        start: [atom1.x, atom1.y, atom1.z] as [number, number, number],
+        end: endPos,
+        radius: 0.04,
+        color: '#C0C0C0',
+        color1: atom1.color || infoA?.color || '#C0C0C0',
+        color2: atom2.color || infoB?.color || '#C0C0C0',
+        selected: this.state.selectedBondKeys.includes(Structure.bondKey(bond.atomId1, bond.atomId2)),
+      });
     }
 
     return bonds;

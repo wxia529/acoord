@@ -9,6 +9,7 @@ export class Structure {
   id: string;
   name: string;
   atoms: Atom[] = [];
+  private atomIndex: Map<string, Atom> = new Map();
   manualBonds: Array<[string, string]> = [];
   suppressedAutoBonds: Array<[string, string]> = [];
   unitCell?: UnitCell;
@@ -29,6 +30,7 @@ export class Structure {
    */
   addAtom(atom: Atom): void {
     this.atoms.push(atom);
+    this.atomIndex.set(atom.id, atom);
   }
 
   /**
@@ -36,6 +38,7 @@ export class Structure {
    */
   removeAtom(atomId: string): void {
     this.atoms = this.atoms.filter((a) => a.id !== atomId);
+    this.atomIndex.delete(atomId);
     this.manualBonds = this.manualBonds.filter(([a, b]) => a !== atomId && b !== atomId);
     this.suppressedAutoBonds = this.suppressedAutoBonds.filter(([a, b]) => a !== atomId && b !== atomId);
   }
@@ -87,10 +90,10 @@ export class Structure {
   }
 
   /**
-   * Get atom by ID
+   * Get atom by ID - O(1) lookup using Map index
    */
   getAtom(atomId: string): Atom | undefined {
-    return this.atoms.find((a) => a.id === atomId);
+    return this.atomIndex.get(atomId);
   }
 
   /**
@@ -333,6 +336,140 @@ export class Structure {
     }
     cloned.supercell = [...this.supercell];
     return cloned;
+  }
+
+  /**
+   * Rebuild the atom index - called after bulk operations
+   */
+  rebuildAtomIndex(): void {
+    this.atomIndex.clear();
+    for (const atom of this.atoms) {
+      this.atomIndex.set(atom.id, atom);
+    }
+  }
+
+  /**
+   * Get the number of atoms in the index (for debugging/testing)
+   */
+  getAtomIndexSize(): number {
+    return this.atomIndex.size;
+  }
+
+  /**
+   * Get periodic bonds using spatial hashing for O(n) performance
+   * This is the periodic equivalent of getBonds() for crystal structures
+   */
+  getPeriodicBonds(): Array<{ atomId1: string; atomId2: string; distance: number; manual: boolean; image?: [number, number, number] }> {
+    if (!this.isCrystal || !this.unitCell) {
+      return [];
+    }
+
+    const bonds: Array<{ atomId1: string; atomId2: string; distance: number; manual: boolean; image?: [number, number, number] }> = [];
+    const tolerance = Structure.BOND_TOLERANCE;
+    const suppressed = new Set(this.suppressedAutoBonds.map(([a, b]) => Structure.bondKey(a, b)));
+    const manualSet = new Set(this.manualBonds.map(([a, b]) => Structure.bondKey(a, b)));
+    const seen = new Set<string>();
+    const vectors = this.unitCell.getLatticeVectors();
+
+    // Pre-compute element symbols and covalent radii
+    const atomData = new Map<string, { symbol: string; radius: number }>();
+    let maxBondLength = 0;
+    for (const atom of this.atoms) {
+      const symbol = parseElement(atom.element) || atom.element;
+      const radius = ELEMENT_DATA[symbol]?.covalentRadius || 1.5;
+      atomData.set(atom.id, { symbol, radius });
+      maxBondLength = Math.max(maxBondLength, radius * 2 * tolerance);
+    }
+    maxBondLength = Math.max(maxBondLength, Structure.MAX_COVALENT_RADIUS * 2);
+
+    // Build spatial hash for base atoms (unit cell at origin)
+    const cellSize = maxBondLength;
+    const grid = this.buildSpatialHash(cellSize);
+
+    // Generate periodic images to check (-1, 0, +1 in each direction)
+    const offsets: Array<[number, number, number]> = [];
+    for (let ox = -1; ox <= 1; ox++) {
+      for (let oy = -1; oy <= 1; oy++) {
+        for (let oz = -1; oz <= 1; oz++) {
+          offsets.push([ox, oy, oz]);
+        }
+      }
+    }
+
+    const isHalfSpace = (ox: number, oy: number, oz: number) =>
+      ox > 0 || (ox === 0 && oy > 0) || (ox === 0 && oy === 0 && oz > 0);
+
+    // Check bonds for each atom against neighbors in all periodic images
+    for (const atom1 of this.atoms) {
+      const data1 = atomData.get(atom1.id)!;
+      const radius1 = data1.radius;
+
+      // Check against all periodic images
+      for (const [ox, oy, oz] of offsets) {
+        // Skip redundant checks using half-space rule
+        if (ox === 0 && oy === 0 && oz === 0) {
+          // Same cell - only check atoms with higher index to avoid duplicates
+          for (const atom2 of this.getNeighboringAtoms(atom1, grid, cellSize, maxBondLength)) {
+            if (atom1.id >= atom2.id) continue;
+
+            const data2 = atomData.get(atom2.id)!;
+            const radius2 = data2.radius;
+            const bondLength = (radius1 + radius2) * tolerance;
+
+            const dx = atom1.x - atom2.x;
+            const dy = atom1.y - atom2.y;
+            const dz = atom1.z - atom2.z;
+            const distanceSq = dx * dx + dy * dy + dz * dz;
+
+            if (distanceSq < bondLength * bondLength) {
+              const key = Structure.bondKey(atom1.id, atom2.id);
+              if (suppressed.has(key) || seen.has(key)) continue;
+              bonds.push({
+                atomId1: atom1.id,
+                atomId2: atom2.id,
+                distance: Math.sqrt(distanceSq),
+                manual: manualSet.has(key),
+                image: [0, 0, 0],
+              });
+              seen.add(key);
+            }
+          }
+        } else if (isHalfSpace(ox, oy, oz)) {
+          // Different cell - check all atoms in this image
+          // Apply periodic offset to atom positions
+          const offsetX = ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0];
+          const offsetY = ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1];
+          const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
+
+          for (const atom2 of this.atoms) {
+            const data2 = atomData.get(atom2.id)!;
+            const radius2 = data2.radius;
+            const bondLength = (radius1 + radius2) * tolerance;
+
+            // Calculate distance to periodic image
+            const dx = (atom2.x + offsetX) - atom1.x;
+            const dy = (atom2.y + offsetY) - atom1.y;
+            const dz = (atom2.z + offsetZ) - atom1.z;
+            const distanceSq = dx * dx + dy * dy + dz * dz;
+
+            if (distanceSq < bondLength * bondLength) {
+              const key = Structure.bondKey(atom1.id, atom2.id);
+              if (suppressed.has(key) || seen.has(key)) continue;
+              bonds.push({
+                atomId1: atom1.id,
+                atomId2: atom2.id,
+                distance: Math.sqrt(distanceSq),
+                manual: false,
+                image: [ox, oy, oz],
+              });
+              seen.add(key);
+            }
+          }
+        }
+      }
+    }
+
+    return bonds;
   }
 
   /**
