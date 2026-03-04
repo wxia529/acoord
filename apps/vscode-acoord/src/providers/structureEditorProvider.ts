@@ -28,6 +28,7 @@ export class StructureDocument implements vscode.CustomDocument {
 class EditorSession {
   constructor(
     readonly key: string,
+    readonly document: StructureDocument,
     readonly webviewPanel: vscode.WebviewPanel,
     readonly renderer: RenderMessageBuilder,
     readonly trajectoryManager: TrajectoryManager,
@@ -52,6 +53,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   >();
   readonly onDidChangeCustomDocument = this._onDidChangeCustomDocument.event;
   private sessions = new Map<string, EditorSession>();
+  private nextSessionId = 0;
 
   constructor(
     private context: vscode.ExtensionContext,
@@ -90,7 +92,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
     const initialFrameIndex = TrajectoryManager.defaultFrameIndex(frames);
 
-    const key = uri;
+    const key = `session_${++this.nextSessionId}`;
     const traj = new TrajectoryManager(frames, initialFrameIndex);
     const renderer = new RenderMessageBuilder(traj.activeStructure);
     renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
@@ -113,6 +115,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     const defaultConfig = this.configManager.getCurrentConfig();
     const session = new EditorSession(
       key,
+      document,
       webviewPanel,
       renderer,
       traj,
@@ -180,19 +183,32 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     const { renderer, trajectoryManager: traj, undoManager: undo, messageRouter } = session;
 
     if (message.command === 'undo') {
+      const hadContent = !session.undoManager.isEmpty;
       this.undoLastEdit(session);
+      if (hadContent) {
+        this.notifyDocumentChanged(session, 'Undo');
+      }
       return;
     }
 
     if (message.command === 'redo') {
+      const hadContent = session.undoManager.canRedo;
       this.redoLastEdit(session);
+      if (hadContent) {
+        this.notifyDocumentChanged(session, 'Redo');
+      }
       return;
     }
 
+    const undoDepthBefore = session.undoManager.depth;
     const handled = await messageRouter.route(message);
 
     if (handled) {
       if (message.command !== 'beginDrag' && message.command !== 'endDrag') {
+        // Check if a structural change occurred by comparing undo stack depth
+        if (session.undoManager.depth > undoDepthBefore) {
+          this.notifyDocumentChanged(session, `Command: ${message.command}`);
+        }
         this.renderStructure(session);
       }
       return;
@@ -337,6 +353,19 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     webviewPanel.webview.postMessage(message);
   }
 
+  private notifyDocumentChanged(session: EditorSession, label: string = 'Structure modified'): void {
+    this._onDidChangeCustomDocument.fire({
+      document: session.document,
+      undo: async () => {
+        this.undoLastEdit(session);
+      },
+      redo: async () => {
+        this.redoLastEdit(session);
+      },
+      label,
+    });
+  }
+
   private async getWebviewContent(webview: vscode.Webview): Promise<string> {
     const csp = `default-src 'none'; img-src ${webview.cspSource} data:; style-src ${webview.cspSource} 'unsafe-inline'; script-src ${webview.cspSource} 'unsafe-eval'; connect-src 'none'; worker-src 'none'; font-src 'none'; object-src 'none';`;
     const styleUri = webview.asWebviewUri(
@@ -359,7 +388,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     document: StructureDocument,
     _cancellationToken: vscode.CancellationToken
   ): Thenable<void> {
-    const session = this.sessions.get(document.uri.fsPath);
+    const session = this.findSessionByDocument(document);
     if (session) {
       const documentService = new DocumentService();
       return documentService.saveStructure(session.key, session.trajectoryManager.activeStructure, session.trajectoryManager.frames);
@@ -367,12 +396,21 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     return Promise.resolve();
   }
 
+  private findSessionByDocument(document: StructureDocument): EditorSession | undefined {
+    for (const session of this.sessions.values()) {
+      if (session.document === document) {
+        return session;
+      }
+    }
+    return undefined;
+  }
+
   async saveCustomDocumentAs(
     document: StructureDocument,
     destination: vscode.Uri,
     _cancellationToken: vscode.CancellationToken
   ): Promise<void> {
-    const session = this.sessions.get(document.uri.fsPath);
+    const session = this.findSessionByDocument(document);
     if (!session) {
       return;
     }
@@ -400,20 +438,48 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
   }
 
-  revertCustomDocument(
+  async revertCustomDocument(
     document: StructureDocument,
     _cancellationToken: vscode.CancellationToken
-  ): Thenable<void> {
-    return Promise.resolve();
+  ): Promise<void> {
+    const session = this.findSessionByDocument(document);
+    if (!session) {
+      return;
+    }
+
+    try {
+      const updatedFrames = await StructureDocumentManager.load(document.uri);
+      if (!updatedFrames || updatedFrames.length === 0) {
+        vscode.window.showErrorMessage('Failed to reload structure: no frame found.');
+        return;
+      }
+      const idx = TrajectoryManager.defaultFrameIndex(updatedFrames);
+      session.trajectoryManager.set(updatedFrames, idx);
+      session.undoManager.clear();
+      session.renderer.setStructure(updatedFrames[idx]);
+      session.renderer.setShowUnitCell(!!updatedFrames[idx].unitCell);
+      session.renderer.setTrajectoryFrameInfo(idx, updatedFrames.length);
+      session.selectionService.clearSelection();
+      this.renderStructure(session);
+    } catch (error) {
+      vscode.window.showErrorMessage(
+        `Failed to revert document: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
   }
 
-  backupCustomDocument(
+  async backupCustomDocument(
     document: vscode.CustomDocument,
     context: vscode.CustomDocumentBackupContext,
     _cancellationToken: vscode.CancellationToken
-  ): Thenable<vscode.CustomDocumentBackup> {
+  ): Promise<vscode.CustomDocumentBackup> {
     const backupUri = context.destination;
-    return Promise.resolve({
+    const session = this.findSessionByDocument(document as StructureDocument);
+    if (session) {
+      const data = JSON.stringify(session.trajectoryManager.frames.map(f => f.toJSON()));
+      await vscode.workspace.fs.writeFile(backupUri, Buffer.from(data));
+    }
+    return {
       id: backupUri.toString(),
       delete: async () => {
         try {
@@ -422,7 +488,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           // Ignore delete errors for missing or already-removed backups.
         }
       },
-    });
+    };
   }
 
   async notifyConfigChange(config: DisplayConfig): Promise<void> {

@@ -3,6 +3,5 @@ out/
 .vscode-test/
 *.vsix
 bug.md
-DEVELOPMENT.md
 code-report.md
 

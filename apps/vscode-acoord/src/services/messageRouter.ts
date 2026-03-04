@@ -38,10 +38,18 @@ export class MessageRouter {
 
   async route(message: WebviewToExtensionMessage): Promise<boolean> {
     const handler = this.handlers.get(message.command);
-    if (handler) {
-      return await handler(message);
+    if (!handler) {
+      return false;
     }
-    return false;
+    try {
+      return await handler(message);
+    } catch (error) {
+      console.error(`[ACoord] Handler for '${message.command}' threw:`, error);
+      vscode.window.showErrorMessage(
+        `ACoord: Command '${message.command}' failed: ${error instanceof Error ? error.message : String(error)}`
+      );
+      return true; // Claim handled to prevent further dispatch
+    }
   }
 
   hasHandler(command: string): boolean {
