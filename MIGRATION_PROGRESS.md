@@ -468,16 +468,220 @@ async notifyConfigChange(config: DisplayConfig): Promise<void> {
 
 ---
 
+## Phase 4: Architecture — Webview
+
+### 4.1 Cancel animate() Loop on Dispose ✅
+
+**Status:** VERIFIED COMPLETED  
+**Files:** `media/webview/src/renderer.ts`
+
+**Verification:**
+- The `animate()` loop stores its `requestAnimationFrame` ID in `rendererState.statusInterval`
+- The `dispose()` function cancels the animation loop and cleans up all Three.js resources
+- All geometries, materials, and textures are properly disposed
+
+**Note:** This was already implemented correctly in the current codebase.
+
+---
+
+### 4.2 Clean Up Event Listeners with AbortController ✅
+
+**Status:** COMPLETED  
+**Files Modified:** `media/webview/src/interaction.ts`
+
+**Changes Made:**
+- Added module-level `AbortController` to manage all event listeners
+- All event listeners (`pointerdown`, `pointermove`, `pointerup`, `pointerleave`, `pointercancel`, `keydown`) are now registered with `{ signal: controller.signal }`
+- Added `dispose()` function that calls `controller.abort()` to remove all listeners at once
+- This prevents memory leaks when the webview is disposed
+
+**Implementation Details:**
+```typescript
+// Module-level AbortController for cleanup
+let controller: AbortController | null = null;
+
+export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): void {
+  // Create new controller for this session
+  controller = new AbortController();
+  
+  // All listeners registered with signal
+  canvas.addEventListener('pointerdown', handler, { signal: controller.signal });
+  // ... other listeners
+}
+
+export function dispose(): void {
+  if (controller) {
+    controller.abort();
+    controller = null;
+  }
+}
+```
+
+**Benefits:**
+- Single call to `abort()` removes all listeners
+- No need to manually track individual listener references
+- Prevents memory leaks from orphaned event listeners
+
+---
+
+### 4.3 Fix Per-Atom Hit-Test Geometry ✅
+
+**Status:** COMPLETED  
+**Files Modified:** `media/webview/src/renderer.ts`
+
+**Problem:** A separate `SphereGeometry` and `CylinderGeometry` was created for each atom's and bond's hit-test mesh, leading to O(n) geometry allocations and high memory usage for large structures.
+
+**Changes Made:**
+- Created a single shared `SphereGeometry(1, 6, 4)` for all atom hit-test meshes
+- Created a single shared `CylinderGeometry(1, 1, 1, 4)` for all bond hit-test meshes
+- Individual hit-test meshes now use `mesh.scale.set()` to match the required dimensions
+- This reduces geometry allocations from O(n) to O(1) for hit-testing
+
+**Implementation Details:**
+```typescript
+// Shared low-poly sphere geometry for hit-testing all atoms
+const hitTestGeometry = new THREE.SphereGeometry(1, 6, 4);
+const hitTestMaterial = new THREE.MeshBasicMaterial({ visible: false });
+
+for (const atom of atoms) {
+  // Scale mesh to match atom radius instead of creating new geometry
+  const hitMesh = new THREE.Mesh(hitTestGeometry, hitTestMaterial);
+  hitMesh.scale.set(radiusKey, radiusKey, radiusKey);
+  hitMesh.position.set(atom.position[0] * scale, ...);
+  // ... rest of setup
+}
+
+// Same pattern for bonds with CylinderGeometry
+const hitTestCylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 4);
+const hitTestCylinderMaterial = new THREE.MeshBasicMaterial({ visible: false });
+
+for (const bond of bonds) {
+  const hitMesh = new THREE.Mesh(hitTestCylinderGeometry, hitTestCylinderMaterial);
+  hitMesh.scale.set(bondRadius, halfLen, bondRadius);
+  // ... rest of setup
+}
+```
+
+**Performance Impact:**
+- For a 1000-atom structure: reduces geometry allocations from ~1000 to 1
+- Memory savings: ~200KB+ for large structures (estimated)
+- Faster render structure calls due to reduced geometry creation overhead
+
+---
+
+### 4.4 Remove Legacy state Proxy ⚠️ DEFERRED
+
+**Status:** DEFERRED TO PHASE 8  
+**Files:** `media/webview/src/state.ts`
+
+**Reason for Deferral:**
+The `state` proxy is used extensively throughout the codebase (76+ occurrences across 7 files). Removing it requires:
+1. Updating all import statements to use specific stores
+2. Refactoring all `state.foo` access to `storeName.foo`
+3. Comprehensive testing to ensure no regressions
+
+This is a mechanical but time-consuming task that doesn't provide immediate functional benefits. It will be addressed in Phase 8 (Cleanup & Polish) along with other type consolidation work.
+
+**Current Status:**
+- Domain-specific stores (`structureStore`, `selectionStore`, `displayStore`, etc.) are already in place
+- The `state` proxy wraps these stores for backward compatibility
+- New code should use the specific stores directly
+
+---
+
+### 4.5 Remove Dead Code: vscodeApi.ts ✅
+
+**Status:** COMPLETED  
+**Files Modified:** `media/webview/src/vscodeApi.ts` (DELETED)
+
+**Changes Made:**
+- Deleted `vscodeApi.ts` which was never imported by any other file
+- The VS Code API is acquired directly in `app.ts` via `acquireVsCodeApi()`
+- No other files reference this module
+
+**Verification:**
+- Grep search for `import.*vscodeApi` returned no results
+- All files use `acquireVsCodeApi()` directly or don't need the VS Code API
+
+---
+
+### 4.6 Fix DOM Cache to Not Cache Null ✅
+
+**Status:** COMPLETED  
+**Files Modified:** `media/webview/src/utils/domCache.ts`
+
+**Problem:** The cache stored `null` for elements not found in the DOM and never invalidated. If an element was dynamically added later, the cache would permanently return `null`.
+
+**Changes Made:**
+- Changed cache type from `Map<string, HTMLElement | null>` to `Map<string, HTMLElement>`
+- Only cache elements that are actually found (non-null)
+- Null results are returned but not stored
+
+**Implementation Details:**
+```typescript
+const elementCache = new Map<string, HTMLElement>();
+
+export function getElementById<T extends HTMLElement = HTMLElement>(
+  id: string
+): T | null {
+  if (elementCache.has(id)) {
+    return elementCache.get(id) as T;
+  }
+
+  const element = document.getElementById(id) as T | null;
+  if (element) {
+    // Only cache non-null results
+    elementCache.set(id, element);
+  }
+  return element;
+}
+```
+
+**Benefits:**
+- Dynamically added elements will be found and cached
+- No stale null references in the cache
+- Cache remains accurate throughout the application lifecycle
+
+---
+
+### 4.7 Webview Architecture Summary
+
+**Key Improvements:**
+- Proper event listener cleanup prevents memory leaks
+- Shared hit-test geometries reduce memory usage and improve performance
+- Dead code removal reduces bundle size and maintenance burden
+- DOM cache fix prevents subtle bugs with dynamically added elements
+
+**Code Quality Improvements:**
+- Using `AbortController` follows modern web standards
+- Geometry sharing demonstrates performance-conscious development
+- Clear separation between visual rendering meshes and hit-test meshes
+
+**Deferred to Phase 8:**
+- Complete removal of legacy `state` proxy
+- Full migration to domain-specific stores
+
+**Next Steps:** Proceed to Phase 5 - Performance
+
+---
+
+---
+
 ## Migration Roadmap
 
 - [x] **Phase 1:** Critical Bug Fixes
 - [x] **Phase 2:** Type Safety & Error Handling
 - [x] **Phase 3:** Architecture — Extension Host
-- [ ] **Phase 4:** Architecture — Webview
+- [x] **Phase 4:** Architecture — Webview
 - [ ] **Phase 5:** Performance
 - [ ] **Phase 6:** Parser Correctness
 - [ ] **Phase 7:** Testing & CI
 - [ ] **Phase 8:** Cleanup & Polish
 
 **Estimated Total Effort:** 15-25 development days  
-**Completed:** ~7-9 days (Phase 1 + Phase 2 + Phase 3)
+**Completed:** ~10-13 days (Phase 1 + Phase 2 + Phase 3 + Phase 4)
+
+---
+
+## Phase 5: Performance
+

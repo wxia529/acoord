@@ -544,6 +544,11 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       const dummy = new THREE.Object3D();
       const _color = new THREE.Color();
 
+      // Shared low-poly sphere geometry for hit-testing all atoms
+      // Scale is applied per-mesh via mesh.scale.set()
+      const hitTestGeometry = new THREE.SphereGeometry(1, 6, 4);
+      const hitTestMaterial = new THREE.MeshBasicMaterial({ visible: false });
+
       for (const [radiusKey, atoms] of byRadius) {
         // Shared geometry for this radius group (16-segment sphere is a good
         // balance between quality and triangle count; was 32 before).
@@ -566,11 +571,10 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
           _color.set(isSelected ? '#f6d55c' : atom.color);
           im.setColorAt(i, _color);
 
-          // Invisible hit-test mesh: small sphere, same radius, raycastable.
-          // Using a very low-poly geometry keeps construction fast.
-          const hitGeo = new THREE.SphereGeometry(radiusKey, 6, 4);
-          const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-          const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+          // Invisible hit-test mesh: use shared geometry scaled to radius.
+          // This avoids creating a new geometry per atom (was O(n) allocations).
+          const hitMesh = new THREE.Mesh(hitTestGeometry, hitTestMaterial);
+          hitMesh.scale.set(radiusKey, radiusKey, radiusKey);
           hitMesh.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
           hitMesh.userData = { atomId: atom.id };
           rendererState.scene!.add(hitMesh);
@@ -647,6 +651,11 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
     const _axis = new THREE.Vector3();
     const _quat = new THREE.Quaternion();
 
+    // Shared low-poly cylinder geometry for bond hit-testing
+    // Scale is applied per-mesh via mesh.scale.set()
+    const hitTestCylinderGeometry = new THREE.CylinderGeometry(1, 1, 1, 4);
+    const hitTestCylinderMaterial = new THREE.MeshBasicMaterial({ visible: false });
+
     for (const [, halves] of byBondRadius) {
       const firstHalf = halves[0];
       // Use half-length = 1 in geometry; we scale each instance via matrix.
@@ -687,10 +696,10 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
         im.setColorAt(i, _color);
 
         // Invisible hit-test mesh for bond selection.
+        // Use shared geometry scaled to match bond dimensions.
         if (half.bondKey) {
-          const hitGeo = new THREE.CylinderGeometry(firstHalf.bondRadius, firstHalf.bondRadius, half.halfLen, 4);
-          const hitMat = new THREE.MeshBasicMaterial({ visible: false });
-          const hitMesh = new THREE.Mesh(hitGeo, hitMat);
+          const hitMesh = new THREE.Mesh(hitTestCylinderGeometry, hitTestCylinderMaterial);
+          hitMesh.scale.set(firstHalf.bondRadius, half.halfLen, firstHalf.bondRadius);
           hitMesh.position.copy(center);
           hitMesh.quaternion.copy(dummy.quaternion);
           hitMesh.userData = { bondKey: half.bondKey };

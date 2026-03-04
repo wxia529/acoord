@@ -18,12 +18,19 @@ export interface InteractionHandlers {
   onEndDrag?: () => void;
 }
 
+// Module-level AbortController for cleanup
+let controller: AbortController | null = null;
+
 export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): void {
   const dragLerp = 0.18;
   const dragThreshold = 4;
   const selectionBox = document.getElementById('selection-box') as HTMLElement | null;
   let pendingDrag: { atomId: string; hitPoint: Vector3; startX: number; startY: number } | null = null;
   let boxSelect: { startX: number; startY: number; bondMode: string } | null = null;
+  
+  // AbortController for cleaning up all event listeners on dispose
+  controller = new AbortController();
+  
   canvas.tabIndex = 0;
   (canvas.style as CSSStyleDeclaration).outline = 'none';
 
@@ -293,18 +300,26 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     boxSelect = null;
   };
 
-  canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointerleave', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointerup', endDrag, { signal: controller.signal });
+  canvas.addEventListener('pointerleave', endDrag, { signal: controller.signal });
+  canvas.addEventListener('pointercancel', endDrag, { signal: controller.signal });
   canvas.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key === 'Escape' && pickerState.activeLightPicker) {
       interactionLighting.deactivatePicker(canvas, handlers.onSetStatus);
       event.preventDefault();
     }
-  });
+  }, { signal: controller.signal });
 
   // Delegate panel initialisation to focused modules.
   interactionLighting.init(canvas, handlers.onSetStatus);
   initDisplay();
   initConfig();
+}
+
+/** Dispose of all event listeners and clean up resources */
+export function dispose(): void {
+  if (controller) {
+    controller.abort();
+    controller = null;
+  }
 }
