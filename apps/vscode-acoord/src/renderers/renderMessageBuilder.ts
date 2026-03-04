@@ -1,14 +1,14 @@
 import { Structure } from '../models/structure';
 import { ELEMENT_DATA, parseElement } from '../utils/elementData';
-
-/**
- * Interface for webview messages
- */
-export interface WebviewMessage {
-  command: string;
-  data?: any;
-  displaySettings?: any;
-}
+import type {
+  WireAtom,
+  WireBond,
+  WireRenderData,
+  WireUnitCell,
+  WireUnitCellParams,
+  WireDisplaySettings,
+  RenderMessage,
+} from '../shared/protocol';
 
 /**
  * Interface for renderer state
@@ -127,7 +127,7 @@ export class RenderMessageBuilder {
   /**
    * Get message for webview to render
    */
-  getRenderMessage(): WebviewMessage {
+  getRenderMessage(): RenderMessage {
     const baseAtoms = this.getAtomGeometry();
     const baseBonds = this.getBondGeometry();
     return {
@@ -155,7 +155,7 @@ export class RenderMessageBuilder {
   /**
    * Generate atom geometry data for webview
    */
-  private getAtomGeometry(): any[] {
+  private getAtomGeometry(): WireAtom[] {
     return this.state.structure.atoms.map((atom) => {
       const symbol = parseElement(atom.element) || atom.element;
       const info = ELEMENT_DATA[symbol];
@@ -165,7 +165,7 @@ export class RenderMessageBuilder {
       return {
         id: atom.id,
         element: symbol,
-        position: [atom.x, atom.y, atom.z],
+        position: [atom.x, atom.y, atom.z] as [number, number, number],
         radius: radius,
         color: atom.color || info?.color || '#C0C0C0',
         selected: atom.selected,
@@ -176,43 +176,45 @@ export class RenderMessageBuilder {
   /**
    * Generate bond geometry data for webview
    */
-  private getBondGeometry(): any[] {
+  private getBondGeometry(): WireBond[] {
     if (this.state.structure.unitCell) {
       return this.getPeriodicBondGeometry();
     }
 
-    const bonds = this.state.structure.getBonds();
-    return bonds
-      .map((bond) => {
-        const atom1 = this.state.structure.getAtom(bond.atomId1);
-        const atom2 = this.state.structure.getAtom(bond.atomId2);
+    const structureBonds = this.state.structure.getBonds();
+    const wireBonds: WireBond[] = [];
 
-        if (!atom1 || !atom2) {
-          return null;
-        }
+    for (const bondInfo of structureBonds) {
+      const atom1 = this.state.structure.getAtom(bondInfo.atomId1);
+      const atom2 = this.state.structure.getAtom(bondInfo.atomId2);
 
-        const symbol1 = parseElement(atom1.element) || atom1.element;
-        const symbol2 = parseElement(atom2.element) || atom2.element;
-        const info1 = ELEMENT_DATA[symbol1];
-        const info2 = ELEMENT_DATA[symbol2];
+      if (!atom1 || !atom2) {
+        continue;
+      }
 
-        return {
-          key: Structure.bondKey(atom1.id, atom2.id),
-          atomId1: atom1.id,
-          atomId2: atom2.id,
-          start: [atom1.x, atom1.y, atom1.z],
-          end: [atom2.x, atom2.y, atom2.z],
-          radius: 0.04,
-          color: '#C0C0C0',
-          color1: atom1.color || info1?.color || '#C0C0C0',
-          color2: atom2.color || info2?.color || '#C0C0C0',
-          selected: this.state.selectedBondKeys.includes(Structure.bondKey(atom1.id, atom2.id)),
-        };
-      })
-      .filter((b) => b !== null);
+      const symbol1 = parseElement(atom1.element) || atom1.element;
+      const symbol2 = parseElement(atom2.element) || atom2.element;
+      const info1 = ELEMENT_DATA[symbol1];
+      const info2 = ELEMENT_DATA[symbol2];
+
+      wireBonds.push({
+        key: Structure.bondKey(atom1.id, atom2.id),
+        atomId1: atom1.id,
+        atomId2: atom2.id,
+        start: [atom1.x, atom1.y, atom1.z] as [number, number, number],
+        end: [atom2.x, atom2.y, atom2.z] as [number, number, number],
+        radius: 0.04,
+        color: '#C0C0C0',
+        color1: atom1.color || info1?.color || '#C0C0C0',
+        color2: atom2.color || info2?.color || '#C0C0C0',
+        selected: this.state.selectedBondKeys.includes(Structure.bondKey(atom1.id, atom2.id)),
+      });
+    }
+
+    return wireBonds;
   }
 
-  private getPeriodicBondGeometry(): any[] {
+  private getPeriodicBondGeometry(): WireBond[] {
     const structure = this.state.structure;
     const unitCell = structure.unitCell;
     if (!unitCell) {
@@ -234,7 +236,7 @@ export class RenderMessageBuilder {
     const isHalfSpace = (ox: number, oy: number, oz: number) =>
       ox > 0 || (ox === 0 && oy > 0) || (ox === 0 && oy === 0 && oz > 0);
 
-    const bonds: any[] = [];
+    const bonds: WireBond[] = [];
     const tolerance = 1.1;
     const suppressed = new Set(
       (structure.suppressedAutoBonds || []).map(([a, b]) => Structure.bondKey(a, b))
@@ -283,8 +285,8 @@ export class RenderMessageBuilder {
               key: bondKey,
               atomId1: atomA.id,
               atomId2: atomB.id,
-              start: [atomA.x, atomA.y, atomA.z],
-              end: [atomA.x + dx, atomA.y + dy, atomA.z + dz],
+              start: [atomA.x, atomA.y, atomA.z] as [number, number, number],
+              end: [atomA.x + dx, atomA.y + dy, atomA.z + dz] as [number, number, number],
               radius: 0.04,
               color: '#C0C0C0',
               color1: atomA.color || infoA?.color || '#C0C0C0',
@@ -310,7 +312,7 @@ export class RenderMessageBuilder {
     return [nx, ny, nz];
   }
 
-  private getUnitCellParams(): any | null {
+  private getUnitCellParams(): WireUnitCellParams | null {
     if (!this.state.structure.unitCell) {
       return null;
     }
@@ -322,10 +324,10 @@ export class RenderMessageBuilder {
       alpha: uc.alpha,
       beta: uc.beta,
       gamma: uc.gamma,
-    };
+    } as WireUnitCellParams;
   }
 
-  private getRenderAtomGeometry(baseAtoms: any[]): any[] {
+  private getRenderAtomGeometry(baseAtoms: WireAtom[]): WireAtom[] {
     const unitCell = this.state.structure.unitCell;
     const [nx, ny, nz] = this.getEffectiveSupercell();
     if (!unitCell || (nx === 1 && ny === 1 && nz === 1)) {
@@ -333,7 +335,7 @@ export class RenderMessageBuilder {
     }
 
     const vectors = unitCell.getLatticeVectors();
-    const result: any[] = [];
+    const result: WireAtom[] = [];
 
     for (let i = 0; i < nx; i++) {
       for (let j = 0; j < ny; j++) {
@@ -351,7 +353,7 @@ export class RenderMessageBuilder {
                 atom.position[0] + dx,
                 atom.position[1] + dy,
                 atom.position[2] + dz,
-              ],
+              ] as [number, number, number],
               selectable: isBaseCell,
               selected: isBaseCell ? atom.selected : false,
             });
@@ -363,7 +365,7 @@ export class RenderMessageBuilder {
     return result;
   }
 
-  private getRenderBondGeometry(baseBonds: any[]): any[] {
+  private getRenderBondGeometry(baseBonds: WireBond[]): WireBond[] {
     const unitCell = this.state.structure.unitCell;
     const [nx, ny, nz] = this.getEffectiveSupercell();
     if (!unitCell || (nx === 1 && ny === 1 && nz === 1)) {
@@ -371,7 +373,7 @@ export class RenderMessageBuilder {
     }
 
     const vectors = unitCell.getLatticeVectors();
-    const result: any[] = [];
+    const result: WireBond[] = [];
 
     for (let i = 0; i < nx; i++) {
       for (let j = 0; j < ny; j++) {
@@ -383,8 +385,8 @@ export class RenderMessageBuilder {
           for (const bond of baseBonds) {
             result.push({
               ...bond,
-              start: [bond.start[0] + dx, bond.start[1] + dy, bond.start[2] + dz],
-              end: [bond.end[0] + dx, bond.end[1] + dy, bond.end[2] + dz],
+              start: [bond.start[0] + dx, bond.start[1] + dy, bond.start[2] + dz] as [number, number, number],
+              end: [bond.end[0] + dx, bond.end[1] + dy, bond.end[2] + dz] as [number, number, number],
             });
           }
         }
@@ -397,7 +399,7 @@ export class RenderMessageBuilder {
   /**
    * Generate unit cell geometry data for webview
    */
-  private getUnitCellGeometry(): any {
+  private getUnitCellGeometry(): WireUnitCell | null {
     if (!this.state.structure.unitCell) {
       return null;
     }
@@ -406,23 +408,23 @@ export class RenderMessageBuilder {
     const [nx, ny, nz] = this.getEffectiveSupercell();
     const vectors = unitCell.getLatticeVectors().map((vec, idx) => {
       const scale = idx === 0 ? nx : idx === 1 ? ny : nz;
-      return [vec[0] * scale, vec[1] * scale, vec[2] * scale];
+      return [vec[0] * scale, vec[1] * scale, vec[2] * scale] as [number, number, number];
     });
 
     // 8 corners of the unit cell
-    const corners = [
+    const corners: [number, number, number][] = [
       [0, 0, 0],
       vectors[0],
       vectors[1],
-      [vectors[0][0] + vectors[1][0], vectors[0][1] + vectors[1][1], vectors[0][2] + vectors[1][2]],
+      [vectors[0][0] + vectors[1][0], vectors[0][1] + vectors[1][1], vectors[0][2] + vectors[1][2]] as [number, number, number],
       vectors[2],
-      [vectors[0][0] + vectors[2][0], vectors[0][1] + vectors[2][1], vectors[0][2] + vectors[2][2]],
-      [vectors[1][0] + vectors[2][0], vectors[1][1] + vectors[2][1], vectors[1][2] + vectors[2][2]],
+      [vectors[0][0] + vectors[2][0], vectors[0][1] + vectors[2][1], vectors[0][2] + vectors[2][2]] as [number, number, number],
+      [vectors[1][0] + vectors[2][0], vectors[1][1] + vectors[2][1], vectors[1][2] + vectors[2][2]] as [number, number, number],
       [
         vectors[0][0] + vectors[1][0] + vectors[2][0],
         vectors[0][1] + vectors[1][1] + vectors[2][1],
         vectors[0][2] + vectors[1][2] + vectors[2][2],
-      ],
+      ] as [number, number, number],
     ];
 
     // 12 edges of the unit cell

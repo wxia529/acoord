@@ -16,7 +16,7 @@ export class Structure {
   supercell: [number, number, number] = [1, 1, 1];
 
   constructor(name: string = 'Untitled', isCrystal: boolean = false) {
-    this.id = `struct_${Math.random().toString(36).substring(2, 11)}`;
+    this.id = `struct_${crypto.randomUUID()}`;
     this.name = name;
     this.isCrystal = isCrystal;
     if (isCrystal) {
