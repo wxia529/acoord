@@ -30,17 +30,23 @@ export class ConfigValidator {
     keyLight: {
       intensity: 0.7,
       color: '#CCCCCC',
-      position: { x: 0, y: 0, z: 10 }
+      x: 0,
+      y: 0,
+      z: 10
     },
     fillLight: {
       intensity: 0,
       color: '#ffffff',
-      position: { x: -10, y: -5, z: 5 }
+      x: -10,
+      y: -5,
+      z: 5
     },
     rimLight: {
       intensity: 0,
       color: '#ffffff',
-      position: { x: 0, y: 5, z: -10 }
+      x: 0,
+      y: 5,
+      z: -10
     }
   };
 
@@ -167,7 +173,7 @@ export class ConfigValidator {
 
       const position = value.position && typeof value.position === 'object'
         ? value.position
-        : value;
+        : { x: value.x ?? fallback.x, y: value.y ?? fallback.y, z: value.z ?? fallback.z };
 
       return {
         intensity: normalizeNumber(
@@ -177,26 +183,24 @@ export class ConfigValidator {
           `${label}.intensity`
         ),
         color: normalizeColor(value.color, fallback.color, `${label}.color`),
-        position: {
-          x: normalizeNumber(
-            position.x,
-            fallback.position?.x ?? 0,
-            ConfigValidator.ranges.lightPosition,
-            `${label}.position.x`
-          ),
-          y: normalizeNumber(
-            position.y,
-            fallback.position?.y ?? 0,
-            ConfigValidator.ranges.lightPosition,
-            `${label}.position.y`
-          ),
-          z: normalizeNumber(
-            position.z,
-            fallback.position?.z ?? 0,
-            ConfigValidator.ranges.lightPosition,
-            `${label}.position.z`
-          )
-        }
+        x: normalizeNumber(
+          position.x,
+          fallback.x,
+          ConfigValidator.ranges.lightPosition,
+          `${label}.x`
+        ),
+        y: normalizeNumber(
+          position.y,
+          fallback.y,
+          ConfigValidator.ranges.lightPosition,
+          `${label}.y`
+        ),
+        z: normalizeNumber(
+          position.z,
+          fallback.z,
+          ConfigValidator.ranges.lightPosition,
+          `${label}.z`
+        )
       };
     };
 

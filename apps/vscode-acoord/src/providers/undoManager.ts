@@ -2,7 +2,7 @@ import { Structure } from '../models/structure';
 
 const MAX_ATOMS_FOR_UNDO = 5000;
 const MAX_MEMORY_MB = 100;
-const ESTIMATED_BYTES_PER_ATOM = 200;
+const ESTIMATED_BYTES_PER_ATOM = 1024;
 
 export class UndoManager {
   private readonly undoStack: Structure[] = [];

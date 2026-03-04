@@ -95,7 +95,7 @@ export class FileManager {
       ];
 
       for (const { name, parser } of parsersToTry) {
-        if (!parser) continue;
+        if (!parser) {continue;}
         try {
           const result = parser.parseTrajectory(content);
           if (result && result.length > 0) {

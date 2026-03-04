@@ -1,7 +1,7 @@
 import { configStore, displayStore, lightingStore, extractDisplaySettings, applyDisplaySettings } from './state';
 import { renderer } from './renderer';
 import type { VsCodeApi, DisplaySettings } from './types';
-import type { ExtensionToWebviewMessage, DisplayConfigLoadedMessage, DisplayConfigSavedMessage, DisplayConfigErrorMessage, CurrentDisplaySettingsMessage } from './messages';
+import type { ExtensionToWebviewMessage, DisplayConfigLoadedMessage, DisplayConfigSavedMessage, DisplayConfigErrorMessage, CurrentDisplaySettingsMessage } from '../../../src/shared/protocol';
 
 let _vscode: VsCodeApi | null = null;
 let _showStatus: ((msg: string) => void) | null = null;

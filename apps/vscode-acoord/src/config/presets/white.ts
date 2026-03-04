@@ -34,17 +34,23 @@ export const WHITE_PRESET: DisplayConfig = {
     keyLight: {
       intensity: 0.7,
       color: '#CCCCCC',
-      position: { x: 0, y: 0, z: 10 }
+      x: 0,
+      y: 0,
+      z: 10
     },
     fillLight: {
       intensity: 0,
       color: '#ffffff',
-      position: { x: -10, y: -5, z: 5 }
+      x: -10,
+      y: -5,
+      z: 5
     },
     rimLight: {
       intensity: 0,
       color: '#ffffff',
-      position: { x: 0, y: 5, z: -10 }
+      x: 0,
+      y: 5,
+      z: -10
     }
   }
 };

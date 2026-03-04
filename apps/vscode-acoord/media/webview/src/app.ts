@@ -9,7 +9,7 @@ import { setup as setupTools } from './appTools';
 import { init as initInteraction } from './interaction';
 import { initVscode as initInteractionConfigVscode, updateConfigSelector } from './interactionConfig';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
-import type { ExtensionToWebviewMessage, RenderMessage } from './messages';
+import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 
 // UI utilities
 import {

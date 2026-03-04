@@ -228,7 +228,7 @@ export class RenderMessageBuilder {
     for (const bond of periodicBonds) {
       const atom1 = structure.getAtom(bond.atomId1);
       const atom2 = structure.getAtom(bond.atomId2);
-      if (!atom1 || !atom2) continue;
+      if (!atom1 || !atom2) {continue;}
 
       const symbolA = parseElement(atom1.element) || atom1.element;
       const symbolB = parseElement(atom2.element) || atom2.element;

@@ -8,7 +8,7 @@ import { AtomEditService } from './atomEditService';
 import { UnitCellService } from './unitCellService';
 import { DocumentService } from './documentService';
 import { DisplayConfigService } from './displayConfigService';
-import type { WebviewToExtensionMessage } from '../types/messages';
+import type { WebviewToExtensionMessage } from '../shared/protocol';
 import type { DisplaySettings } from '../config/types';
 
 export interface MessageHandler {

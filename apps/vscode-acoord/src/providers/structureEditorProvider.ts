@@ -15,8 +15,7 @@ import { UnitCellService } from '../services/unitCellService';
 import { MessageRouter } from '../services/messageRouter';
 import { DisplayConfigService } from '../services/displayConfigService';
 import { DocumentService } from '../services/documentService';
-import type { WebviewToExtensionMessage, ImageSavedMessage, ImageSaveFailedMessage } from '../types/messages';
-import type { WireDisplaySettings } from '../shared/protocol';
+import type { WebviewToExtensionMessage, ImageSavedMessage, ImageSaveFailedMessage, WireDisplaySettings } from '../shared/protocol';
 
 export class StructureDocument implements vscode.CustomDocument {
   constructor(readonly uri: vscode.Uri) {}
