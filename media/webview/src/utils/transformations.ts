@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore, selectionStore, interactionStore, adsorptionStore } from '../state';
 import { renderer } from '../renderer';
 import { getAtomById, updateMeasurements } from './measurements';
 import type { Atom, VsCodeApi } from '../types';
@@ -9,12 +9,12 @@ let rotationBaseIds: string[] = [];
 export function resetRotationBase(): void {
   rotationBase = null;
   rotationBaseIds = [];
-  state.rotationInProgress = false;
+  interactionStore.rotationInProgress = false;
 }
 
 export function captureRotationBase(): { id: string; pos: [number, number, number] }[] | null {
-  if (!state.currentStructure || !state.currentStructure.atoms) return null;
-  rotationBaseIds = [...state.selectedAtomIds];
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  rotationBaseIds = [...selectionStore.selectedAtomIds];
   rotationBase = rotationBaseIds.map((id) => {
     const atom = getAtomById(id);
     return atom ? { id, pos: [...atom.position] as [number, number, number] } : null;
@@ -65,8 +65,8 @@ export function rotateAroundAxis(
 }
 
 export function getSelectedCentroid(): [number, number, number] | null {
-  if (!state.currentStructure || !state.currentStructure.atoms) return null;
-  const ids = state.selectedAtomIds;
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  const ids = selectionStore.selectedAtomIds;
   if (!ids || ids.length === 0) return null;
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const id of ids) {
@@ -97,7 +97,7 @@ export function updateAtomPosition(
 }
 
 export function applyBondAngle(targetDeg: number): void {
-  const ids = state.selectedAtomIds;
+  const ids = selectionStore.selectedAtomIds;
   if (!ids || ids.length < 3) return;
   const atomA = getAtomById(ids[0]);
   const atomB = getAtomById(ids[1]);
@@ -142,17 +142,17 @@ export function applyBondAngle(targetDeg: number): void {
 }
 
 export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCodeApi): void {
-  if (!state.selectedAtomIds || state.selectedAtomIds.length === 0) return;
+  if (!selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length === 0) return;
   const pivot = getSelectedCentroid();
   if (!pivot) return;
-  if (!rotationBase || rotationBaseIds.join(',') !== state.selectedAtomIds.join(',')) {
+  if (!rotationBase || rotationBaseIds.join(',') !== selectionStore.selectedAtomIds.join(',')) {
     captureRotationBase();
   }
   if (!rotationBase) return;
 
-  if (preview && !state.rotationInProgress) {
-    state.rotationInProgress = true;
-    vscode.postMessage({ command: 'beginDrag', atomId: state.selectedAtomIds[0] });
+  if (preview && !interactionStore.rotationInProgress) {
+    interactionStore.rotationInProgress = true;
+    vscode.postMessage({ command: 'beginDrag', atomId: selectionStore.selectedAtomIds[0] });
   }
 
   const angleRad = (angleDeg * Math.PI) / 180;
@@ -160,20 +160,20 @@ export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCode
 
   for (const entry of rotationBase) {
     if (!entry) continue;
-    const rotated = rotateAroundAxis(entry.pos, pivot, state.rotationAxis, angleRad);
+    const rotated = rotateAroundAxis(entry.pos, pivot, interactionStore.rotationAxis, angleRad);
     updateAtomPosition(entry.id, rotated[0], rotated[1], rotated[2]);
     updated.push({ id: entry.id, x: rotated[0], y: rotated[1], z: rotated[2] });
   }
 
-  if (preview && state.currentStructure && state.currentStructure.renderAtoms) {
+  if (preview && structureStore.currentStructure && structureStore.currentStructure.renderAtoms) {
     const baseMap = new Map<string, [number, number, number]>();
-    for (const atom of state.currentStructure.atoms || []) {
+    for (const atom of structureStore.currentStructure.atoms || []) {
       baseMap.set(atom.id, atom.position);
     }
-    for (const renderAtom of state.currentStructure.renderAtoms) {
+    for (const renderAtom of structureStore.currentStructure.renderAtoms) {
       const baseId = String(renderAtom.id).split('::')[0];
       const basePos = baseMap.get(baseId);
-      const offset = state.renderAtomOffsets[renderAtom.id];
+      const offset = interactionStore.renderAtomOffsets[renderAtom.id];
       if (basePos && offset) {
         renderAtom.position = [
           basePos[0] + offset[0],
@@ -186,26 +186,26 @@ export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCode
 
   vscode.postMessage({ command: 'setAtomsPositions', atomPositions: updated, preview: !!preview });
 
-  if (preview && state.currentStructure) {
-    renderer.renderStructure(state.currentStructure, { updateCounts: () => {} }, { fitCamera: false });
+  if (preview && structureStore.currentStructure) {
+    renderer.renderStructure(structureStore.currentStructure, { updateCounts: () => {} }, { fitCamera: false });
   }
 
   if (!preview) {
-    state.rotationInProgress = false;
+    interactionStore.rotationInProgress = false;
     vscode.postMessage({ command: 'endDrag' });
   }
 }
 
 export function getAdsorptionReference(): { anchor: Atom; reference: Atom; distance: number } | null {
-  if (!state.currentStructure || !state.currentStructure.atoms) return null;
-  if (!state.adsorptionReferenceId || state.adsorptionAdsorbateIds.length === 0) return null;
-  const atoms = state.currentStructure.atoms;
-  const referenceAtom = atoms.find((atom) => atom.id === state.adsorptionReferenceId);
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  if (!adsorptionStore.adsorptionReferenceId || adsorptionStore.adsorptionAdsorbateIds.length === 0) return null;
+  const atoms = structureStore.currentStructure.atoms;
+  const referenceAtom = atoms.find((atom) => atom.id === adsorptionStore.adsorptionReferenceId);
   if (!referenceAtom) return null;
   let anchor: Atom | null = null;
   let nearestDist = Infinity;
   for (const atom of atoms) {
-    if (!state.adsorptionAdsorbateIds.includes(atom.id)) { continue; }
+    if (!adsorptionStore.adsorptionAdsorbateIds.includes(atom.id)) { continue; }
     const dx = atom.position[0] - referenceAtom.position[0];
     const dy = atom.position[1] - referenceAtom.position[1];
     const dz = atom.position[2] - referenceAtom.position[2];
@@ -228,7 +228,7 @@ export function applyAdsorptionDistance(target: number, preview: boolean, vscode
   const nx = dx / current;
   const ny = dy / current;
   const nz = dz / current;
-  for (const id of state.adsorptionAdsorbateIds) {
+  for (const id of adsorptionStore.adsorptionAdsorbateIds) {
     const atom = getAtomById(id);
     if (atom) {
       updateAtomPosition(id, atom.position[0] + nx * delta, atom.position[1] + ny * delta, atom.position[2] + nz * delta);
@@ -236,7 +236,7 @@ export function applyAdsorptionDistance(target: number, preview: boolean, vscode
   }
   vscode.postMessage({
     command: 'moveGroup',
-    atomIds: state.adsorptionAdsorbateIds,
+    atomIds: adsorptionStore.adsorptionAdsorbateIds,
     dx: nx * delta, dy: ny * delta, dz: nz * delta,
     preview: !!preview,
   });

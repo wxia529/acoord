@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore } from '../state';
 import { getFractionalCoords } from '../utils/measurements';
 
 let renderStatus = 'Ready.';
@@ -20,7 +20,7 @@ export function setStatus(message: string): void {
 export function updateStatusBar(force?: boolean): void {
   const statusEl = document.getElementById('status-text') as HTMLElement | null;
   if (!statusEl) return;
-  const selected = state.currentSelectedAtom;
+  const selected = structureStore.currentSelectedAtom;
   const selectedId = selected ? selected.id : null;
   if (!force && statusSelectionLock && selectedId === lastStatusSelectedId) {
     return;
@@ -33,7 +33,7 @@ export function updateStatusBar(force?: boolean): void {
 
   const cart = selected.position || [0, 0, 0];
   const cartText = `Cart: ${cart[0].toFixed(4)}, ${cart[1].toFixed(4)}, ${cart[2].toFixed(4)}`;
-  const frac = getFractionalCoords(cart, state.currentStructure && state.currentStructure.unitCellParams);
+  const frac = getFractionalCoords(cart, structureStore.currentStructure && structureStore.currentStructure.unitCellParams);
   const fracText = frac
     ? ` | Frac: ${frac[0].toFixed(4)}, ${frac[1].toFixed(4)}, ${frac[2].toFixed(4)}`
     : '';

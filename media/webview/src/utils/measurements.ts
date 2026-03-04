@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore, selectionStore } from '../state';
 import type { Atom, UnitCellParams } from '../types';
 
 export function invert3x3(
@@ -58,14 +58,14 @@ export function getFractionalCoords(
 }
 
 export function getAtomById(atomId: string): Atom | null {
-  if (!state.currentStructure || !state.currentStructure.atoms) return null;
-  return state.currentStructure.atoms.find((atom) => atom.id === atomId) || null;
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  return structureStore.currentStructure.atoms.find((atom) => atom.id === atomId) || null;
 }
 
 export function updateMeasurements(): void {
   const lengthEl = document.getElementById('bond-length') as HTMLElement | null;
   const angleEl = document.getElementById('bond-angle') as HTMLElement | null;
-  const selected = state.selectedAtomIds;
+  const selected = selectionStore.selectedAtomIds;
   if (selected.length < 2) {
     if (lengthEl) lengthEl.textContent = '--';
     if (angleEl) angleEl.textContent = '--';

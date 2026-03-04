@@ -8,16 +8,20 @@ import { AtomEditService } from './atomEditService';
 import { UnitCellService } from './unitCellService';
 import { DocumentService } from './documentService';
 import { DisplayConfigService } from './displayConfigService';
-import type { WebviewToExtensionMessage } from '../shared/protocol';
+import type { WebviewToExtensionMessage, MessageByCommand } from '../shared/protocol';
 import type { DisplaySettings } from '../config/types';
 
-export interface MessageHandler {
-  command: string;
-  handler: (message: any) => Promise<boolean> | boolean;
-}
+type AnyHandler = (message: any) => Promise<boolean> | boolean;
 
 export class MessageRouter {
-  private handlers = new Map<string, (message: any) => Promise<boolean> | boolean>();
+  private handlers = new Map<string, AnyHandler>();
+
+  registerTyped<C extends WebviewToExtensionMessage['command']>(
+    command: C,
+    handler: (message: MessageByCommand<C>) => Promise<boolean> | boolean
+  ): void {
+    this.handlers.set(command, handler as AnyHandler);
+  }
 
   constructor(
     private renderer: RenderMessageBuilder,
@@ -44,8 +48,11 @@ export class MessageRouter {
     this.registerDisplayConfigCommands();
   }
 
-  register(handler: MessageHandler): void {
-    this.handlers.set(handler.command, handler.handler);
+  register<C extends WebviewToExtensionMessage['command']>(
+    command: C,
+    handler: (message: MessageByCommand<C>) => Promise<boolean> | boolean
+  ): void {
+    this.registerTyped(command, handler);
   }
 
   async route(message: WebviewToExtensionMessage): Promise<boolean> {
@@ -69,11 +76,11 @@ export class MessageRouter {
   }
 
   private registerCoreCommands(): void {
-    this.handlers.set('getState', () => {
+    this.registerTyped('getState', () => {
       return true;
     });
 
-    this.handlers.set('setTrajectoryFrame', (message) => {
+    this.registerTyped('setTrajectoryFrame', (message) => {
       if (this.trajectoryManager.frameCount <= 1) {
         return true;
       }
@@ -92,7 +99,7 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('beginDrag', (message) => {
+    this.registerTyped('beginDrag', (message) => {
       if (message.atomId && !this.trajectoryManager.isEditing) {
         const editStructure = this.trajectoryManager.beginEdit();
         this.undoManager.push(editStructure);
@@ -100,20 +107,20 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('endDrag', () => {
+    this.registerTyped('endDrag', () => {
       if (this.trajectoryManager.isEditing) {
         this.trajectoryManager.commitEdit();
       }
       return true;
     });
 
-    this.handlers.set('undo', () => {
+    this.registerTyped('undo', () => {
       return false;
     });
   }
 
   private registerSelectionCommands(): void {
-    this.handlers.set('selectAtom', (message) => {
+    this.registerTyped('selectAtom', (message) => {
       if (message.atomId) {
         if (message.add) {
           this.selectionService.toggleAtomSelection(message.atomId);
@@ -125,14 +132,13 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('setSelection', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      this.selectionService.setSelection(ids);
+    this.registerTyped('setSelection', (message) => {
+      this.selectionService.setSelection(message.atomIds);
       this.selectionService.deselectBond();
       return true;
     });
 
-    this.handlers.set('selectBond', (message) => {
+    this.registerTyped('selectBond', (message) => {
       const bondKey = typeof message.bondKey === 'string' && message.bondKey.trim()
         ? message.bondKey.trim()
         : undefined;
@@ -144,38 +150,30 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('setBondSelection', (message) => {
-      const keys: string[] = Array.isArray(message.bondKeys)
-        ? message.bondKeys.filter((k: unknown) => typeof k === 'string')
-        : [];
-      this.selectionService.setBondSelection(keys);
+    this.registerTyped('setBondSelection', (message) => {
+      this.selectionService.setBondSelection(message.bondKeys);
       return true;
     });
   }
 
   private registerAtomEditCommands(): void {
-    this.handlers.set('addAtom', (message) => {
-      const element = String(message.element || '');
-      const x = message.x || 0;
-      const y = message.y || 0;
-      const z = message.z || 0;
-      return this.atomEditService.addAtom(element, x, y, z);
+    this.registerTyped('addAtom', (message) => {
+      return this.atomEditService.addAtom(message.element, message.x, message.y, message.z);
     });
 
-    this.handlers.set('deleteAtom', (message) => {
+    this.registerTyped('deleteAtom', (message) => {
       if (message.atomId) {
         this.atomEditService.deleteAtom(message.atomId);
       }
       return true;
     });
 
-    this.handlers.set('deleteAtoms', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      this.atomEditService.deleteAtoms(ids);
+    this.registerTyped('deleteAtoms', (message) => {
+      this.atomEditService.deleteAtoms(message.atomIds);
       return true;
     });
 
-    this.handlers.set('moveAtom', (message) => {
+    this.registerTyped('moveAtom', (message) => {
       if (message.atomId) {
         this.atomEditService.moveAtom(
           message.atomId,
@@ -188,39 +186,32 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('moveGroup', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      this.atomEditService.moveGroup(ids, message.dx, message.dy, message.dz, message.preview);
+    this.registerTyped('moveGroup', (message) => {
+      this.atomEditService.moveGroup(message.atomIds, message.dx, message.dy, message.dz, message.preview);
       return true;
     });
 
-    this.handlers.set('setAtomsPositions', (message) => {
-      const updates = Array.isArray(message.atomPositions) ? message.atomPositions : [];
-      this.atomEditService.setAtomPositions(updates, message.preview);
+    this.registerTyped('setAtomsPositions', (message) => {
+      this.atomEditService.setAtomPositions(message.atomPositions, message.preview);
       return true;
     });
 
-    this.handlers.set('copyAtoms', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      const offset = message.offset || { x: 0.5, y: 0.5, z: 0.5 };
-      this.atomEditService.copyAtoms(ids, offset);
+    this.registerTyped('copyAtoms', (message) => {
+      this.atomEditService.copyAtoms(message.atomIds, message.offset);
       return true;
     });
 
-    this.handlers.set('changeAtoms', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      this.atomEditService.changeAtoms(ids, message.element);
+    this.registerTyped('changeAtoms', (message) => {
+      this.atomEditService.changeAtoms(message.atomIds, message.element);
       return true;
     });
 
-    this.handlers.set('setAtomColor', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      const color = typeof message.color === 'string' ? message.color.trim() : '';
-      this.atomEditService.setAtomColor(ids, color);
+    this.registerTyped('setAtomColor', (message) => {
+      this.atomEditService.setAtomColor(message.atomIds, message.color);
       return true;
     });
 
-    this.handlers.set('updateAtom', (message) => {
+    this.registerTyped('updateAtom', (message) => {
       if (message.atomId) {
         this.atomEditService.updateAtom(message.atomId, {
           element: message.element,
@@ -232,52 +223,48 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('setBondLength', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      this.bondService.setBondLength(ids, message.length);
+    this.registerTyped('setBondLength', (message) => {
+      this.bondService.setBondLength(message.atomIds, message.length);
       return true;
     });
   }
 
   private registerBondCommands(): void {
-    this.handlers.set('createBond', (message) => {
-      const ids: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
-      if (ids.length >= 2) {
-        this.bondService.createBond(ids[0], ids[1]);
+    this.registerTyped('createBond', (message) => {
+      if (message.atomIds.length >= 2) {
+        this.bondService.createBond(message.atomIds[0], message.atomIds[1]);
       }
       return true;
     });
 
-    this.handlers.set('deleteBond', (message) => {
-      const bondKey = message.bondKey;
+    this.registerTyped('deleteBond', (message) => {
       const atomIds: string[] = Array.isArray(message.atomIds) ? message.atomIds : [];
       const bondKeys: string[] = Array.isArray(message.bondKeys) ? message.bondKeys : [];
-      this.bondService.deleteBond(bondKey, atomIds, bondKeys);
+      this.bondService.deleteBond(message.bondKey, atomIds, bondKeys);
       return true;
     });
 
-    this.handlers.set('recalculateBonds', () => {
+    this.registerTyped('recalculateBonds', () => {
       this.bondService.recalculateBonds();
       return true;
     });
   }
 
   private registerUnitCellCommands(): void {
-    this.handlers.set('toggleUnitCell', () => {
+    this.registerTyped('toggleUnitCell', () => {
       this.unitCellService.toggleUnitCell();
       return true;
     });
 
-    this.handlers.set('setUnitCell', (message) => {
-      const params = message.params || {};
+    this.registerTyped('setUnitCell', (message) => {
       const isValid = this.unitCellService.setUnitCell(
         {
-          a: Number(params.a),
-          b: Number(params.b),
-          c: Number(params.c),
-          alpha: Number(params.alpha),
-          beta: Number(params.beta),
-          gamma: Number(params.gamma),
+          a: message.params.a,
+          b: message.params.b,
+          c: message.params.c,
+          alpha: message.params.alpha,
+          beta: message.params.beta,
+          gamma: message.params.gamma,
         },
         message.scaleAtoms
       );
@@ -287,27 +274,27 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('clearUnitCell', () => {
+    this.registerTyped('clearUnitCell', () => {
       this.unitCellService.clearUnitCell();
       return true;
     });
 
-    this.handlers.set('centerToUnitCell', async () => {
+    this.registerTyped('centerToUnitCell', async () => {
       return await this.unitCellService.centerToUnitCell();
     });
 
-    this.handlers.set('setSupercell', (message) => {
-      const sc = Array.isArray(message.supercell) ? message.supercell : [1, 1, 1];
-      const nx = Math.max(1, Math.floor(Number(sc[0]) || 1));
-      const ny = Math.max(1, Math.floor(Number(sc[1]) || 1));
-      const nz = Math.max(1, Math.floor(Number(sc[2]) || 1));
+    this.registerTyped('setSupercell', (message) => {
+      const [s0, s1, s2] = message.supercell;
+      const nx = Math.max(1, Math.floor(Number(s0) || 1));
+      const ny = Math.max(1, Math.floor(Number(s1) || 1));
+      const nz = Math.max(1, Math.floor(Number(s2) || 1));
       this.unitCellService.setSupercell([nx, ny, nz]);
       return true;
     });
   }
 
   private registerDocumentCommands(): void {
-    this.handlers.set('saveStructure', async () => {
+    this.registerTyped('saveStructure', async () => {
       await this.documentService.saveStructure(
         this.sessionKey,
         this.trajectoryManager.activeStructure,
@@ -316,7 +303,7 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('saveStructureAs', async () => {
+    this.registerTyped('saveStructureAs', async () => {
       await this.documentService.saveStructureAs(
         this.sessionKey,
         this.trajectoryManager.activeStructure,
@@ -326,19 +313,17 @@ export class MessageRouter {
       return true;
     });
 
-    this.handlers.set('saveRenderedImage', async (message) => {
-      const dataUrl = typeof message.dataUrl === 'string' ? message.dataUrl : '';
-      const suggestedName = message.suggestedName || '';
-      await this.documentService.saveRenderedImage(dataUrl, suggestedName, this.webviewPanel);
+    this.registerTyped('saveRenderedImage', async (message) => {
+      await this.documentService.saveRenderedImage(message.dataUrl, message.suggestedName ?? '', this.webviewPanel);
       return true;
     });
 
-    this.handlers.set('openSource', async () => {
+    this.registerTyped('openSource', async () => {
       await this.documentService.openSource(this.sessionKey);
       return true;
     });
 
-    this.handlers.set('reloadStructure', async () => {
+    this.registerTyped('reloadStructure', async () => {
       await this.documentService.reloadStructure(
         this.sessionKey,
         this.trajectoryManager,
@@ -352,49 +337,49 @@ export class MessageRouter {
   }
 
   private registerDisplayConfigCommands(): void {
-    this.handlers.set('getDisplayConfigs', async () => {
+    this.registerTyped('getDisplayConfigs', async () => {
       return await this.displayConfigService.handleGetDisplayConfigs();
     });
 
-    this.handlers.set('loadDisplayConfig', async (message) => {
+    this.registerTyped('loadDisplayConfig', async (message) => {
       return await this.displayConfigService.handleLoadDisplayConfig(message.configId);
     });
 
-    this.handlers.set('promptSaveDisplayConfig', async (message) => {
-      return await this.displayConfigService.handlePromptSaveDisplayConfig(message.settings);
+    this.registerTyped('promptSaveDisplayConfig', async (message) => {
+      return await this.displayConfigService.handlePromptSaveDisplayConfig(message.settings as DisplaySettings | undefined);
     });
 
-    this.handlers.set('saveDisplayConfig', async (message) => {
+    this.registerTyped('saveDisplayConfig', async (message) => {
       return await this.displayConfigService.handleSaveDisplayConfig(
         message.name,
-        message.settings,
+        message.settings as DisplaySettings,
         message.description,
         message.existingId
       );
     });
 
-    this.handlers.set('getCurrentDisplaySettings', async () => {
+    this.registerTyped('getCurrentDisplaySettings', async () => {
       return await this.displayConfigService.handleGetCurrentDisplaySettings();
     });
 
-    this.handlers.set('updateDisplaySettings', (message) => {
+    this.registerTyped('updateDisplaySettings', (message) => {
       this.displayConfigService.updateDisplaySettings(message.settings);
       return true;
     });
 
-    this.handlers.set('exportDisplayConfigs', async () => {
+    this.registerTyped('exportDisplayConfigs', async () => {
       return await this.displayConfigService.handleExportDisplayConfigs();
     });
 
-    this.handlers.set('importDisplayConfigs', async () => {
+    this.registerTyped('importDisplayConfigs', async () => {
       return await this.displayConfigService.handleImportDisplayConfigs();
     });
 
-    this.handlers.set('confirmDeleteDisplayConfig', async (message) => {
+    this.registerTyped('confirmDeleteDisplayConfig', async (message) => {
       return await this.displayConfigService.handleConfirmDeleteDisplayConfig(message.configId);
     });
 
-    this.handlers.set('deleteDisplayConfig', async (message) => {
+    this.registerTyped('deleteDisplayConfig', async (message) => {
       return await this.displayConfigService.handleDeleteDisplayConfig(message.configId);
     });
   }

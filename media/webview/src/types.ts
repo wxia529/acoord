@@ -37,69 +37,6 @@ export interface AvailableConfigs {
   user: ConfigEntry[];
 }
 
-export interface AppState {
-  currentStructure: Structure | null;
-  currentSelectedAtom: Atom | null;
-  currentSelectedBondKey: string | null;
-  selectedBondKeys: string[];
-  selectedAtomIds: string[];
-  isDragging: boolean;
-  dragAtomId: string | null;
-  adsorptionReferenceId: string | null;
-  adsorptionAdsorbateIds: string[];
-  manualScale: number;
-  autoScaleEnabled: boolean;
-  atomSizeScale: number;
-  bondThicknessScale: number;
-  viewZoom: number;
-  projectionMode: string;
-  scaleAtomsWithLattice: boolean;
-  supercell: [number, number, number];
-  unitCellEditing: boolean;
-  renderAtomOffsets: Record<string, [number, number, number]>;
-  shouldFitCamera: boolean;
-  groupMoveActive: boolean;
-  trajectoryFrameIndex: number;
-  trajectoryFrameCount: number;
-  trajectoryPlaying: boolean;
-  trajectoryPlaybackFps: number;
-  lastDragWorld: { x: number; y: number; z: number } | null;
-  dragPlaneNormal: { x: number; y: number; z: number } | null;
-  rotationAxis: string;
-  rotationInProgress: boolean;
-
-  // Display settings
-  showAxes: boolean;
-  backgroundColor: string;
-  unitCellColor: string;
-  unitCellThickness: number;
-  unitCellLineStyle: string;
-  atomSizeUseDefaultSettings: boolean;
-  atomSizeGlobal: number;
-  atomSizeByElement: Record<string, number>;
-  atomSizeByAtom: Record<string, number>;
-  atomSizeElementExpanded: boolean;
-  shininess: number;
-
-  // Lighting settings
-  lightingEnabled: boolean;
-  ambientIntensity: number;
-  ambientColor: string;
-  keyLight: LightConfig;
-  fillLight: LightConfig;
-  rimLight: LightConfig;
-
-  // Configuration management
-  currentConfigId: string;
-  currentConfigName: string;
-  availableConfigs: AvailableConfigs;
-  isLoadingConfig: boolean;
-
-  // Methods
-  extractDisplaySettings(): DisplaySettings;
-  applyDisplaySettings(settings: DisplaySettings): void;
-}
-
 export interface VsCodeApi {
   postMessage(message: unknown): void;
   getState(): unknown;
@@ -189,6 +126,4 @@ export interface AppCallbacks
     SelectionContext,
     TransformContext,
     EditContext {
-  /** @deprecated Access state directly or through specific store modules */
-  state: AppState;
 }

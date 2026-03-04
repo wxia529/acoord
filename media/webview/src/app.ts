@@ -1,4 +1,4 @@
-import { structureStore, selectionStore, displayStore, adsorptionStore, interactionStore, applyDisplaySettings, state } from './state';
+import { structureStore, selectionStore, displayStore, adsorptionStore, interactionStore, applyDisplaySettings } from './state';
 import { renderer } from './renderer';
 import * as configHandler from './configHandler';
 import * as appTrajectory from './appTrajectory';
@@ -176,7 +176,6 @@ function setupUI(): void {
   // Module setup callbacks
   const callbacks: AppCallbacks = {
     vscode,
-    state,
     renderer,
     setError,
     rerenderCurrentStructure,
