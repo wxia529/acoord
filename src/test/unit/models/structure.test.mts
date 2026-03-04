@@ -1,7 +1,7 @@
 import { expect } from 'chai';
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { UnitCell } from '../../models/unitCell';
+import { Structure } from '../../../models/structure.js';
+import { Atom } from '../../../models/atom.js';
+import { UnitCell } from '../../../models/unitCell.js';
 
 describe('Structure', () => {
   describe('Basic Structure Creation', () => {
@@ -104,7 +104,7 @@ describe('Structure', () => {
       const bonds = structure.getBonds();
       expect(bonds).to.have.lengthOf(2);
 
-      const bondPairs = bonds.map(b => [b.atomId1, b.atomId2].sort());
+      const bondPairs = bonds.map((b: { atomId1: string; atomId2: string }) => [b.atomId1, b.atomId2].sort());
       const expectedPairs = [
         [h1.id, o.id].sort(),
         [h2.id, o.id].sort()

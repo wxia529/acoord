@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import { UnitCell } from '../../models/unitCell';
+import { UnitCell } from '../../../models/unitCell.js';
 
 describe('UnitCell', () => {
   describe('Basic Unit Cell Creation', () => {

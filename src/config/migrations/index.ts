@@ -1,4 +1,4 @@
-import { DisplayConfig, Migration } from '../types';
+import { DisplayConfig, Migration } from '../types.js';
 
 /**
  * Manages configuration migrations between schema versions

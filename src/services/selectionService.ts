@@ -1,4 +1,4 @@
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
 
 export interface SelectionState {
   selectedAtomIds: string[];

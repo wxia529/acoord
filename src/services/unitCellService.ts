@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
-import { UnitCell } from '../models/unitCell';
-import { UndoManager } from '../providers/undoManager';
-import { TrajectoryManager } from '../providers/trajectoryManager';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import { UnitCell } from '../models/unitCell.js';
+import { UndoManager } from '../providers/undoManager.js';
+import { TrajectoryManager } from '../providers/trajectoryManager.js';
 
 export interface UnitCellParams {
   a: number;

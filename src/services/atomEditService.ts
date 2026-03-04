@@ -1,8 +1,8 @@
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
-import { Atom } from '../models/atom';
-import { UndoManager } from '../providers/undoManager';
-import { TrajectoryManager } from '../providers/trajectoryManager';
-import { parseElement } from '../utils/elementData';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import { Atom } from '../models/atom.js';
+import { UndoManager } from '../providers/undoManager.js';
+import { TrajectoryManager } from '../providers/trajectoryManager.js';
+import { parseElement } from '../utils/elementData.js';
 
 export interface PositionUpdate {
   id: string;

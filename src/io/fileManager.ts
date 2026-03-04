@@ -1,4 +1,4 @@
-import { Structure } from '../models/structure';
+import { Structure } from '../models/structure.js';
 import {
   XYZParser,
   CIFParser,
@@ -11,7 +11,7 @@ import {
   PDBParser,
   STRUParser,
   BaseStructureParser,
-} from './parsers';
+} from './parsers/index.js';
 
 /**
  * File extension to parser mapping

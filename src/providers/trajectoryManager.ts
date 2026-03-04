@@ -1,4 +1,4 @@
-import { Structure } from '../models/structure';
+import { Structure } from '../models/structure.js';
 
 export class TrajectoryManager {
   private _frames: Structure[] = [];

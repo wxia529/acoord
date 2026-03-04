@@ -1,5 +1,5 @@
-import { DisplayConfig, DisplaySettings, ValidationResult } from './types';
-import { parseElement } from '../utils/elementData';
+import { DisplayConfig, DisplaySettings, ValidationResult } from './types.js';
+import { parseElement } from '../utils/elementData.js';
 
 /**
  * Validates display configurations

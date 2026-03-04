@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Structure } from '../models/structure';
-import { FileManager } from '../io/fileManager';
+import { Structure } from '../models/structure.js';
+import { FileManager } from '../io/fileManager.js';
 
 /**
  * Handles all file I/O for structure documents: loading, saving in-place, and

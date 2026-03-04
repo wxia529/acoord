@@ -1,8 +1,8 @@
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { UnitCell } from '../../models/unitCell';
-import { parseElement } from '../../utils/elementData';
-import { BaseStructureParser } from './structureParser';
+import { Structure } from '../../models/structure.js';
+import { Atom } from '../../models/atom.js';
+import { UnitCell } from '../../models/unitCell.js';
+import { parseElement } from '../../utils/elementData.js';
+import { BaseStructureParser } from './structureParser.js';
 
 /**
  * PDB file format parser (basic support for CRYST1 and ATOM/HETATM)
@@ -97,7 +97,7 @@ export class PDBParser extends BaseStructureParser {
       const charge = '  ';
 
       lines.push(
-        `ATOM  ${serial} ${name}${resName}${chainID}${resSeq}${iCode}   ${x}${y}${z}${occupancy.padStart(6)}${tempFactor.padStart(6)}          ${element}${charge}`
+        `ATOM  ${serial} ${name}${resName}${chainID}${resSeq}${iCode}   ${x}${y}${z}${occupancy.padStart(6)}${tempFactor.padStart(6)}            ${element}${charge}`
       );
       atomIndex++;
     }

@@ -1,7 +1,7 @@
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { parseElement } from '../../utils/elementData';
-import { BaseStructureParser } from './structureParser';
+import { Structure } from '../../models/structure.js';
+import { Atom } from '../../models/atom.js';
+import { parseElement } from '../../utils/elementData.js';
+import { BaseStructureParser } from './structureParser.js';
 
 /**
  * ORCA input file parser (.inp)
