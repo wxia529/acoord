@@ -2,17 +2,19 @@
  * Cache for DOM elements to avoid repeated getElementById calls
  */
 
-const elementCache = new Map<string, HTMLElement | null>();
+const elementCache = new Map<string, HTMLElement>();
 
 export function getElementById<T extends HTMLElement = HTMLElement>(
   id: string
 ): T | null {
   if (elementCache.has(id)) {
-    return elementCache.get(id) as T | null;
+    return elementCache.get(id) as T;
   }
 
   const element = document.getElementById(id) as T | null;
-  elementCache.set(id, element);
+  if (element) {
+    elementCache.set(id, element);
+  }
   return element;
 }
 
