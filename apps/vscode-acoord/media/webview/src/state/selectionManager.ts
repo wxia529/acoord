@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore, selectionStore, adsorptionStore } from '../state';
 import { getAtomById } from '../utils/measurements';
 import { hasAtomSizeOverride } from '../utils/atomSize';
 import type { Atom, VsCodeApi } from '../types';
@@ -11,8 +11,8 @@ export function parseBondPairFromKey(bondKey: string): [string, string] | null {
 }
 
 export function getSelectedBondKeys(): string[] {
-  const keys = Array.isArray(state.selectedBondKeys) ? state.selectedBondKeys : [];
-  return keys.filter((key) => typeof key === 'string' && key.trim().length > 0);
+  const keys = Array.isArray(selectionStore.selectedBondKeys) ? selectionStore.selectedBondKeys : [];
+  return keys.filter((key: string) => typeof key === 'string' && key.trim().length > 0);
 }
 
 export function updateBondSelectionUI(): void {
@@ -38,7 +38,7 @@ export function updateBondSelectionUI(): void {
   }
   deleteBtn.disabled = !(
     selectedBondKeys.length > 0 ||
-    (state.selectedAtomIds && state.selectedAtomIds.length >= 2)
+    (selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.length >= 2)
   );
 }
 
@@ -47,8 +47,8 @@ export function setSelectedBondSelection(bondKeys: string[], syncBackend: boolea
     new Set((Array.isArray(bondKeys) ? bondKeys : [])
       .filter((key) => typeof key === 'string' && key.trim().length > 0))
   );
-  state.selectedBondKeys = normalized;
-  state.currentSelectedBondKey = normalized.length > 0 ? normalized[normalized.length - 1] : null;
+  selectionStore.selectedBondKeys = normalized;
+  structureStore.currentSelectedBondKey = normalized.length > 0 ? normalized[normalized.length - 1] : null;
   updateBondSelectionUI();
   if (syncBackend) {
     vscode.postMessage({ command: 'setBondSelection', bondKeys: normalized });
@@ -102,7 +102,7 @@ export function updateAtomList(
   }
 ): void {
   const derivedSelectedIds = atoms.filter((atom) => atom.selected).map((atom) => atom.id);
-  const fallbackIds = state.selectedAtomIds || [];
+  const fallbackIds = selectionStore.selectedAtomIds || [];
   const effectiveSelectedId =
     selectedId ||
     selectedIds[selectedIds.length - 1] ||
@@ -139,14 +139,14 @@ export function updateAtomList(
   }
 
   const selected = atoms.find((atom) => atom.id === effectiveSelectedId) || null;
-  state.currentSelectedAtom = selected;
-  state.selectedAtomIds = normalizedSelectedIds;
+  structureStore.currentSelectedAtom = selected;
+  selectionStore.selectedAtomIds = normalizedSelectedIds;
   if (normalizedSelectedIds.length >= 2) {
-    state.adsorptionReferenceId = normalizedSelectedIds[normalizedSelectedIds.length - 1];
-    state.adsorptionAdsorbateIds = normalizedSelectedIds.slice(0, -1);
+    adsorptionStore.adsorptionReferenceId = normalizedSelectedIds[normalizedSelectedIds.length - 1];
+    adsorptionStore.adsorptionAdsorbateIds = normalizedSelectedIds.slice(0, -1);
   } else {
-    state.adsorptionReferenceId = null;
-    state.adsorptionAdsorbateIds = normalizedSelectedIds.slice();
+    adsorptionStore.adsorptionReferenceId = null;
+    adsorptionStore.adsorptionAdsorbateIds = normalizedSelectedIds.slice();
   }
   callbacks.updateSelectedInputs(selected);
   callbacks.updateAtomColorPreview();
@@ -170,12 +170,12 @@ export function handleSelect(
     updateStatusBar: () => void;
   }
 ): void {
-  if (!state.currentStructure || !state.currentStructure.atoms) {
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) {
     vscode.postMessage({ command: 'selectAtom', atomId, add: !!add });
     return;
   }
-  const atoms = state.currentStructure.atoms;
-  let next = add || preserve ? [...state.selectedAtomIds] : [];
+  const atoms = structureStore.currentStructure.atoms;
+  let next = add || preserve ? [...selectionStore.selectedAtomIds] : [];
   const alreadySelected = next.includes(atomId);
   if (preserve && alreadySelected) {
     // Keep current selection when shift-dragging a selected atom.
@@ -208,8 +208,8 @@ export function applySelectionFromIds(
     updateStatusBar: () => void;
   }
 ): void {
-  if (!state.currentStructure || !state.currentStructure.atoms) { return; }
-  const currentIds = state.selectedAtomIds || [];
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) { return; }
+  const currentIds = selectionStore.selectedAtomIds || [];
   const nextSet = new Set<string>();
   if (mode === 'add') {
     for (const id of currentIds) nextSet.add(id);
@@ -221,7 +221,7 @@ export function applySelectionFromIds(
     for (const id of atomIds) nextSet.add(id);
   }
 
-  const atoms = state.currentStructure.atoms;
+  const atoms = structureStore.currentStructure.atoms;
   const next: string[] = [];
   for (const atom of atoms) {
     const selected = nextSet.has(atom.id);

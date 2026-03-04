@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore, displayStore } from '../state';
 import type { Atom } from '../types';
 
 export const ATOM_SIZE_MIN = 0.1;
@@ -16,8 +16,8 @@ export function getBaseAtomId(atomId: string): string {
 }
 
 export function getCurrentStructureAtoms(): Atom[] {
-  if (!state.currentStructure || !Array.isArray(state.currentStructure.atoms)) { return []; }
-  return state.currentStructure.atoms;
+  if (!structureStore.currentStructure || !Array.isArray(structureStore.currentStructure.atoms)) { return []; }
+  return structureStore.currentStructure.atoms;
 }
 
 export function getAvailableElements(): string[] {
@@ -32,34 +32,34 @@ export function getAvailableElements(): string[] {
 
 export function cleanupAtomSizeOverrides(): void {
   const atoms = getCurrentStructureAtoms();
-  if (!state.atomSizeByAtom || typeof state.atomSizeByAtom !== 'object') {
-    state.atomSizeByAtom = {};
+  if (!displayStore.atomSizeByAtom || typeof displayStore.atomSizeByAtom !== 'object') {
+    displayStore.atomSizeByAtom = {};
   }
-  if (!state.atomSizeByElement || typeof state.atomSizeByElement !== 'object') {
-    state.atomSizeByElement = {};
+  if (!displayStore.atomSizeByElement || typeof displayStore.atomSizeByElement !== 'object') {
+    displayStore.atomSizeByElement = {};
   }
   const atomIds = new Set(atoms.map((atom) => atom.id));
-  for (const atomId of Object.keys(state.atomSizeByAtom)) {
-    if (!atomIds.has(atomId)) { delete state.atomSizeByAtom[atomId]; }
+  for (const atomId of Object.keys(displayStore.atomSizeByAtom)) {
+    if (!atomIds.has(atomId)) { delete displayStore.atomSizeByAtom[atomId]; }
   }
   const elements = new Set(atoms.map((atom) => atom.element));
-  for (const element of Object.keys(state.atomSizeByElement)) {
-    if (!elements.has(element)) { delete state.atomSizeByElement[element]; }
+  for (const element of Object.keys(displayStore.atomSizeByElement)) {
+    if (!elements.has(element)) { delete displayStore.atomSizeByElement[element]; }
   }
 }
 
 export function hasAtomSizeOverride(atomId: string): boolean {
   const baseId = getBaseAtomId(atomId);
-  return Number.isFinite(state.atomSizeByAtom && state.atomSizeByAtom[baseId]);
+  return Number.isFinite(displayStore.atomSizeByAtom && displayStore.atomSizeByAtom[baseId]);
 }
 
 export function hasElementSizeOverride(element: string): boolean {
-  return Number.isFinite(state.atomSizeByElement && state.atomSizeByElement[element]);
+  return Number.isFinite(displayStore.atomSizeByElement && displayStore.atomSizeByElement[element]);
 }
 
 export function getFallbackRadiusForAtom(atom: Atom | null): number {
   if (atom && Number.isFinite(atom.radius)) { return atom.radius; }
-  return clampAtomSize(state.atomSizeGlobal, 0.3);
+  return clampAtomSize(displayStore.atomSizeGlobal, 0.3);
 }
 
 export function getAtomSizeForAtomId(atomId: string): number {
@@ -67,24 +67,24 @@ export function getAtomSizeForAtomId(atomId: string): number {
   const atom = getCurrentStructureAtoms().find((candidate) => candidate.id === baseId) || null;
   const fallback = getFallbackRadiusForAtom(atom);
 
-  if (state.atomSizeUseDefaultSettings !== false) { return fallback; }
+  if (displayStore.atomSizeUseDefaultSettings !== false) { return fallback; }
 
-  const atomOverride = state.atomSizeByAtom && state.atomSizeByAtom[baseId];
+  const atomOverride = displayStore.atomSizeByAtom && displayStore.atomSizeByAtom[baseId];
   if (Number.isFinite(atomOverride)) { return clampAtomSize(atomOverride, fallback); }
 
-  const elementOverride = atom && state.atomSizeByElement
-    ? state.atomSizeByElement[atom.element]
+  const elementOverride = atom && displayStore.atomSizeByElement
+    ? displayStore.atomSizeByElement[atom.element]
     : undefined;
   if (Number.isFinite(elementOverride)) { return clampAtomSize(elementOverride!, fallback); }
 
-  return clampAtomSize(state.atomSizeGlobal, fallback);
+  return clampAtomSize(displayStore.atomSizeGlobal, fallback);
 }
 
 export function getAtomSizeForElement(element: string): number {
   const atom = getCurrentStructureAtoms().find((candidate) => candidate.element === element) || null;
   const fallback = getFallbackRadiusForAtom(atom);
-  if (state.atomSizeUseDefaultSettings !== false) { return fallback; }
-  const elementOverride = state.atomSizeByElement && state.atomSizeByElement[element];
+  if (displayStore.atomSizeUseDefaultSettings !== false) { return fallback; }
+  const elementOverride = displayStore.atomSizeByElement && displayStore.atomSizeByElement[element];
   if (Number.isFinite(elementOverride)) { return clampAtomSize(elementOverride, fallback); }
-  return clampAtomSize(state.atomSizeGlobal, fallback);
+  return clampAtomSize(displayStore.atomSizeGlobal, fallback);
 }

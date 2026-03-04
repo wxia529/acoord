@@ -1,4 +1,4 @@
-import { state } from '../state';
+import { structureStore, selectionStore } from '../state';
 import { getAtomById } from '../utils/measurements';
 import { getAdsorptionReference } from '../utils/transformations';
 import type { Atom } from '../types';
@@ -39,11 +39,11 @@ export function updateAtomColorPreview(): void {
   if (!atomColorPicker || !atomColorText) { return; }
 
   let previewColor: string | null = null;
-  if (state.currentSelectedAtom && state.currentSelectedAtom.color) {
-    previewColor = normalizeHexColor(state.currentSelectedAtom.color);
+  if (structureStore.currentSelectedAtom && structureStore.currentSelectedAtom.color) {
+    previewColor = normalizeHexColor(structureStore.currentSelectedAtom.color);
   }
-  if (!previewColor && state.selectedAtomIds && state.selectedAtomIds.length > 0) {
-    const focusAtomId = state.selectedAtomIds[state.selectedAtomIds.length - 1];
+  if (!previewColor && selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.length > 0) {
+    const focusAtomId = selectionStore.selectedAtomIds[selectionStore.selectedAtomIds.length - 1];
     const atom = getAtomById(focusAtomId);
     if (atom && atom.color) {
       previewColor = normalizeHexColor(atom.color);
@@ -74,7 +74,7 @@ export function updateAdsorptionUI(): void {
 }
 
 export function applySelectedAtomChanges(vscode: { postMessage: (msg: unknown) => void }): void {
-  if (!state.currentSelectedAtom) return;
+  if (!structureStore.currentSelectedAtom) return;
   const el = (document.getElementById('sel-element') as HTMLInputElement | null)?.value.trim() ?? '';
   const x = parseFloat((document.getElementById('sel-x') as HTMLInputElement | null)?.value ?? '');
   const y = parseFloat((document.getElementById('sel-y') as HTMLInputElement | null)?.value ?? '');
@@ -82,8 +82,8 @@ export function applySelectedAtomChanges(vscode: { postMessage: (msg: unknown) =
   if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return;
   vscode.postMessage({
     command: 'updateAtom',
-    atomId: state.currentSelectedAtom.id,
-    element: el || state.currentSelectedAtom.element,
+    atomId: structureStore.currentSelectedAtom.id,
+    element: el || structureStore.currentSelectedAtom.element,
     x, y, z,
   });
 }
