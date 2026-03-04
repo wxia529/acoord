@@ -1,20 +1,20 @@
 import * as vscode from 'vscode';
-import { Structure } from '../models/structure';
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
-import { ConfigManager } from '../config/configManager';
-import { DisplaySettings, DisplayConfig } from '../config/types';
-import { FileManager } from '../io/fileManager';
-import { UndoManager } from './undoManager';
-import { TrajectoryManager } from './trajectoryManager';
-import { StructureDocumentManager } from './structureDocumentManager';
-import { SelectionService } from '../services/selectionService';
-import { BondService } from '../services/bondService';
-import { AtomEditService } from '../services/atomEditService';
-import { UnitCellService } from '../services/unitCellService';
-import { MessageRouter } from '../services/messageRouter';
-import { DisplayConfigService } from '../services/displayConfigService';
-import { DocumentService } from '../services/documentService';
-import type { WebviewToExtensionMessage, WireDisplaySettings } from '../shared/protocol';
+import { Structure } from '../models/structure.js';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import { ConfigManager } from '../config/configManager.js';
+import { DisplaySettings, DisplayConfig } from '../config/types.js';
+import { FileManager } from '../io/fileManager.js';
+import { UndoManager } from './undoManager.js';
+import { TrajectoryManager } from './trajectoryManager.js';
+import { StructureDocumentManager } from './structureDocumentManager.js';
+import { SelectionService } from '../services/selectionService.js';
+import { BondService } from '../services/bondService.js';
+import { AtomEditService } from '../services/atomEditService.js';
+import { UnitCellService } from '../services/unitCellService.js';
+import { MessageRouter } from '../services/messageRouter.js';
+import { DisplayConfigService } from '../services/displayConfigService.js';
+import { DocumentService } from '../services/documentService.js';
+import type { WebviewToExtensionMessage, WireDisplaySettings } from '../shared/protocol.js';
 
 export class StructureDocument implements vscode.CustomDocument {
   /** Frames restored from a hot-exit backup, if one was present at open time. */
@@ -111,7 +111,10 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     const renderer = new RenderMessageBuilder(traj.activeStructure);
     renderer.setTrajectoryFrameInfo(traj.activeIndex, traj.frameCount);
 
-    const undoManager = new UndoManager();
+    const undoMaxDepth = vscode.workspace
+      .getConfiguration('acoord')
+      .get<number>('undoMaxDepth', 100);
+    const undoManager = new UndoManager(undoMaxDepth);
     const selectionService = new SelectionService(renderer);
     const bondService = new BondService(renderer, traj, undoManager, selectionService);
     const atomEditService = new AtomEditService(renderer, traj, undoManager);

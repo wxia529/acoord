@@ -1,6 +1,6 @@
-import { Atom } from './atom';
-import { UnitCell } from './unitCell';
-import { ELEMENT_DATA, parseElement } from '../utils/elementData';
+import { Atom } from './atom.js';
+import { UnitCell } from './unitCell.js';
+import { ELEMENT_DATA, parseElement } from '../utils/elementData.js';
 
 /**
  * Represents a molecular or crystal structure

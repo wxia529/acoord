@@ -1,7 +1,7 @@
 import * as vscode from 'vscode';
-import { ConfigManager } from '../config/configManager';
-import { DisplaySettings } from '../config/types';
-import type { WireDisplaySettings } from '../shared/protocol';
+import { ConfigManager } from '../config/configManager.js';
+import { DisplaySettings } from '../config/types.js';
+import type { WireDisplaySettings } from '../shared/protocol.js';
 
 export type PostMessageCallback = (message: any) => void;
 export type SessionRef = { displaySettings?: DisplaySettings };

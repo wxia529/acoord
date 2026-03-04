@@ -1,4 +1,4 @@
-import { DisplayConfig } from '../types';
+import { DisplayConfig } from '../types.js';
 
 export const WHITE_PRESET: DisplayConfig = {
   id: 'preset-white',

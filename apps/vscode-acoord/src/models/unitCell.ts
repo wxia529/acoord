@@ -61,6 +61,16 @@ export class UnitCell {
     const betaRad = (this.beta * Math.PI) / 180;
     const gammaRad = (this.gamma * Math.PI) / 180;
 
+    // All angles must be strictly between 0° and 180°
+    for (const [name, deg] of [['alpha', this.alpha], ['beta', this.beta], ['gamma', this.gamma]] as [string, number][]) {
+      if (deg <= 0 || deg >= 180) {
+        throw new Error(
+          `Invalid unit cell parameters: ${name}=${deg}° is out of range. ` +
+          `All angles must be strictly between 0° and 180°.`
+        );
+      }
+    }
+
     const sinGamma = Math.sin(gammaRad);
 
     if (Math.abs(sinGamma) < 1e-10) {

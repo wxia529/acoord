@@ -15,7 +15,7 @@ export interface LightConfig {
 
 // Display Settings - Core configuration data
 // This is the extension-side runtime type that extends the wire type
-import type { WireDisplaySettings } from '../shared/protocol';
+import type { WireDisplaySettings } from '../shared/protocol.js';
 
 export interface DisplaySettings extends Required<WireDisplaySettings> {
   // Make all wire fields required in the extension

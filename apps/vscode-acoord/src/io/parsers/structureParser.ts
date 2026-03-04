@@ -1,4 +1,4 @@
-import { Structure } from '../../models/structure';
+import { Structure } from '../../models/structure.js';
 
 /**
  * Base class for structure parsers providing default implementations

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
-import { Structure } from '../models/structure';
-import { FileManager } from '../io/fileManager';
-import { StructureDocumentManager } from '../providers/structureDocumentManager';
-import { TrajectoryManager } from '../providers/trajectoryManager';
+import { Structure } from '../models/structure.js';
+import { FileManager } from '../io/fileManager.js';
+import { StructureDocumentManager } from '../providers/structureDocumentManager.js';
+import { TrajectoryManager } from '../providers/trajectoryManager.js';
 
 export class DocumentService {
   async saveStructure(key: string, activeStructure: Structure, frames: Structure[]): Promise<void> {

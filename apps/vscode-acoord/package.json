@@ -5,6 +5,7 @@
   "publisher": "wxia529",
   "version": "0.2.0",
   "license": "GPL-3.0-only",
+  "type": "module",
   "icon": "media/acoord-icon.png",
   "keywords": [
     "chemistry",
@@ -129,6 +130,18 @@
         }
       ]
     },
+    "configuration": {
+      "title": "ACoord",
+      "properties": {
+        "acoord.undoMaxDepth": {
+          "type": "integer",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of undo steps stored per editor session."
+        }
+      }
+    },
     "commands": [
       {
         "command": "acoord.createNewMolecule",
@@ -200,8 +213,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "test:unit": "node src/test/run-tests.mjs",
-    "test:validate": "node src/test/run-tests.mjs"
+    "test:unit": "mocha",
+    "test:validate": "mocha"
   },
   "dependencies": {
     "three": "^0.183.2"
@@ -220,6 +233,7 @@
     "eslint": "^9.39.2",
     "mocha": "^10.8.2",
     "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.54.0"
   }

@@ -1,10 +1,10 @@
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { UnitCell } from '../../models/unitCell';
-import { ELEMENT_DATA, parseElement } from '../../utils/elementData';
-import { BOHR_TO_ANGSTROM } from '../../utils/constants';
-import { fractionalToCartesian } from '../../utils/parserUtils';
-import { BaseStructureParser } from './structureParser';
+import { Structure } from '../../models/structure.js';
+import { Atom } from '../../models/atom.js';
+import { UnitCell } from '../../models/unitCell.js';
+import { ELEMENT_DATA, parseElement } from '../../utils/elementData.js';
+import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
+import { fractionalToCartesian } from '../../utils/parserUtils.js';
+import { BaseStructureParser } from './structureParser.js';
 
 type QEUnit = 'angstrom' | 'bohr' | 'alat' | 'crystal';
 

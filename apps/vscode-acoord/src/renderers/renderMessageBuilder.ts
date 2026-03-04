@@ -1,12 +1,12 @@
-import { Structure } from '../models/structure';
-import { ELEMENT_DATA, parseElement } from '../utils/elementData';
+import { Structure } from '../models/structure.js';
+import { ELEMENT_DATA, parseElement } from '../utils/elementData.js';
 import type {
   WireAtom,
   WireBond,
   WireUnitCell,
   WireUnitCellParams,
   RenderMessage,
-} from '../shared/protocol';
+} from '../shared/protocol.js';
 
 /**
  * Interface for renderer state

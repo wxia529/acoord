@@ -4,12 +4,12 @@
  */
 
 import * as vscode from 'vscode';
-import { StructureEditorProvider } from './providers/structureEditorProvider';
-import { Structure } from './models/structure';
-import { Atom } from './models/atom';
-import { UnitCell } from './models/unitCell';
-import { FileManager } from './io/fileManager';
-import { ConfigManager } from './config/configManager';
+import { StructureEditorProvider } from './providers/structureEditorProvider.js';
+import { Structure } from './models/structure.js';
+import { Atom } from './models/atom.js';
+import { UnitCell } from './models/unitCell.js';
+import { FileManager } from './io/fileManager.js';
+import { ConfigManager } from './config/configManager.js';
 
 /**
  * Extension activation

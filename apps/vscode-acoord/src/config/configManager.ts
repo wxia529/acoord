@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import { ConfigStorage } from './configStorage';
-import { MigrationManager } from './migrations';
-import { ConfigValidator } from './configValidator';
-import { BUILTIN_PRESETS } from './presets';
+import { ConfigStorage } from './configStorage.js';
+import { MigrationManager } from './migrations/index.js';
+import { ConfigValidator } from './configValidator.js';
+import { BUILTIN_PRESETS } from './presets/index.js';
 import {
   DisplayConfig,
   DisplaySettings,
   ConfigMeta,
   ConfigChangeEvent
-} from './types';
+} from './types.js';
 
 /**
  * Main configuration manager

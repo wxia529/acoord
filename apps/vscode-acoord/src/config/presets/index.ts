@@ -1,6 +1,6 @@
-import { DisplayConfig } from '../types';
-import { DEFAULT_PRESET } from './default';
-import { WHITE_PRESET } from './white';
+import { DisplayConfig } from '../types.js';
+import { DEFAULT_PRESET } from './default.js';
+import { WHITE_PRESET } from './white.js';
 
 export const BUILTIN_PRESETS: DisplayConfig[] = [
   DEFAULT_PRESET,

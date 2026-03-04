@@ -1,4 +1,4 @@
-import { Structure } from '../models/structure';
+import { Structure } from '../models/structure.js';
 
 const MAX_ATOMS_FOR_UNDO = 5000;
 const MAX_MEMORY_MB = 100;

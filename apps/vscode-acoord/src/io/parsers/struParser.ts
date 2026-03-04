@@ -1,11 +1,11 @@
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { UnitCell } from '../../models/unitCell';
-import { DEFAULT_NUMERICAL_ORBITALS, ELEMENT_DATA, ElementInfo } from '../../utils/elementData';
-import { parseElement } from '../../utils/elementData';
-import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants';
-import { fractionalToCartesian } from '../../utils/parserUtils';
-import { BaseStructureParser } from './structureParser';
+import { Structure } from '../../models/structure.js';
+import { Atom } from '../../models/atom.js';
+import { UnitCell } from '../../models/unitCell.js';
+import { DEFAULT_NUMERICAL_ORBITALS, ELEMENT_DATA, ElementInfo } from '../../utils/elementData.js';
+import { parseElement } from '../../utils/elementData.js';
+import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants.js';
+import { fractionalToCartesian } from '../../utils/parserUtils.js';
+import { BaseStructureParser } from './structureParser.js';
 
 /**
  * ABACUS STRU file parser (basic support)

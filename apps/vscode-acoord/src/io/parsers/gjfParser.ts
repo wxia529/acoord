@@ -1,8 +1,8 @@
-import { Structure } from '../../models/structure';
-import { Atom } from '../../models/atom';
-import { UnitCell } from '../../models/unitCell';
-import { parseElement } from '../../utils/elementData';
-import { BaseStructureParser } from './structureParser';
+import { Structure } from '../../models/structure.js';
+import { Atom } from '../../models/atom.js';
+import { UnitCell } from '../../models/unitCell.js';
+import { parseElement } from '../../utils/elementData.js';
+import { BaseStructureParser } from './structureParser.js';
 
 /**
  * Gaussian input file format parser (GJF/COM)

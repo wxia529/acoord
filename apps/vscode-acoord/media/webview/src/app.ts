@@ -419,8 +419,19 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       break;
     }
 
-    default:
+    case 'displayConfigsLoaded':
+    case 'displayConfigLoaded':
+    case 'displayConfigSaved':
+    case 'displayConfigChanged':
+    case 'currentDisplaySettings':
+    case 'displayConfigError':
       configHandler.handleMessage(message);
+      break;
+
+    default: {
+      const _exhaustive: never = message;
+      console.warn('Unhandled message command:', (_exhaustive as { command: string }).command);
+    }
   }
 });
 

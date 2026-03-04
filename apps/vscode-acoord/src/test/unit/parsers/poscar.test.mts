@@ -1,14 +1,9 @@
 import { expect } from 'chai';
-import { Structure } from '../../../models/structure';
-import { UnitCell } from '../../../models/unitCell';
+import { Structure } from '../../../models/structure.js';
+import { UnitCell } from '../../../models/unitCell.js';
+import { POSCARParser } from '../../../io/parsers/poscarParser.js';
 
 describe('POSCAR Parser', () => {
-  let POSCARParser: any;
-
-  before(() => {
-    POSCARParser = require('../../../io/parsers/poscarParser').POSCARParser;
-  });
-
   it('should parse a simple POSCAR file', () => {
     const content = `Simple BCC Iron
 1.0

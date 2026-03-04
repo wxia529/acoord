@@ -1,8 +1,8 @@
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
-import { Structure } from '../models/structure';
-import { UndoManager } from '../providers/undoManager';
-import { TrajectoryManager } from '../providers/trajectoryManager';
-import { SelectionService } from './selectionService';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import { Structure } from '../models/structure.js';
+import { UndoManager } from '../providers/undoManager.js';
+import { TrajectoryManager } from '../providers/trajectoryManager.js';
+import { SelectionService } from './selectionService.js';
 
 export class BondService {
   constructor(

@@ -1,14 +1,14 @@
 import * as vscode from 'vscode';
-import { RenderMessageBuilder } from '../renderers/renderMessageBuilder';
-import { UndoManager } from '../providers/undoManager';
-import { TrajectoryManager } from '../providers/trajectoryManager';
-import { SelectionService } from './selectionService';
-import { BondService } from './bondService';
-import { AtomEditService } from './atomEditService';
-import { UnitCellService } from './unitCellService';
-import { DocumentService } from './documentService';
-import { DisplayConfigService } from './displayConfigService';
-import type { WebviewToExtensionMessage, MessageByCommand } from '../shared/protocol';
+import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import { UndoManager } from '../providers/undoManager.js';
+import { TrajectoryManager } from '../providers/trajectoryManager.js';
+import { SelectionService } from './selectionService.js';
+import { BondService } from './bondService.js';
+import { AtomEditService } from './atomEditService.js';
+import { UnitCellService } from './unitCellService.js';
+import { DocumentService } from './documentService.js';
+import { DisplayConfigService } from './displayConfigService.js';
+import type { WebviewToExtensionMessage, MessageByCommand } from '../shared/protocol.js';
 
 type AnyHandler = (message: unknown) => Promise<boolean> | boolean;
 
