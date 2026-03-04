@@ -16,6 +16,7 @@ import { MessageRouter } from '../services/messageRouter';
 import { DisplayConfigService } from '../services/displayConfigService';
 import { DocumentService } from '../services/documentService';
 import type { WebviewToExtensionMessage, ImageSavedMessage, ImageSaveFailedMessage } from '../types/messages';
+import type { WireDisplaySettings } from '../shared/protocol';
 
 export class StructureDocument implements vscode.CustomDocument {
   constructor(readonly uri: vscode.Uri) {}
@@ -347,7 +348,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     const message = renderer.getRenderMessage();
 
     if (session.displaySettings) {
-      message.displaySettings = session.displaySettings;
+      // TODO: Phase 8 - properly consolidate DisplaySettings and WireDisplaySettings types
+      message.displaySettings = session.displaySettings as unknown as WireDisplaySettings;
     }
 
     webviewPanel.webview.postMessage(message);
