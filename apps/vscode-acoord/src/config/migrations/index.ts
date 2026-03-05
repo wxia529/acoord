@@ -4,7 +4,7 @@ import { DisplayConfig, Migration } from '../types.js';
  * Manages configuration migrations between schema versions
  */
 export class MigrationManager {
-  private currentSchemaVersion = 2;
+  private currentSchemaVersion = 3;
   private migrations: Migration[] = [];
 
   constructor() {
@@ -30,6 +30,25 @@ export class MigrationManager {
                 ? settings.scaleAtomsWithLattice
                 : false,
           },
+        };
+      },
+    });
+
+    // v2 → v3: Display Scale panel removed. manualScale and autoScaleEnabled are no
+    // longer used by the UI. atomSizeScale (formerly "Atom size" in Display Scale)
+    // is preserved as-is since it moved into the Atom & Bond Size panel.
+    this.migrations.push({
+      fromVersion: 2,
+      toVersion: 3,
+      migrate: async (config) => {
+        const settings = config.settings || ({} as DisplayConfig['settings']);
+        // Carry forward atomSizeScale so users keep their previous atom scale value.
+        // Drop manualScale and autoScaleEnabled — they are no longer meaningful.
+        const { manualScale: _m, autoScaleEnabled: _a, ...rest } = settings as Record<string, unknown>;
+        return {
+          ...config,
+          schemaVersion: 3,
+          settings: rest as DisplayConfig['settings'],
         };
       },
     });

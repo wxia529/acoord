@@ -1,7 +1,8 @@
 /**
  * View tab module.
  *
- * Wires: Projection selector, Axis View buttons (a/b/c/-a/-b/-c).
+ * Wires: Projection selector, Axis View buttons (a/b/c/-a/-b/-c),
+ *        Rotation panel (tilt/rotate/roll buttons + angle input).
  *
  * setup() must be called once during app initialisation.
  */
@@ -32,6 +33,31 @@ export function setup(): void {
     const btn = document.getElementById(id) as HTMLButtonElement | null;
     if (btn) {
       btn.addEventListener('click', () => { renderer.snapCameraToAxis(axis); });
+    }
+  }
+
+  // ── Rotation panel ─────────────────────────────────────────────────────────
+
+  const angleInput = document.getElementById('rot-angle') as HTMLInputElement | null;
+
+  const getAngle = (): number => {
+    const v = parseFloat(angleInput?.value ?? '15');
+    return Number.isFinite(v) && v > 0 ? v : 15;
+  };
+
+  const rotButtons: Array<[string, string]> = [
+    ['btn-rot-tilt-up',   'tiltUp'],
+    ['btn-rot-tilt-down', 'tiltDown'],
+    ['btn-rot-left',      'rotateLeft'],
+    ['btn-rot-right',     'rotateRight'],
+    ['btn-rot-roll-ccw',  'rollCCW'],
+    ['btn-rot-roll-cw',   'rollCW'],
+  ];
+
+  for (const [id, axis] of rotButtons) {
+    const btn = document.getElementById(id) as HTMLButtonElement | null;
+    if (btn) {
+      btn.addEventListener('click', () => { renderer.rotateCameraBy(axis, getAngle()); });
     }
   }
 }
