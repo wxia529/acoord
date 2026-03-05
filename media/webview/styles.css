@@ -495,3 +495,47 @@ input[type="color"]::-moz-color-swatch {
   border-radius: 6px;
   cursor: pointer;
 }
+
+/* ── Rotation panel ──────────────────────────────────────────────────────── */
+
+.rotation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(3, 32px);
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.rot-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.rot-center,
+.rot-empty {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.rotation-angle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rotation-angle-row label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.rotation-angle-row input[type="number"] {
+  text-align: right;
+}

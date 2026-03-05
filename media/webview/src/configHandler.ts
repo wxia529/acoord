@@ -173,11 +173,6 @@ export function updateUI(): void {
   setInput('bond-size-slider', displayStore.bondThicknessScale);
   setText('bond-size-value', displayStore.bondThicknessScale.toFixed(1) + 'x');
 
-  setInput('scale-slider', displayStore.manualScale);
-  setText('scale-value', displayStore.manualScale.toFixed(1) + 'x');
-
-  setChecked('scale-auto', !!displayStore.autoScaleEnabled);
-
   setInput('size-slider', displayStore.atomSizeScale);
   setText('size-value', displayStore.atomSizeScale.toFixed(2) + 'x');
 

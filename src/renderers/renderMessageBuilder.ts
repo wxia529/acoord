@@ -245,18 +245,66 @@ export class RenderMessageBuilder {
         endPos = [atom2.x, atom2.y, atom2.z] as [number, number, number];
       }
 
-      bonds.push({
-        key: Structure.bondKey(bond.atomId1, bond.atomId2),
-        atomId1: bond.atomId1,
-        atomId2: bond.atomId2,
-        start: [atom1.x, atom1.y, atom1.z] as [number, number, number],
-        end: endPos,
-        radius: 0.04,
-        color: '#C0C0C0',
-        color1: atom1.color || infoA?.color || '#C0C0C0',
-        color2: atom2.color || infoB?.color || '#C0C0C0',
-        selected: this.state.selectedBondKeys.includes(Structure.bondKey(bond.atomId1, bond.atomId2)),
-      });
+      const bondKey = Structure.bondKey(bond.atomId1, bond.atomId2);
+      const isSelected = this.state.selectedBondKeys.includes(bondKey);
+      const colorA = atom1.color || infoA?.color || '#C0C0C0';
+      const colorB = atom2.color || infoB?.color || '#C0C0C0';
+
+      const isCrossBoundary = bond.image && (bond.image[0] !== 0 || bond.image[1] !== 0 || bond.image[2] !== 0);
+      if (isCrossBoundary) {
+        // For cross-boundary bonds, emit two half-stubs so each stub is visually
+        // attached to its own atom and terminates at the cell boundary, matching
+        // the display behavior of professional crystallography viewers (e.g. VESTA).
+        //
+        // Stub 1: atom1 → midpoint (halfway toward atom2's image)
+        const midX = atom1.x + 0.5 * (endPos[0] - atom1.x);
+        const midY = atom1.y + 0.5 * (endPos[1] - atom1.y);
+        const midZ = atom1.z + 0.5 * (endPos[2] - atom1.z);
+        bonds.push({
+          key: bondKey,
+          atomId1: bond.atomId1,
+          atomId2: bond.atomId2,
+          start: [atom1.x, atom1.y, atom1.z],
+          end: [midX, midY, midZ],
+          radius: 0.04,
+          color: colorA,
+          color1: colorA,
+          color2: colorA,
+          selected: isSelected,
+        });
+
+        // Stub 2: atom2 → its own midpoint (halfway toward atom1's image in atom2's cell)
+        // atom1's image in atom2's frame is at atom2 - (endPos - atom1), so
+        // midpoint = atom2 - 0.5*(endPos - atom1)
+        const mid2X = atom2.x - 0.5 * (endPos[0] - atom1.x);
+        const mid2Y = atom2.y - 0.5 * (endPos[1] - atom1.y);
+        const mid2Z = atom2.z - 0.5 * (endPos[2] - atom1.z);
+        bonds.push({
+          key: bondKey,
+          atomId1: bond.atomId2,
+          atomId2: bond.atomId1,
+          start: [atom2.x, atom2.y, atom2.z],
+          end: [mid2X, mid2Y, mid2Z],
+          radius: 0.04,
+          color: colorB,
+          color1: colorB,
+          color2: colorB,
+          selected: isSelected,
+        });
+      } else {
+        bonds.push({
+          key: bondKey,
+          atomId1: bond.atomId1,
+          atomId2: bond.atomId2,
+          start: [atom1.x, atom1.y, atom1.z],
+          end: endPos,
+          radius: 0.04,
+          color: '#C0C0C0',
+          color1: colorA,
+          color2: colorB,
+          selected: isSelected,
+        });
+      }
     }
 
     return bonds;

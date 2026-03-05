@@ -38,6 +38,10 @@ export interface RendererApi {
   updateAtomPosition(atomId: string, position: THREE.Vector3): void;
   /** Mark the renderer dirty so the next animate() frame will re-render. */
   markDirty(): void;
+  /** Rotate the camera view by angleDeg around the given semantic axis.
+   *  axis: 'tiltUp' | 'tiltDown' | 'rotateLeft' | 'rotateRight' | 'rollCCW' | 'rollCW'
+   */
+  rotateCameraBy(axis: string, angleDeg: number): void;
   /** Clean up Three.js resources to prevent memory leaks when the webview closes. */
   dispose(): void;
 }
@@ -1204,8 +1208,51 @@ export const renderer: RendererApi = {
   exportHighResolutionImage,
   updateAtomPosition,
   markDirty,
+  rotateCameraBy,
   dispose,
 };
+
+// axis: 'tiltUp'|'tiltDown'|'rotateLeft'|'rotateRight'|'rollCCW'|'rollCW'
+// Rotates the camera around controls.target by angleDeg.
+function rotateCameraBy(axis: string, angleDeg: number): void {
+  if (!rendererState.camera) return;
+  const ctrl = rendererState.controls as TrackballControls;
+  const target = (ctrl && ctrl.target) ? ctrl.target.clone() : new THREE.Vector3();
+
+  const rad = (angleDeg * Math.PI) / 180;
+  const cam = rendererState.camera;
+
+  // The three camera-space axes
+  const forward = new THREE.Vector3().subVectors(target, cam.position).normalize();
+  const right = new THREE.Vector3().crossVectors(forward, cam.up).normalize();
+  // re-orthogonalise up in case of floating-point drift
+  const up = new THREE.Vector3().crossVectors(right, forward).normalize();
+
+  let rotAxis: THREE.Vector3;
+  let angle = rad;
+  switch (axis) {
+    case 'tiltUp':    rotAxis = right;   break;
+    case 'tiltDown':  rotAxis = right;   angle = -rad; break;
+    case 'rotateLeft':  rotAxis = up;    break;
+    case 'rotateRight': rotAxis = up;    angle = -rad; break;
+    case 'rollCCW': rotAxis = forward; break;
+    case 'rollCW':  rotAxis = forward; angle = -rad; break;
+    default: return;
+  }
+
+  const q = new THREE.Quaternion().setFromAxisAngle(rotAxis, angle);
+  // Rotate camera position around target
+  const offset = new THREE.Vector3().subVectors(cam.position, target).applyQuaternion(q);
+  cam.position.copy(target).add(offset);
+  // Rotate camera up vector
+  cam.up.copy(up).applyQuaternion(q);
+  cam.lookAt(target);
+  cam.updateProjectionMatrix();
+
+  if (ctrl && ctrl.target) ctrl.target.copy(target);
+  if (rendererState.controls) rendererState.controls.update();
+  markDirty();
+}
 
 function dispose(): void {
   if (rendererState.animationFrameId !== null) {

@@ -185,6 +185,28 @@
               </div>
             </div>
           </div>
+
+          <div class="panel">
+            <div class="panel-title">Rotation</div>
+            <div class="input-group">
+              <div class="rotation-grid">
+                <button id="btn-rot-roll-ccw"   class="rot-btn" type="button" title="Roll counter-clockwise">↺</button>
+                <button id="btn-rot-tilt-up"    class="rot-btn" type="button" title="Tilt up">↑</button>
+                <button id="btn-rot-roll-cw"    class="rot-btn" type="button" title="Roll clockwise">↻</button>
+                <button id="btn-rot-left"       class="rot-btn" type="button" title="Rotate left">←</button>
+                <span class="rot-center"></span>
+                <button id="btn-rot-right"      class="rot-btn" type="button" title="Rotate right">→</button>
+                <span class="rot-empty"></span>
+                <button id="btn-rot-tilt-down"  class="rot-btn" type="button" title="Tilt down">↓</button>
+                <span class="rot-empty"></span>
+              </div>
+            </div>
+            <div class="input-group rotation-angle-row">
+              <label>Angle:</label>
+              <input type="number" id="rot-angle" value="45" min="1" max="180" step="1" style="width:60px;" />
+              <span>°</span>
+            </div>
+          </div>
         </div>
 
         <div class="tab-pane" id="tab-display">
@@ -233,7 +255,7 @@
           <div class="panel">
             <div class="panel-title">Atom & Bond Size</div>
             <div class="input-group">
-              <label>Global: <span id="atom-size-global-value">0.30 Å</span></label>
+              <label>Global size: <span id="atom-size-global-value">0.30 Å</span></label>
               <input type="range" id="atom-size-global-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
             </div>
             <div class="input-group">
@@ -255,22 +277,8 @@
               <button id="atom-size-element-toggle" type="button" class="atom-size-element-toggle">By Element ▼</button>
             </div>
             <div id="atom-size-element-list" class="atom-size-element-list" style="display:none;"></div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-title">Display Scale</div>
             <div class="input-group">
-              <label class="checkbox-row">
-                <input type="checkbox" id="scale-auto" />
-                Auto scale
-              </label>
-            </div>
-            <div class="input-group">
-              <label>Manual scale: <span id="scale-value">1.0</span>x</label>
-              <input type="range" id="scale-slider" min="0.2" max="50" step="0.1" value="1" />
-            </div>
-            <div class="input-group">
-              <label>Atom size: <span id="size-value">1.00</span>x</label>
+              <label>Atom scale: <span id="size-value">1.00</span>x</label>
               <input type="range" id="size-slider" min="0.5" max="3" step="0.05" value="1" />
             </div>
           </div>
@@ -492,8 +500,8 @@
             </div>
           </div>
         </div>
-      </div>
-    </div>
+          </div>
+        </div>
   </div>
 
   <div id="status-bar">

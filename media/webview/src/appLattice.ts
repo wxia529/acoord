@@ -2,8 +2,7 @@
  * Lattice tab module.
  *
  * Wires: Lattice Params panel, Supercell panel, Center at Cell,
- *        Display Scale panel (scale/size sliders, auto-scale), projection selector,
- *        Atom & Bond Size panel (global, per-selected, by-element, bond thickness).
+ *        Atom & Bond Size panel (global, per-selected, by-element, bond thickness, atom scale).
  *
  * setup(callbacks) must be called once during app initialisation.
  */
@@ -269,32 +268,8 @@ export function setup(callbacks: AppLatticeContext): void {
 
   // ── Scale / size sliders ───────────────────────────────────────────────────
 
-  const scaleSlider = getElementById<HTMLInputElement>('scale-slider');
   const sizeSlider = getElementById<HTMLInputElement>('size-slider');
   const bondSizeSlider = getElementById<HTMLInputElement>('bond-size-slider');
-  const scaleAuto = getElementById<HTMLInputElement>('scale-auto');
-
-  if (scaleSlider) {
-    scaleSlider.addEventListener('input', (event: Event) => {
-      displayStore.manualScale = parseFloat((event.target as HTMLInputElement).value);
-      const scaleValue = getElementById<HTMLElement>('scale-value');
-      if (scaleValue) scaleValue.textContent = displayStore.manualScale.toFixed(1);
-      if (!displayStore.autoScaleEnabled && structureStore.currentStructure) {
-        debouncedRenderStructure();
-      }
-    });
-  }
-
-  if (sizeSlider) {
-    sizeSlider.addEventListener('input', (event: Event) => {
-      displayStore.atomSizeScale = parseFloat((event.target as HTMLInputElement).value);
-      const sizeValue = getElementById<HTMLElement>('size-value');
-      if (sizeValue) sizeValue.textContent = displayStore.atomSizeScale.toFixed(2);
-      if (structureStore.currentStructure) {
-        debouncedRenderStructure();
-      }
-    });
-  }
 
   if (bondSizeSlider) {
     bondSizeSlider.addEventListener('input', (event: Event) => {
@@ -303,15 +278,6 @@ export function setup(callbacks: AppLatticeContext): void {
       if (bondSizeValue) bondSizeValue.textContent = displayStore.bondThicknessScale.toFixed(1);
       if (structureStore.currentStructure) {
         debouncedRenderStructure();
-      }
-    });
-  }
-
-  if (scaleAuto) {
-    scaleAuto.addEventListener('change', (event: Event) => {
-      displayStore.autoScaleEnabled = (event.target as HTMLInputElement).checked;
-      if (structureStore.currentStructure) {
-        renderer.renderStructure(structureStore.currentStructure, { updateCounts, updateAtomList });
       }
     });
   }
@@ -366,6 +332,17 @@ export function setup(callbacks: AppLatticeContext): void {
       displayStore.atomSizeElementExpanded = !displayStore.atomSizeElementExpanded;
       updateAtomSizePanel();
     });
+
+    if (sizeSlider) {
+      sizeSlider.addEventListener('input', (event: Event) => {
+        displayStore.atomSizeScale = parseFloat((event.target as HTMLInputElement).value);
+        const sizeValue = getElementById<HTMLElement>('size-value');
+        if (sizeValue) sizeValue.textContent = displayStore.atomSizeScale.toFixed(2);
+        if (structureStore.currentStructure) {
+          debouncedRenderStructure();
+        }
+      });
+    }
 
     updateAtomSizePanel();
   }
