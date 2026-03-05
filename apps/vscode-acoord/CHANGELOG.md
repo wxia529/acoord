@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## 0.2.1
+
+### Bug Fixes
+
+- **Periodic Boundary Condition Bond Detection**: Fixed cross-boundary bond generation to prevent duplicate bonds when atoms are outside the unit cell. The algorithm now checks if the origin atom is inside the unit cell before generating bonds to periodic images, ensuring correct bonding visualization for supercell structures.
+
 ## 0.2.0
 
 ### Major Architecture Refactoring
