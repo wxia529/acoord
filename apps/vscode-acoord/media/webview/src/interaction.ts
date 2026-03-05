@@ -27,6 +27,15 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   const selectionBox = document.getElementById('selection-box') as HTMLElement | null;
   let pendingDrag: { atomId: string; hitPoint: Vector3; startX: number; startY: number } | null = null;
   let boxSelect: { startX: number; startY: number; bondMode: string } | null = null;
+
+  // Pre-allocated scratch Vector3s for the hot pointermove path — avoids allocations at 60fps.
+  const _intersection = new Vector3();
+  const _normal       = new Vector3();
+  const _delta        = new Vector3();
+  const _normalDelta  = new Vector3();
+  const _newPos       = new Vector3();
+  // For box-select projection (pointerup) — one scratch to avoid per-atom allocs.
+  const _projected    = new Vector3();
   
   // AbortController for cleaning up all event listeners on dispose
   controller = new AbortController();
@@ -158,9 +167,9 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
         interactionStore.dragAtomId = pendingDrag.atomId;
         interactionStore.lastDragWorld = pendingDrag.hitPoint.clone();
         renderer.setControlsEnabled(false);
-        const normal = camera.getWorldDirection(new Vector3());
-        interactionStore.dragPlaneNormal = normal.clone();
-        renderer.getDragPlane().setFromNormalAndCoplanarPoint(normal, pendingDrag.hitPoint);
+        camera.getWorldDirection(_normal);
+        interactionStore.dragPlaneNormal = _normal.clone();
+        renderer.getDragPlane().setFromNormalAndCoplanarPoint(_normal, pendingDrag.hitPoint);
         if (handlers.onBeginDrag) {
           handlers.onBeginDrag(pendingDrag.atomId);
         }
@@ -172,39 +181,45 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
       mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
       mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
       raycaster.setFromCamera(mouse, camera);
-      const intersection = new Vector3();
-      const hit = raycaster.ray.intersectPlane(renderer.getDragPlane(), intersection);
+      const hit = raycaster.ray.intersectPlane(renderer.getDragPlane(), _intersection);
       if (hit) {
         const mesh = renderer.getAtomMeshes().get(interactionStore.dragAtomId);
-        let nextPosition = intersection;
+        // nextPosition: either the raw intersection or a lerped version; we write
+        // into _newPos to avoid aliasing _intersection when we need it below.
+        let nextPosition: Vector3;
         if (mesh) {
-          nextPosition = mesh.position.clone().lerp(intersection, dragLerp);
+          _newPos.copy(mesh.position).lerp(_intersection, dragLerp);
+          nextPosition = _newPos;
+        } else {
+          nextPosition = _intersection;
         }
 
-        const normal = interactionStore.dragPlaneNormal instanceof Vector3
+        // Resolve normal from stored drag-plane normal (set at begin-drag).
+        const storedNormal = interactionStore.dragPlaneNormal instanceof Vector3
           ? interactionStore.dragPlaneNormal
-          : camera.getWorldDirection(new Vector3());
+          : camera.getWorldDirection(_normal);
+
         if (selectionStore.selectedAtomIds.length > 1) {
-          const last = interactionStore.lastDragWorld instanceof Vector3 ? interactionStore.lastDragWorld : nextPosition.clone();
-          const delta = nextPosition.clone().sub(last);
-          const normalDelta = normal.clone().multiplyScalar(delta.dot(normal));
-          delta.sub(normalDelta);
-          if (delta.length() > 0) {
+          const last = interactionStore.lastDragWorld instanceof Vector3 ? interactionStore.lastDragWorld : nextPosition;
+          _delta.subVectors(nextPosition, last);
+          _normalDelta.copy(storedNormal).multiplyScalar(_delta.dot(storedNormal));
+          _delta.sub(_normalDelta);
+          if (_delta.length() > 0) {
             for (const id of selectionStore.selectedAtomIds) {
               const selectedMesh = renderer.getAtomMeshes().get(id);
               if (selectedMesh) {
-                const newPos = selectedMesh.position.clone().add(delta);
-                renderer.updateAtomPosition(id, newPos);
+                _newPos.copy(selectedMesh.position).add(_delta);
+                renderer.updateAtomPosition(id, _newPos);
               }
             }
             if (handlers.onDragGroup) {
-              handlers.onDragGroup(delta);
+              handlers.onDragGroup(_delta);
             }
           }
         } else if (mesh) {
-          const delta = nextPosition.clone().sub(mesh.position);
-          const normalDelta = normal.clone().multiplyScalar(delta.dot(normal));
-          nextPosition.sub(normalDelta);
+          _delta.subVectors(nextPosition, mesh.position);
+          _normalDelta.copy(storedNormal).multiplyScalar(_delta.dot(storedNormal));
+          nextPosition.sub(_normalDelta);
           renderer.updateAtomPosition(interactionStore.dragAtomId, nextPosition);
           handlers.onDragAtom(interactionStore.dragAtomId, nextPosition);
         }
@@ -265,10 +280,10 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
       if (handlers.onBoxSelect && camera) {
         const ids: string[] = [];
         for (const [id, mesh] of renderer.getAtomMeshes()) {
-          const projected = mesh.position.clone().project(camera);
-          if (projected.z < -1 || projected.z > 1) { continue; }
-          const screenX = (projected.x * 0.5 + 0.5) * rect.width;
-          const screenY = (-projected.y * 0.5 + 0.5) * rect.height;
+          _projected.copy(mesh.position).project(camera);
+          if (_projected.z < -1 || _projected.z > 1) { continue; }
+          const screenX = (_projected.x * 0.5 + 0.5) * rect.width;
+          const screenY = (-_projected.y * 0.5 + 0.5) * rect.height;
           if (screenX >= minW && screenX <= maxW && screenY >= minH && screenY <= maxH) {
             ids.push(id);
           }
@@ -281,10 +296,10 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
         for (const mesh of bondMeshesArr) {
           const bondKey = mesh.userData && (mesh.userData as Record<string, unknown>).bondKey as string | undefined;
           if (!bondKey) { continue; }
-          const projected = mesh.position.clone().project(camera);
-          if (projected.z < -1 || projected.z > 1) { continue; }
-          const screenX = (projected.x * 0.5 + 0.5) * rect.width;
-          const screenY = (-projected.y * 0.5 + 0.5) * rect.height;
+          _projected.copy(mesh.position).project(camera);
+          if (_projected.z < -1 || _projected.z > 1) { continue; }
+          const screenX = (_projected.x * 0.5 + 0.5) * rect.width;
+          const screenY = (-_projected.y * 0.5 + 0.5) * rect.height;
           if (screenX >= minW && screenX <= maxW && screenY >= minH && screenY <= maxH) {
             selectedBondKeys.add(bondKey);
           }

@@ -3,6 +3,7 @@ import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls
 import { structureStore, displayStore, lightingStore } from './state';
 import type { Atom, Bond, Structure, UiHooks, UnitCellEdge } from './types';
 import { clampAtomSize, getBaseAtomId } from './utils/atomSize';
+import { debounce } from './utils/performance';
 
 // Camera auto-scaling constants
 const CAMERA_TARGET_DIMENSION = 30;
@@ -52,6 +53,30 @@ interface RendererState {
   atomInstancedMeshes: THREE.InstancedMesh[];
   /** Maps atom id to its instanced mesh + instance index for matrix updates during drag. */
   atomInstanceIndex: Map<string, { im: THREE.InstancedMesh; index: number }>;
+  /**
+   * Maps atom id to all bond-half instances that touch this atom (either end).
+   * Used by updateAtomPosition() to incrementally recompute bond cylinder
+   * matrices without a full renderStructure() rebuild.
+   *
+   * Each entry describes one half-cylinder:
+   *   im      – the InstancedMesh that owns this instance
+   *   index   – the instance index within im
+   *   atomId1 – atom id at the start (non-midpoint) end of this half
+   *   atomId2 – atom id at the far full end (the other endpoint of the bond)
+   *   isFirstHalf – true  → half runs from atomId1 toward midpoint
+   *                 false → half runs from midpoint toward atomId1
+   *                 (atomId2 is always the other endpoint, never in this half)
+   *
+   * Both atomId1 and atomId2 keys in bondHalfIndex point to the same entry so
+   * that moving either endpoint triggers a recompute of both halves.
+   */
+  bondHalfIndex: Map<string, Array<{
+    im: THREE.InstancedMesh;
+    index: number;
+    atomId1: string;
+    atomId2: string;
+    isFirstHalf: boolean;
+  }>>;
   bondMeshes: THREE.Mesh[];
   bondLines: THREE.Mesh[];
   /** Instanced meshes that visually render bonds (one per radius group). */
@@ -88,6 +113,7 @@ const rendererState: RendererState = {
   atomMeshes: new Map(),
   atomInstancedMeshes: [],
   atomInstanceIndex: new Map(),
+  bondHalfIndex: new Map(),
   bondMeshes: [],
   bondLines: [],
   bondInstancedMeshes: [],
@@ -278,7 +304,7 @@ function init(canvas: HTMLCanvasElement, handlers: { setError: (m: string) => vo
   rendererState.mouse = new THREE.Vector2();
   rendererState.dragPlane = new THREE.Plane();
 
-  window.addEventListener('resize', onResize);
+  window.addEventListener('resize', _onResizeDebounced);
   onResize();
   requestAnimationFrame(() => onResize());
   setTimeout(() => onResize(), 150);
@@ -307,25 +333,31 @@ function updateLightsForCamera(): void {
     return;
   }
   const camera = rendererState.camera;
-  const keyOffset = new THREE.Vector3(lightingStore.keyLight?.x ?? 0, lightingStore.keyLight?.y ?? 0, lightingStore.keyLight?.z ?? 10);
-  const fillOffset = new THREE.Vector3(lightingStore.fillLight?.x ?? -10, lightingStore.fillLight?.y ?? -5, lightingStore.fillLight?.z ?? 5);
-  const rimOffset = new THREE.Vector3(lightingStore.rimLight?.x ?? 0, lightingStore.rimLight?.y ?? 5, lightingStore.rimLight?.z ?? -10);
+  // Reuse pre-allocated scratch Vector3s — no allocations per frame.
+  _keyOffset.set(lightingStore.keyLight?.x ?? 0, lightingStore.keyLight?.y ?? 0, lightingStore.keyLight?.z ?? 10);
+  _fillOffset.set(lightingStore.fillLight?.x ?? -10, lightingStore.fillLight?.y ?? -5, lightingStore.fillLight?.z ?? 5);
+  _rimOffset.set(lightingStore.rimLight?.x ?? 0, lightingStore.rimLight?.y ?? 5, lightingStore.rimLight?.z ?? -10);
 
-  keyOffset.applyQuaternion(camera.quaternion);
-  fillOffset.applyQuaternion(camera.quaternion);
-  rimOffset.applyQuaternion(camera.quaternion);
+  _keyOffset.applyQuaternion(camera.quaternion);
+  _fillOffset.applyQuaternion(camera.quaternion);
+  _rimOffset.applyQuaternion(camera.quaternion);
 
   const distance = 50;
-  rendererState.keyLight.position.copy(keyOffset.normalize().multiplyScalar(distance));
-  rendererState.fillLight.position.copy(fillOffset.normalize().multiplyScalar(distance));
-  rendererState.rimLight.position.copy(rimOffset.normalize().multiplyScalar(distance));
+  rendererState.keyLight.position.copy(_keyOffset.normalize().multiplyScalar(distance));
+  rendererState.fillLight.position.copy(_fillOffset.normalize().multiplyScalar(distance));
+  rendererState.rimLight.position.copy(_rimOffset.normalize().multiplyScalar(distance));
 }
+
+// Cached reference to the main container element — set on first onResize call.
+let _container: HTMLElement | null = null;
 
 function onResize(): void {
   if (!rendererState.renderer || !rendererState.camera) return;
-  const container = document.getElementById('container');
-  if (!container) return;
-  const rect = container.getBoundingClientRect();
+  if (!_container) {
+    _container = document.getElementById('container');
+  }
+  if (!_container) return;
+  const rect = _container.getBoundingClientRect();
   const width = Math.max(1, rect.width - 250);
   const height = Math.max(1, rect.height);
   if (rendererState.camera instanceof THREE.OrthographicCamera) {
@@ -346,6 +378,10 @@ function onResize(): void {
   }
   markDirty();
 }
+
+// Debounced variant for the window resize event — avoids multiple full
+// renderer resizes when the OS fires a burst of resize events.
+const _onResizeDebounced = debounce(onResize, 50);
 
 function getAutoScales(atoms: Atom[]): { scale: number; sizeScale: number } {
   if (!atoms || atoms.length === 0) return { scale: 1, sizeScale: 1 };
@@ -419,6 +455,70 @@ function createUnitCellEdgeMesh(start: THREE.Vector3, end: THREE.Vector3, radius
   mesh.quaternion.setFromUnitVectors(up, direction.clone().normalize());
   return mesh;
 }
+
+/**
+ * Build a world-space matrix for a half-cylinder instance.
+ *
+ * The geometry is a unit-height cylinder along Y.  We position it at the
+ * midpoint of [from, to], orient it along the from→to direction, and scale
+ * the Y axis to the actual half-length.  X/Z scale stays 1 because the
+ * geometry already encodes the bond radius at creation time.
+ *
+ * Reused by both renderStructure() and updateAtomPosition() so the two paths
+ * are guaranteed to produce identical matrices.
+ */
+const _cmUp   = new THREE.Vector3(0, 1, 0);
+const _cmAxis  = new THREE.Vector3();
+const _cmQuat  = new THREE.Quaternion();
+const _cmDummy = new THREE.Object3D();
+const _cmXAxis = new THREE.Vector3(1, 0, 0);
+
+// Scratch objects for updateLightsForCamera — avoids 3 allocations per rendered frame.
+const _keyOffset  = new THREE.Vector3();
+const _fillOffset = new THREE.Vector3();
+const _rimOffset  = new THREE.Vector3();
+
+// Scratch objects for buildCylinderMatrix — no allocations per call.
+const _cmCenter = new THREE.Vector3();
+const _cmDir    = new THREE.Vector3();
+
+function buildCylinderMatrix(from: THREE.Vector3, to: THREE.Vector3, target: THREE.Matrix4): void {
+  _cmCenter.addVectors(from, to).multiplyScalar(0.5);
+  _cmDir.subVectors(to, from);
+  const halfLen = _cmDir.length();
+  _cmDir.normalize();
+
+  _cmDummy.position.copy(_cmCenter);
+
+  if (halfLen > 1e-6 && _cmDir.length() > 0.0001) {
+    _cmAxis.crossVectors(_cmUp, _cmDir);
+    if (_cmAxis.length() > 0.0001) {
+      const angle = Math.acos(Math.max(-1, Math.min(1, _cmUp.dot(_cmDir))));
+      _cmQuat.setFromAxisAngle(_cmAxis.normalize(), angle);
+      _cmDummy.quaternion.copy(_cmQuat);
+    } else {
+      // Parallel or anti-parallel to Y
+      _cmDummy.quaternion.set(0, 0, 0, 1);
+      if (_cmUp.dot(_cmDir) < 0) {
+        _cmDummy.quaternion.setFromAxisAngle(_cmXAxis, Math.PI);
+      }
+    }
+  } else {
+    _cmDummy.quaternion.set(0, 0, 0, 1);
+  }
+
+  _cmDummy.scale.set(1, halfLen, 1);
+  _cmDummy.updateMatrix();
+  target.copy(_cmDummy.matrix);
+}
+
+// Scratch objects for updateAtomPosition — avoids 4 allocations per drag event.
+const _uapMatrix = new THREE.Matrix4();
+const _uapPos    = new THREE.Vector3();
+const _uapQuat   = new THREE.Quaternion();
+const _uapSca    = new THREE.Vector3();
+// Scratch Vector3 for midpoint computation in bond-half updates.
+const _uapMid    = new THREE.Vector3();
 
 function buildUnitCellGroup(edges: UnitCellEdge[], scale: number): THREE.Group | null {
   if (!Array.isArray(edges) || edges.length === 0) return null;
@@ -506,6 +606,7 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
     disposeInstancedMesh(im);
   }
   rendererState.bondInstancedMeshes = [];
+  rendererState.bondHalfIndex.clear();
 
   if (rendererState.unitCellGroup) {
     rendererState.scene!.remove(rendererState.unitCellGroup);
@@ -619,6 +720,7 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
 
   if (renderBonds) {
     // Pre-compute all bond half-cylinder data, then group by radius key for instancing.
+    // atomId1/atomId2 are carried through so bondHalfIndex can be populated below.
     interface BondHalf {
       from: THREE.Vector3;
       to: THREE.Vector3;
@@ -627,6 +729,12 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       bondRadius: number;
       emissive: string;
       bondKey: string | undefined;
+      /** Atom id at the non-midpoint end of this half (the "owning" atom). */
+      ownAtomId: string | undefined;
+      /** Atom id at the other full end of the bond (used during drag to find the far position). */
+      otherAtomId: string | undefined;
+      /** True → this half runs from ownAtom end toward midpoint. */
+      isFirstHalf: boolean;
     }
     const bondHalves: BondHalf[] = [];
 
@@ -643,8 +751,18 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       const midpoint = start.clone().add(end).multiplyScalar(0.5);
       const emissive = isSelectedBond ? '#704214' : '#000000';
 
-      bondHalves.push({ from: start, to: midpoint, halfLen: length / 2, color: bond.color1 || bond.color, bondRadius, emissive, bondKey: bond.key });
-      bondHalves.push({ from: midpoint, to: end,   halfLen: length / 2, color: bond.color2 || bond.color, bondRadius, emissive, bondKey: bond.key });
+      // First half: from atomId1's end toward midpoint
+      bondHalves.push({
+        from: start, to: midpoint, halfLen: length / 2,
+        color: bond.color1 || bond.color, bondRadius, emissive, bondKey: bond.key,
+        ownAtomId: bond.atomId1, otherAtomId: bond.atomId2, isFirstHalf: true,
+      });
+      // Second half: from midpoint toward atomId2's end
+      bondHalves.push({
+        from: midpoint, to: end, halfLen: length / 2,
+        color: bond.color2 || bond.color, bondRadius, emissive, bondKey: bond.key,
+        ownAtomId: bond.atomId2, otherAtomId: bond.atomId1, isFirstHalf: false,
+      });
     }
 
     // Group bond halves by (bondRadius, emissive) key for instancing.
@@ -655,11 +773,8 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       byBondRadius.get(key)!.push(half);
     }
 
-    const dummy = new THREE.Object3D();
     const _color = new THREE.Color();
-    const _up = new THREE.Vector3(0, 1, 0);
-    const _axis = new THREE.Vector3();
-    const _quat = new THREE.Quaternion();
+    const _matrix = new THREE.Matrix4();
 
     // Shared low-poly cylinder geometry for bond hit-testing
     // Scale is applied per-mesh via mesh.scale.set()
@@ -680,38 +795,56 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
 
       for (let i = 0; i < halves.length; i++) {
         const half = halves[i];
-        const center = half.from.clone().add(half.to).multiplyScalar(0.5);
-        const dir = half.to.clone().sub(half.from).normalize();
 
-        dummy.position.copy(center);
-        if (dir.length() > 0.0001) {
-          _axis.crossVectors(_up, dir);
-          if (_axis.length() > 0.0001) {
-            const angle = Math.acos(Math.max(-1, Math.min(1, _up.dot(dir))));
-            _quat.setFromAxisAngle(_axis.normalize(), angle);
-            dummy.quaternion.copy(_quat);
-          } else {
-            // Parallel or anti-parallel to Y
-            dummy.quaternion.set(0, 0, 0, 1);
-            if (_up.dot(dir) < 0) {
-              dummy.quaternion.setFromAxisAngle(new THREE.Vector3(1, 0, 0), Math.PI);
-            }
-          }
-        }
-        // Scale Y to actual half-length (geometry unit-length along Y).
-        dummy.scale.set(1, half.halfLen, 1);
-        dummy.updateMatrix();
-        im.setMatrixAt(i, dummy.matrix);
+        // Use shared buildCylinderMatrix so updateAtomPosition() produces
+        // identical results when it recomputes the same half during drag.
+        buildCylinderMatrix(half.from, half.to, _matrix);
+        im.setMatrixAt(i, _matrix);
         _color.set(half.color);
         im.setColorAt(i, _color);
+
+        // Register this half in bondHalfIndex under BOTH endpoint atoms so
+        // that updateAtomPosition() finds it regardless of which end moves.
+        // Only register for atoms that have a hit-mesh (selectable atoms);
+        // periodic ghost atoms have fixed positions and are never dragged.
+        if (half.ownAtomId && half.otherAtomId) {
+          const entry = {
+            im,
+            index: i,
+            atomId1: half.ownAtomId,
+            atomId2: half.otherAtomId,
+            isFirstHalf: half.isFirstHalf,
+          };
+          // Register under ownAtomId (the non-midpoint end of this half).
+          if (rendererState.atomMeshes.has(half.ownAtomId)) {
+            if (!rendererState.bondHalfIndex.has(half.ownAtomId)) {
+              rendererState.bondHalfIndex.set(half.ownAtomId, []);
+            }
+            rendererState.bondHalfIndex.get(half.ownAtomId)!.push(entry);
+          }
+          // Also register under otherAtomId so that when the far end moves,
+          // this half (which shares the midpoint) is also recomputed.
+          if (rendererState.atomMeshes.has(half.otherAtomId)) {
+            if (!rendererState.bondHalfIndex.has(half.otherAtomId)) {
+              rendererState.bondHalfIndex.set(half.otherAtomId, []);
+            }
+            rendererState.bondHalfIndex.get(half.otherAtomId)!.push(entry);
+          }
+        }
 
         // Invisible hit-test mesh for bond selection.
         // Use shared geometry scaled to match bond dimensions.
         if (half.bondKey) {
+          // Derive center and quaternion from the already-computed matrix.
+          const center = new THREE.Vector3();
+          const quat   = new THREE.Quaternion();
+          const scl    = new THREE.Vector3();
+          _matrix.decompose(center, quat, scl);
+
           const hitMesh = new THREE.Mesh(hitTestCylinderGeometry, hitTestCylinderMaterial);
           hitMesh.scale.set(firstHalf.bondRadius, half.halfLen, firstHalf.bondRadius);
           hitMesh.position.copy(center);
-          hitMesh.quaternion.copy(dummy.quaternion);
+          hitMesh.quaternion.copy(quat);
           hitMesh.userData = { bondKey: half.bondKey };
           rendererState.scene!.add(hitMesh);
           rendererState.bondMeshes.push(hitMesh);
@@ -999,18 +1132,56 @@ function updateAtomPosition(atomId: string, position: THREE.Vector3): void {
   const entry = rendererState.atomInstanceIndex.get(atomId);
   if (entry) {
     const { im, index } = entry;
-    const matrix = new THREE.Matrix4();
-    im.getMatrixAt(index, matrix);
-    // Decompose, replace translation, recompose.
-    const pos = new THREE.Vector3();
-    const quat = new THREE.Quaternion();
-    const sca = new THREE.Vector3();
-    matrix.decompose(pos, quat, sca);
-    pos.copy(position);
-    matrix.compose(pos, quat, sca);
-    im.setMatrixAt(index, matrix);
+    im.getMatrixAt(index, _uapMatrix);
+    // Decompose, replace translation, recompose — using pre-allocated scratch objects.
+    _uapMatrix.decompose(_uapPos, _uapQuat, _uapSca);
+    _uapPos.copy(position);
+    _uapMatrix.compose(_uapPos, _uapQuat, _uapSca);
+    im.setMatrixAt(index, _uapMatrix);
     im.instanceMatrix.needsUpdate = true;
   }
+
+  // Incrementally update all bond half-cylinders that have this atom as an
+  // endpoint.  Each entry is registered under BOTH endpoint atoms, so when
+  // atom A moves we find both halves of every A-B bond here.
+  // We look up the current world position of each endpoint from atomMeshes
+  // (always up to date) and recompute only the affected instance matrices.
+  const halfEntries = rendererState.bondHalfIndex.get(atomId);
+  if (halfEntries && halfEntries.length > 0) {
+    // Track which InstancedMeshes were touched so we upload only once each.
+    const dirtyIMs = new Set<THREE.InstancedMesh>();
+
+    for (const he of halfEntries) {
+      // Resolve world positions for both full endpoints.
+      // For the atom being dragged, use the new position directly.
+      // For the other atom, read its current hit-mesh position.
+      const posA = he.atomId1 === atomId
+        ? position
+        : rendererState.atomMeshes.get(he.atomId1)?.position;
+      const posB = he.atomId2 === atomId
+        ? position
+        : rendererState.atomMeshes.get(he.atomId2)?.position;
+
+      if (!posA || !posB) continue;
+
+      // midpoint between the two full atom endpoints — use scratch to avoid allocation.
+      _uapMid.addVectors(posA, posB).multiplyScalar(0.5);
+
+      // isFirstHalf=true  → half runs from atomId1 end toward midpoint
+      // isFirstHalf=false → half runs from midpoint toward atomId1 end
+      const from = he.isFirstHalf ? posA     : _uapMid;
+      const to   = he.isFirstHalf ? _uapMid  : posA;
+
+      buildCylinderMatrix(from, to, _uapMatrix);
+      he.im.setMatrixAt(he.index, _uapMatrix);
+      dirtyIMs.add(he.im);
+    }
+
+    for (const im of dirtyIMs) {
+      im.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   markDirty();
 }
 
@@ -1041,7 +1212,7 @@ function dispose(): void {
     cancelAnimationFrame(rendererState.animationFrameId);
     rendererState.animationFrameId = null;
   }
-  window.removeEventListener('resize', onResize);
+  window.removeEventListener('resize', _onResizeDebounced);
   if (rendererState.statusInterval) {
     clearInterval(rendererState.statusInterval);
     rendererState.statusInterval = null;
@@ -1077,6 +1248,7 @@ function dispose(): void {
     disposeInstancedMesh(im);
   }
   rendererState.bondInstancedMeshes = [];
+  rendererState.bondHalfIndex.clear();
 
   if (rendererState.unitCellGroup) {
     rendererState.scene?.remove(rendererState.unitCellGroup);

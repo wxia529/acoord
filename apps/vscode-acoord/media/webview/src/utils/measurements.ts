@@ -1,5 +1,23 @@
 import { structureStore, selectionStore } from '../state';
 import type { Atom, UnitCellParams } from '../types';
+import { getElementById } from './domCache';
+
+// O(1) atom lookup index — rebuilt whenever a new structure is rendered.
+let _atomIndex: Map<string, Atom> = new Map();
+
+/**
+ * Rebuild the atom-id → Atom index from the current structure.
+ * Must be called by app.ts after each renderStructure() call so that
+ * getAtomById() stays O(1) instead of O(n) Array.find().
+ */
+export function rebuildAtomIndex(): void {
+  _atomIndex = new Map();
+  const atoms = structureStore.currentStructure?.atoms;
+  if (!atoms) return;
+  for (const atom of atoms) {
+    _atomIndex.set(atom.id, atom);
+  }
+}
 
 export function invert3x3(
   m: [[number, number, number], [number, number, number], [number, number, number]]
@@ -17,6 +35,12 @@ export function invert3x3(
   ];
 }
 
+// Cache for the fractional-coordinate matrix inverse.
+// Keyed on a compact string of the 6 cell parameters so we recompute only
+// when the unit cell actually changes (not on every pointermove frame).
+let _fracCacheKey: string | null = null;
+let _fracCacheInverse: [[number, number, number], [number, number, number], [number, number, number]] | null = null;
+
 export function getFractionalCoords(
   cart: [number, number, number],
   cell: UnitCellParams | null | undefined
@@ -32,25 +56,35 @@ export function getFractionalCoords(
   const sinGamma = Math.sin(gamma);
   if (Math.abs(sinGamma) < 1e-8) return null;
 
-  const cosAlpha = Math.cos(alpha);
-  const cosBeta = Math.cos(beta);
-  const cosGamma = Math.cos(gamma);
+  // Use the cached inverse when the cell is unchanged.
+  const cacheKey = `${a},${b},${c},${alpha},${beta},${gamma}`;
+  let inverse: [[number, number, number], [number, number, number], [number, number, number]] | null;
+  if (cacheKey === _fracCacheKey && _fracCacheInverse !== null) {
+    inverse = _fracCacheInverse;
+  } else {
+    const cosAlpha = Math.cos(alpha);
+    const cosBeta = Math.cos(beta);
+    const cosGamma = Math.cos(gamma);
 
-  const ax = a, ay = 0, az = 0;
-  const bx = b * cosGamma, by = b * sinGamma, bz = 0;
-  const cx = c * cosBeta;
-  const cy = c * (cosAlpha - cosBeta * cosGamma) / sinGamma;
-  const czSquared = c * c - cx * cx - cy * cy;
-  if (czSquared <= 0) return null;
-  const cz = Math.sqrt(czSquared);
+    const ax = a, ay = 0, az = 0;
+    const bx = b * cosGamma, by = b * sinGamma, bz = 0;
+    const cx = c * cosBeta;
+    const cy = c * (cosAlpha - cosBeta * cosGamma) / sinGamma;
+    const czSquared = c * c - cx * cx - cy * cy;
+    if (czSquared <= 0) return null;
+    const cz = Math.sqrt(czSquared);
 
-  const matrix: [[number, number, number], [number, number, number], [number, number, number]] = [
-    [ax, bx, cx],
-    [ay, by, cy],
-    [az, bz, cz],
-  ];
-  const inverse = invert3x3(matrix);
-  if (!inverse) return null;
+    const matrix: [[number, number, number], [number, number, number], [number, number, number]] = [
+      [ax, bx, cx],
+      [ay, by, cy],
+      [az, bz, cz],
+    ];
+    inverse = invert3x3(matrix);
+    if (!inverse) return null;
+    _fracCacheKey = cacheKey;
+    _fracCacheInverse = inverse;
+  }
+
   const fx = inverse[0][0] * cart[0] + inverse[0][1] * cart[1] + inverse[0][2] * cart[2];
   const fy = inverse[1][0] * cart[0] + inverse[1][1] * cart[1] + inverse[1][2] * cart[2];
   const fz = inverse[2][0] * cart[0] + inverse[2][1] * cart[1] + inverse[2][2] * cart[2];
@@ -58,13 +92,12 @@ export function getFractionalCoords(
 }
 
 export function getAtomById(atomId: string): Atom | null {
-  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
-  return structureStore.currentStructure.atoms.find((atom) => atom.id === atomId) || null;
+  return _atomIndex.get(atomId) ?? null;
 }
 
 export function updateMeasurements(): void {
-  const lengthEl = document.getElementById('bond-length') as HTMLElement | null;
-  const angleEl = document.getElementById('bond-angle') as HTMLElement | null;
+  const lengthEl = getElementById<HTMLElement>('bond-length');
+  const angleEl = getElementById<HTMLElement>('bond-angle');
   const selected = selectionStore.selectedAtomIds;
   if (selected.length < 2) {
     if (lengthEl) lengthEl.textContent = '--';
