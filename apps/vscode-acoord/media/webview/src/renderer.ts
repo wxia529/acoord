@@ -80,6 +80,13 @@ interface RendererState {
     atomId1: string;
     atomId2: string;
     isFirstHalf: boolean;
+    /**
+      * For cross-boundary periodic stubs, the cell-boundary endpoint of the
+      * full stub.  During drag, the midpoint between the atom's live position
+      * and this fixed boundary point is recalculated, and each half-cylinder
+      * is updated accordingly.  Null for ordinary (non-periodic-stub) bond halves.
+      */
+      fixedEnd: THREE.Vector3 | null;
   }>>;
   bondMeshes: THREE.Mesh[];
   bondLines: THREE.Mesh[];
@@ -739,6 +746,13 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       otherAtomId: string | undefined;
       /** True → this half runs from ownAtom end toward midpoint. */
       isFirstHalf: boolean;
+      /**
+       * For cross-boundary periodic stubs, the cell-boundary endpoint of the
+       * full stub.  Both color-halves of a periodic stub share the same fixedEnd.
+       * During drag, the midpoint is recalculated from the atom's live position
+       * and this fixed point.  Null for ordinary (non-periodic-stub) bond halves.
+       */
+      fixedEnd: THREE.Vector3 | null;
     }
     const bondHalves: BondHalf[] = [];
 
@@ -759,13 +773,22 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       bondHalves.push({
         from: start, to: midpoint, halfLen: length / 2,
         color: bond.color1 || bond.color, bondRadius, emissive, bondKey: bond.key,
-        ownAtomId: bond.atomId1, otherAtomId: bond.atomId2, isFirstHalf: true,
+        // For periodic stubs, BOTH halves belong to atomId1 (the stub's owning
+        // atom).  The stub is entirely on one atom's side of the cell boundary,
+        // so dragging atomId1 should update both halves, and dragging atomId2
+        // should not affect this stub at all.
+        ownAtomId: bond.atomId1, otherAtomId: bond.periodicStub ? bond.atomId1 : bond.atomId2, isFirstHalf: true,
+        // For periodic stubs, store the WireBond's `end` (the cell-boundary
+        // endpoint of the full stub) so that during drag we can recompute the
+        // midpoint from the atom's new position and this fixed boundary point.
+        fixedEnd: bond.periodicStub ? end.clone() : null,
       });
       // Second half: from midpoint toward atomId2's end
       bondHalves.push({
         from: midpoint, to: end, halfLen: length / 2,
         color: bond.color2 || bond.color, bondRadius, emissive, bondKey: bond.key,
-        ownAtomId: bond.atomId2, otherAtomId: bond.atomId1, isFirstHalf: false,
+        ownAtomId: bond.periodicStub ? bond.atomId1 : bond.atomId2, otherAtomId: bond.atomId1, isFirstHalf: false,
+        fixedEnd: bond.periodicStub ? end.clone() : null,
       });
     }
 
@@ -818,6 +841,7 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
             atomId1: half.ownAtomId,
             atomId2: half.otherAtomId,
             isFirstHalf: half.isFirstHalf,
+            fixedEnd: half.fixedEnd,
           };
           // Register under ownAtomId (the non-midpoint end of this half).
           if (rendererState.atomMeshes.has(half.ownAtomId)) {
@@ -828,7 +852,10 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
           }
           // Also register under otherAtomId so that when the far end moves,
           // this half (which shares the midpoint) is also recomputed.
-          if (rendererState.atomMeshes.has(half.otherAtomId)) {
+          // For periodic stubs, fixedEnd is set (the midpoint is a fixed boundary
+          // point, not derived from otherAtom's position), so skip this registration
+          // to prevent wrong updates when the far atom moves.
+          if (!half.fixedEnd && rendererState.atomMeshes.has(half.otherAtomId)) {
             if (!rendererState.bondHalfIndex.has(half.otherAtomId)) {
               rendererState.bondHalfIndex.set(half.otherAtomId, []);
             }
@@ -1162,19 +1189,35 @@ function updateAtomPosition(atomId: string, position: THREE.Vector3): void {
       const posA = he.atomId1 === atomId
         ? position
         : rendererState.atomMeshes.get(he.atomId1)?.position;
-      const posB = he.atomId2 === atomId
-        ? position
-        : rendererState.atomMeshes.get(he.atomId2)?.position;
 
-      if (!posA || !posB) continue;
+      if (!posA) continue;
 
-      // midpoint between the two full atom endpoints — use scratch to avoid allocation.
-      _uapMid.addVectors(posA, posB).multiplyScalar(0.5);
-
-      // isFirstHalf=true  → half runs from atomId1 end toward midpoint
-      // isFirstHalf=false → half runs from midpoint toward atomId1 end
-      const from = he.isFirstHalf ? posA     : _uapMid;
-      const to   = he.isFirstHalf ? _uapMid  : posA;
+      // For cross-boundary periodic stubs, fixedEnd stores the cell-boundary
+      // endpoint of the full stub.  We recalculate the midpoint between the
+      // atom's live position and this boundary point, then draw each half.
+      // Using the raw position of the other atom would produce a wrong bond
+      // that crosses the entire cell.
+      let to: THREE.Vector3;
+      let from: THREE.Vector3;
+      if (he.fixedEnd) {
+        // Periodic stub: both halves belong to the same atom (atomId1).
+        // `fixedEnd` is the cell-boundary endpoint of the full stub.
+        // Recompute the midpoint between the atom's live position and the
+        // fixed boundary point, then assign the correct segment.
+        _uapMid.addVectors(posA, he.fixedEnd).multiplyScalar(0.5);
+        from = he.isFirstHalf ? posA    : _uapMid;
+        to   = he.isFirstHalf ? _uapMid : he.fixedEnd;
+      } else {
+        // Ordinary bond: recompute midpoint from both live atom positions.
+        const posB = he.atomId2 === atomId
+          ? position
+          : rendererState.atomMeshes.get(he.atomId2)?.position;
+        if (!posB) continue;
+        // midpoint between the two full atom endpoints — use scratch to avoid allocation.
+        _uapMid.addVectors(posA, posB).multiplyScalar(0.5);
+        from = he.isFirstHalf ? posA    : _uapMid;
+        to   = he.isFirstHalf ? _uapMid : posA;
+      }
 
       buildCylinderMatrix(from, to, _uapMatrix);
       he.im.setMatrixAt(he.index, _uapMatrix);

@@ -36,6 +36,13 @@ export interface WireBond {
   color1?: string;
   color2?: string;
   selected?: boolean;
+  /**
+   * Present and true for cross-boundary periodic half-stubs.
+   * When set, `end` is a fixed geometric midpoint at the cell boundary rather
+   * than another atom's position.  The renderer uses this to avoid recomputing
+   * the stub endpoint from live atom positions during drag previews.
+   */
+  periodicStub?: true;
 }
 
 export interface WireUnitCellEdge {
