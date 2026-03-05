@@ -271,6 +271,7 @@ export class RenderMessageBuilder {
           color1: colorA,
           color2: colorA,
           selected: isSelected,
+          periodicStub: true,
         });
 
         // Stub 2: atom2 → its own midpoint (halfway toward atom1's image in atom2's cell)
@@ -290,6 +291,7 @@ export class RenderMessageBuilder {
           color1: colorB,
           color2: colorB,
           selected: isSelected,
+          periodicStub: true,
         });
       } else {
         bonds.push({
