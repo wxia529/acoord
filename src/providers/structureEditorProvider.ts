@@ -252,11 +252,24 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           this.notifyDocumentChanged(session, 'Drag');
         }
       } else if (message.command !== 'beginDrag') {
-        // Check if a structural change occurred by comparing undo stack depth
-        if (session.undoManager.depth > undoDepthBefore) {
-          this.notifyDocumentChanged(session, `Command: ${message.command}`);
+        // Preview drag messages update the extension model but must NOT trigger
+        // a renderStructure() round-trip back to the webview.  The webview
+        // maintains its own local visual via renderer.updateAtomPosition() which
+        // already updates bond cylinders incrementally.  Sending a full render
+        // message on every pointermove frame would cause the IPC latency to
+        // fight the local preview, producing the drag-stutter bug.
+        // See DEVELOPMENT.md §12.3 and §15.3.
+        const isPreviewDrag =
+          (message.command === 'moveAtom'        && (message as { preview?: boolean }).preview === true) ||
+          (message.command === 'moveGroup'        && (message as { preview?: boolean }).preview === true) ||
+          (message.command === 'setAtomsPositions' && (message as { preview?: boolean }).preview === true);
+
+        if (!isPreviewDrag) {
+          if (session.undoManager.depth > undoDepthBefore) {
+            this.notifyDocumentChanged(session, `Command: ${message.command}`);
+          }
+          this.renderStructure(session);
         }
-        this.renderStructure(session);
       }
       return;
     }

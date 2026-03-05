@@ -34,7 +34,7 @@ import {
 } from './ui/inputs';
 
 // Measurement utilities
-import { getAtomById, updateMeasurements } from './utils/measurements';
+import { getAtomById, updateMeasurements, rebuildAtomIndex } from './utils/measurements';
 
 // Atom size utilities
 import {
@@ -72,6 +72,9 @@ import {
   applyRotation,
   applyAdsorptionDistance,
 } from './utils/transformations';
+
+// DOM cache — avoids repeated getElementById on the hot drag path.
+import { getElementById as cachedGetElementById } from './utils/domCache';
 
 declare function acquireVsCodeApi(): VsCodeApi;
 
@@ -219,9 +222,9 @@ function setupInteraction(): void {
 
   const updatePositionInputs = (atom: Atom | null) => {
     if (!atom) return;
-    const selX = document.getElementById('sel-x') as HTMLInputElement | null;
-    const selY = document.getElementById('sel-y') as HTMLInputElement | null;
-    const selZ = document.getElementById('sel-z') as HTMLInputElement | null;
+    const selX = cachedGetElementById<HTMLInputElement>('sel-x');
+    const selY = cachedGetElementById<HTMLInputElement>('sel-y');
+    const selZ = cachedGetElementById<HTMLInputElement>('sel-z');
     if (selX) selX.value = atom.position[0].toFixed(4);
     if (selY) selY.value = atom.position[1].toFixed(4);
     if (selZ) selZ.value = atom.position[2].toFixed(4);
@@ -248,9 +251,9 @@ function setupInteraction(): void {
       });
 
       if (structureStore.currentSelectedAtom?.id === atomId) {
-        const selX = document.getElementById('sel-x') as HTMLInputElement | null;
-        const selY = document.getElementById('sel-y') as HTMLInputElement | null;
-        const selZ = document.getElementById('sel-z') as HTMLInputElement | null;
+        const selX = cachedGetElementById<HTMLInputElement>('sel-x');
+        const selY = cachedGetElementById<HTMLInputElement>('sel-y');
+        const selZ = cachedGetElementById<HTMLInputElement>('sel-z');
         if (selX) selX.value = modelX.toFixed(4);
         if (selY) selY.value = modelY.toFixed(4);
         if (selZ) selZ.value = modelZ.toFixed(4);
@@ -354,6 +357,8 @@ function handleRenderMessage(message: RenderMessage): void {
     },
     { fitCamera: interactionStore.shouldFitCamera }
   );
+  // Rebuild O(1) atom lookup index after every structure render.
+  rebuildAtomIndex();
   interactionStore.shouldFitCamera = false;
   updateStatusBar();
 
