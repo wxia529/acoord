@@ -401,16 +401,29 @@ export class Structure {
     const isHalfSpace = (ox: number, oy: number, oz: number) =>
       ox > 0 || (ox === 0 && oy > 0) || (ox === 0 && oy === 0 && oz > 0);
 
+    const eps = 1e-6;
+
     // Check bonds for each atom against neighbors in all periodic images
     for (const atom1 of this.atoms) {
       const data1 = atomData.get(atom1.id)!;
       const radius1 = data1.radius;
 
+      // Compute fractional coordinates of atom1 once; used to guard the
+      // cross-boundary branch (atoms outside the cell should not act as the
+      // "origin" atom when enumerating periodic images).
+      const [fx1, fy1, fz1] = this.unitCell.cartesianToFractional(atom1.x, atom1.y, atom1.z);
+      const atom1InCell =
+        fx1 >= -eps && fx1 < 1 + eps &&
+        fy1 >= -eps && fy1 < 1 + eps &&
+        fz1 >= -eps && fz1 < 1 + eps;
+
       // Check against all periodic images
       for (const [ox, oy, oz] of offsets) {
         // Skip redundant checks using half-space rule
         if (ox === 0 && oy === 0 && oz === 0) {
-          // Same cell - only check atoms with higher index to avoid duplicates
+          // Same cell - only check atoms with higher index to avoid duplicates.
+          // No boundary restriction: two out-of-cell atoms that are bonding
+          // distance apart should still get a bond.
           for (const atom2 of this.getNeighboringAtoms(atom1, grid, cellSize, maxBondLength)) {
             if (atom1.id >= atom2.id) {continue;}
 
@@ -436,8 +449,11 @@ export class Structure {
               seen.add(key);
             }
           }
-        } else if (isHalfSpace(ox, oy, oz)) {
-          // Different cell - use spatial hash of image atoms for O(n*k) performance
+        } else if (isHalfSpace(ox, oy, oz) && atom1InCell) {
+          // Different cell - use spatial hash of image atoms for O(n*k) performance.
+          // Only generate cross-boundary bonds when atom1 is inside the unit cell;
+          // an out-of-cell atom1 is already a periodic image of another cell and
+          // would produce spurious duplicate bonds if used as the origin here.
           const offsetX = ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0];
           const offsetY = ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1];
           const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
