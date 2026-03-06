@@ -1,7 +1,7 @@
 /**
  * Edit tab module.
  *
- * Wires: Quick Add panel, Selected Atom panel, Change Element panel,
+ * Wires: Quick Add panel, Selected Atom panel,
  *        Atom Color panel, and the Delete/Copy toolbar buttons.
  *
  * setup(callbacks) must be called once during app initialisation.
@@ -73,17 +73,6 @@ export function setup(callbacks: AppEditContext): void {
   if (selX) selX.addEventListener('change', applySelectedAtomChanges);
   if (selY) selY.addEventListener('change', applySelectedAtomChanges);
   if (selZ) selZ.addEventListener('change', applySelectedAtomChanges);
-
-  // ── Change Element ─────────────────────────────────────────────────────────
-
-  const btnChangeAtom = document.getElementById('btn-change-atom') as HTMLButtonElement | null;
-  if (btnChangeAtom) {
-    btnChangeAtom.addEventListener('click', () => {
-      const element = (document.getElementById('change-element') as HTMLInputElement | null)?.value.trim() ?? '';
-      if (!element || !selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length === 0) { return; }
-      vscode.postMessage({ command: 'changeAtoms', atomIds: selectionStore.selectedAtomIds, element });
-    });
-  }
 
   // ── Atom Color ─────────────────────────────────────────────────────────────
 

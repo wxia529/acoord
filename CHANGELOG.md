@@ -8,18 +8,15 @@ All notable changes to this project will be documented in this file.
 
 - **Clipboard Copy/Paste**: Full clipboard support for atomic structures via `Ctrl+C` / `Ctrl+V` shortcuts. The `ClipboardService` enables cross-session copy/paste operations with configurable offset (default 0.5Å in each direction).
 - **Enhanced Keyboard Shortcuts**: Added `Ctrl+C` (copy selection), `Ctrl+V` (paste), `Ctrl+Y` (redo), and `A` (focus add atom form) to the existing keyboard shortcut set.
-- **Format Preservation on Save**: When editing GJF, XYZ, ORCA, QE, and ABACUS STRU files, ACoord now preserves original format-specific content (headers, configuration blocks, comments) and only updates coordinate data. This ensures user configurations are not lost during editing:
-  - **GJF/COM**: Preserves route lines (`#P`), header directives (`%mem`, `%nproc`), title, and charge/multiplicity format
-  - **XYZ**: Preserves comment lines including Lattice field formatting
-  - **ORCA**: Preserves header directives (`!` methods, `%maxcore`, `%pal`) and charge/multiplicity format
-  - **QE**: Preserves all namelist blocks (CONTROL, SYSTEM, ELECTRONS, IONS, CELL), ATOMIC_SPECIES, CELL_PARAMETERS, and ATOMIC_POSITIONS header format
-  - **ABACUS STRU**: Preserves ATOMIC_SPECIES, NUMERICAL_ORBITAL, LATTICE_CONSTANT, LATTICE_VECTORS blocks and coordinate type (Cartesian/Direct)
+- **Format Preservation on Save**: When editing GJF, XYZ, ORCA, QE, and ABACUS STRU files, ACoord now preserves original format-specific content and only updates coordinate data. This ensures user configurations are not lost during editing:
 
 ### Bug Fixes
 
 - **Periodic Bond Detection for Out-of-Cell Atoms**: Fixed asymmetric bond detection where atoms with fractional coordinates outside `[0, 1)` would incorrectly form bonds. The algorithm now properly filters atoms by fractional position before building spatial hashes for periodic images, preventing ghost bonds and ensuring symmetric bond detection regardless of atom placement direction.
 - **Multi-Atom Drag Plane Calculation**: Fixed drag plane normal calculation when dragging multiple atoms simultaneously, ensuring movement stays in the correct view plane.
 - **Camera Control During Drag**: Fixed issue where camera controls remained disabled after cancelled drag operations.
+- **Element Change Color Update**: Fixed bug where changing an atom's element did not immediately update its color to the new element's default. The `changeAtoms` method now clears the atom's custom color when the element changes.
+- **UI Cleanup**: Removed duplicate "Change Element" panel; element changes are now performed exclusively via the "Selected Atom" panel for a cleaner interface.
 
 ## 0.2.1
 

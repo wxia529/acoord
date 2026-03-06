@@ -68,7 +68,7 @@ Input and output:
 - Move atoms: Shift drag selected atoms in the canvas.
 - Box select: Shift drag in empty space to select multiple atoms in screen space.
 - Rotate selection: pick axis (X/Y/Z) and move the angle slider (0-360).
-- Change element: use the Change Element panel and Apply to Selected.
+- Change element: use the Selected Atom panel and click Apply.
 - Add or delete atoms: use the Add Atom panel or Delete button.
 - Keyboard shortcuts: Delete/Backspace (delete selected atom(s)), Ctrl/Cmd+Z (undo), Ctrl/Cmd+S (save), Ctrl/Cmd+Shift+S (save as).
 - Measure: select 2 atoms for bond length, 3 atoms for bond angle.
