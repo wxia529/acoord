@@ -679,4 +679,25 @@ No separately maintained duplicate interface.
 
 ---
 
+### ✓ Periodic bond detection formed spurious bonds with out-of-cell atoms
+
+**Resolved:** 2026-03-06
+
+`getPeriodicBonds()` in `src/models/structure.ts` was forming bonds between atoms
+inside the unit cell and "non-existent" periodic images of atoms outside the cell.
+This created an asymmetry bug: atoms far outside the left boundary (fx < 0) would
+form bonds through their +1 images, but atoms outside the right boundary (fx >= 1)
+would not.
+
+**Fix:** Added a check to skip atoms whose fractional coordinates are outside
+[0, 1) range from participating in periodic bond detection. This ensures only
+atoms in the primary unit cell form bonds, eliminating spurious bonds with
+"ghost" images.
+
+**Test:** Added `src/test/unit/models/periodic_bond_outside_cell.test.mts` with
+5 test cases covering left/right boundary, cross-boundary bonds, and far-outside
+atoms.
+
+---
+
 *End of document.*
