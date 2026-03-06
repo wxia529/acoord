@@ -17,13 +17,8 @@ export function setup(callbacks: AppEditContext): void {
 
   // ── Quick Add ─────────────────────────────────────────────────────────────────
 
-  const btnAddAtom = document.getElementById('btn-add-atom') as HTMLButtonElement | null;
   const elementInput = document.getElementById('element-input') as HTMLInputElement | null;
   const btnAddAtomForm = document.getElementById('btn-add-atom-form') as HTMLButtonElement | null;
-
-  if (btnAddAtom && elementInput) {
-    btnAddAtom.addEventListener('click', () => { elementInput.focus(); });
-  }
 
   if (btnAddAtomForm) {
     btnAddAtomForm.addEventListener('click', () => {
@@ -45,7 +40,7 @@ export function setup(callbacks: AppEditContext): void {
     });
   }
 
-  // ── Delete / Copy toolbar buttons ──────────────────────────────────────────
+  // ── Delete helper (keyboard shortcut uses this) ────────────────────────────
 
   const deleteSelectedAtoms = (): boolean => {
     const selectedAtomIds = Array.isArray(selectionStore.selectedAtomIds)
@@ -64,24 +59,6 @@ export function setup(callbacks: AppEditContext): void {
 
   // Expose so the keyboard handler can call it.
   callbacks.deleteSelectedAtoms = deleteSelectedAtoms;
-
-  const btnDeleteAtom = document.getElementById('btn-delete-atom') as HTMLButtonElement | null;
-  const btnCopyAtom = document.getElementById('btn-copy-atom') as HTMLButtonElement | null;
-
-  if (btnDeleteAtom) {
-    btnDeleteAtom.addEventListener('click', () => { deleteSelectedAtoms(); });
-  }
-
-  if (btnCopyAtom) {
-    btnCopyAtom.addEventListener('click', () => {
-      if (!selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length === 0) { return; }
-      vscode.postMessage({
-        command: 'copyAtoms',
-        atomIds: selectionStore.selectedAtomIds,
-        offset: { x: 0.5, y: 0.5, z: 0.5 },
-      });
-    });
-  }
 
   // ── Selected Atom panel ────────────────────────────────────────────────────
 
@@ -147,7 +124,7 @@ export function setup(callbacks: AppEditContext): void {
     });
   }
 
-  // ── Keyboard shortcuts (global — delete, undo, save) ──────────────────────
+  // ── Keyboard shortcuts (global — delete, undo, save, copy, paste) ──────────────────────
 
   document.addEventListener('keydown', (event: KeyboardEvent) => {
     const target = event.target as HTMLElement | null;
@@ -158,20 +135,62 @@ export function setup(callbacks: AppEditContext): void {
     const withModifier = event.ctrlKey || event.metaKey;
     if (withModifier && !event.altKey) {
       const key = String(event.key || '').toLowerCase();
+      
+      // Undo
       if (key === 'z' && !event.shiftKey) {
         vscode.postMessage({ command: 'undo' });
         event.preventDefault();
         return;
       }
+      
+      // Redo
+      if (key === 'y' || (key === 'z' && event.shiftKey)) {
+        vscode.postMessage({ command: 'redo' });
+        event.preventDefault();
+        return;
+      }
+      
+      // Save As
       if (key === 's' && event.shiftKey) {
         vscode.postMessage({ command: 'saveStructureAs' });
         event.preventDefault();
         return;
       }
+      
+      // Save
       if (key === 's') {
         vscode.postMessage({ command: 'saveStructure' });
         event.preventDefault();
         return;
+      }
+      
+      // Copy selection
+      if (key === 'c') {
+        if (selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.length > 0) {
+          vscode.postMessage({ 
+            command: 'copySelection', 
+            atomIds: selectionStore.selectedAtomIds 
+          });
+          event.preventDefault();
+          return;
+        }
+      }
+      
+      // Paste
+      if (key === 'v') {
+        vscode.postMessage({ command: 'pasteSelection' });
+        event.preventDefault();
+        return;
+      }
+      
+      // Focus Add Atom form
+      if (key === 'a') {
+        const elementInput = document.getElementById('element-input') as HTMLInputElement | null;
+        if (elementInput) {
+          elementInput.focus();
+          event.preventDefault();
+          return;
+        }
       }
     }
 

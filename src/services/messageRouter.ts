@@ -8,6 +8,7 @@ import { AtomEditService } from './atomEditService.js';
 import { UnitCellService } from './unitCellService.js';
 import { DocumentService } from './documentService.js';
 import { DisplayConfigService } from './displayConfigService.js';
+import { ClipboardManager } from './clipboardManager.js';
 import type { WebviewToExtensionMessage, MessageByCommand } from '../shared/protocol.js';
 
 type AnyHandler = (message: unknown) => Promise<boolean> | boolean;
@@ -32,7 +33,9 @@ export class MessageRouter {
     private unitCellService: UnitCellService,
     private documentService: DocumentService,
     private displayConfigService: DisplayConfigService,
+    private clipboardManager: ClipboardManager,
     private sessionKey: string,
+    private documentUri: string,
     private webviewPanel: vscode.WebviewPanel,
     private onRenderRequired: () => void,
     private onSelectionClearRequired: () => void,
@@ -44,6 +47,7 @@ export class MessageRouter {
     this.registerUnitCellCommands();
     this.registerDocumentCommands();
     this.registerDisplayConfigCommands();
+    this.registerClipboardCommands();
   }
 
   register<C extends WebviewToExtensionMessage['command']>(
@@ -384,6 +388,25 @@ export class MessageRouter {
 
     this.registerTyped('deleteDisplayConfig', async (message) => {
       return await this.displayConfigService.handleDeleteDisplayConfig(message.configId);
+    });
+  }
+
+  private registerClipboardCommands(): void {
+    this.registerTyped('copySelection', (message) => {
+      const structure = this.trajectoryManager.activeStructure;
+      this.clipboardManager.copy(message.atomIds, structure, this.sessionKey, this.documentUri);
+      return true;
+    });
+
+    this.registerTyped('pasteSelection', (message) => {
+      const structure = this.trajectoryManager.activeStructure;
+      
+      this.undoManager.push(structure);
+      const newAtomIds = this.clipboardManager.paste(structure, message.offset);
+      
+      this.selectionService.setSelection(newAtomIds);
+      this.renderer.setStructure(structure);
+      return true;
     });
   }
 }
