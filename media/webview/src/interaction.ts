@@ -199,9 +199,9 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
           ? interactionStore.dragPlaneNormal
           : camera.getWorldDirection(_normal);
 
-        if (selectionStore.selectedAtomIds.length > 1) {
-          const last = interactionStore.lastDragWorld instanceof Vector3 ? interactionStore.lastDragWorld : nextPosition;
-          _delta.subVectors(nextPosition, last);
+        if (selectionStore.selectedAtomIds.length > 1 && mesh) {
+          const last = interactionStore.lastDragWorld instanceof Vector3 ? interactionStore.lastDragWorld : mesh.position;
+          _delta.subVectors(nextPosition, mesh.position);
           _normalDelta.copy(storedNormal).multiplyScalar(_delta.dot(storedNormal));
           _delta.sub(_normalDelta);
           if (_delta.length() > 0) {
