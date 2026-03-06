@@ -171,7 +171,7 @@ export class AtomEditService {
 
     const parsedElement = parseElement(element);
     if (!parsedElement) {
-      return false;
+      throw new Error(`changeAtoms: invalid element symbol "${element}"`);
     }
 
     if (!this.trajectoryManager.isEditing) {
@@ -184,6 +184,7 @@ export class AtomEditService {
       const atom = editStructure.getAtom(id);
       if (atom) {
         atom.element = parsedElement;
+        atom.color = undefined;
       }
     }
     this.renderer.setStructure(editStructure);

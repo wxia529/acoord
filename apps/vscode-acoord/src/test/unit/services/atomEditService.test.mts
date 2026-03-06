@@ -151,11 +151,10 @@ describe('AtomEditService', () => {
       expect(tm.activeStructure.getAtom(id)!.element).to.equal('N');
     });
 
-    it('should return false for invalid element', () => {
+    it('should throw for invalid element', () => {
       const s = makeStructure();
       const { svc } = makeServices(s);
-      const result = svc.changeAtoms([s.atoms[0].id], 'Xx');
-      expect(result).to.be.false;
+      expect(() => svc.changeAtoms([s.atoms[0].id], 'Xx')).to.throw(/invalid element symbol/);
     });
 
     it('should return false for empty ids', () => {
