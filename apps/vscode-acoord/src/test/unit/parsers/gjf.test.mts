@@ -88,5 +88,42 @@ H  0.631 -0.631 -0.631
       expect(reparsed.metadata.get('charge')).to.equal(original.metadata.get('charge'));
       expect(reparsed.metadata.get('multiplicity')).to.equal(original.metadata.get('multiplicity'));
     });
+
+    it('should preserve original header lines (format preservation)', () => {
+      const original = parser.parse(fixtureContent);
+      const serialized = parser.serialize(original);
+      
+      const origLines = fixtureContent.split('\n');
+      const serLines = serialized.split('\n');
+      
+      // Header lines should be preserved
+      expect(serLines[0]).to.equal('%mem=2GB');
+      expect(serLines[1]).to.equal('%nprocshared=8');
+      expect(serLines[2]).to.contain('B3LYP/6-31G(d)');
+      
+      // Title should be preserved
+      expect(serLines[4]).to.equal('Water molecule optimization');
+    });
+  });
+  
+  it('should preserve format on round-trip with header lines', () => {
+    const gjfWithHeader = `%mem=4GB
+%nprocshared=4
+# B3LYP/6-31G(d) Opt Freq
+
+Test molecule
+
+0 1
+C  0.000  0.000  0.000
+H  0.631  0.631  0.631
+
+`;
+    const original = parser.parse(gjfWithHeader);
+    const serialized = parser.serialize(original);
+    
+    const serLines = serialized.split('\n');
+    expect(serLines[0]).to.equal('%mem=4GB');
+    expect(serLines[1]).to.equal('%nprocshared=4');
+    expect(serLines[2]).to.equal('# B3LYP/6-31G(d) Opt Freq');
   });
 });

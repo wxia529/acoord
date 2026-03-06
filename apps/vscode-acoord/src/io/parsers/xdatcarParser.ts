@@ -3,7 +3,7 @@ import { Atom } from '../../models/atom.js';
 import { UnitCell } from '../../models/unitCell.js';
 import { parseElement } from '../../utils/elementData.js';
 import { expandElements, fractionalToCartesian } from '../../utils/parserUtils.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 interface XdatcarHeader {
   label: string;
@@ -18,7 +18,7 @@ interface XdatcarHeader {
 /**
  * XDATCAR trajectory parser (VASP)
  */
-export class XDATCARParser extends BaseStructureParser {
+export class XDATCARParser extends StructureParser {
   parse(content: string): Structure {
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {

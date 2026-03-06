@@ -83,5 +83,34 @@ H  -0.757   0.586   0.000
       expect(reparsed.metadata.get('charge')).to.equal(original.metadata.get('charge'));
       expect(reparsed.metadata.get('multiplicity')).to.equal(original.metadata.get('multiplicity'));
     });
+
+    it('should preserve original header lines (format preservation)', () => {
+      const original = parser.parse(fixtureContent);
+      const serialized = parser.serialize(original);
+      
+      const serLines = serialized.split('\n');
+      
+      // Header lines should be preserved
+      expect(serLines[0]).to.contain('!');  // Should start with !
+      expect(serLines[1]).to.contain('%');  // Should contain %maxcore or similar
+    });
+  });
+  
+  it('should preserve format on round-trip with header lines', () => {
+    const orcaWithHeader = `! PBE0 D3BJ def2-TZVP
+%pal nprocs 4 end
+%maxcore 8192
+
+* xyz 0 1
+O  0.000  0.000  0.000
+H  0.757  0.586  0.000
+*`;
+    const original = parser.parse(orcaWithHeader);
+    const serialized = parser.serialize(original);
+    
+    const serLines = serialized.split('\n');
+    expect(serLines[0]).to.equal('! PBE0 D3BJ def2-TZVP');
+    expect(serLines[1]).to.equal('%pal nprocs 4 end');
+    expect(serLines[2]).to.equal('%maxcore 8192');
   });
 });

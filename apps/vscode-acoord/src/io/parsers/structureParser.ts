@@ -5,7 +5,7 @@ import { Structure } from '../../models/structure.js';
  * for trajectory methods. Subclasses should override these methods
  * if they support trajectory parsing/serialization.
  */
-export abstract class BaseStructureParser {
+export abstract class StructureParser {
   abstract parse(content: string): Structure;
   abstract serialize(structure: Structure): string;
 

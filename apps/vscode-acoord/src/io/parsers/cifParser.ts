@@ -2,19 +2,26 @@ import { Structure } from '../../models/structure.js';
 import { Atom } from '../../models/atom.js';
 import { UnitCell } from '../../models/unitCell.js';
 import { parseElement } from '../../utils/elementData.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 /**
  * CIF file format parser (basic implementation)
  * Crystallographic Information File
  */
-export class CIFParser extends BaseStructureParser {
+export class CIFParser extends StructureParser {
   parse(content: string): Structure {
+    if (!content.trim()) {
+      throw new Error('CIFParser: empty input');
+    }
     const structure = new Structure('', true);
     const lines = content.split(/\r?\n/);
     this.parseUnitCell(lines, structure);
     this.parseAtomLoops(lines, structure);
     this.applySymmetryOperations(lines, structure);
+
+    if (structure.atoms.length === 0) {
+      throw new Error('CIFParser: no atom positions found in file');
+    }
 
     return structure;
   }

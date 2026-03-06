@@ -91,5 +91,70 @@ Si  0.25  0.25  0.25
       expect(reparsed.atoms[0].element).to.equal(original.atoms[0].element);
       expect(reparsed.unitCell).to.be.instanceOf(UnitCell);
     });
+
+    it('should preserve original namelist blocks (format preservation)', () => {
+      const original = parser.parse(fixtureContent);
+      const serialized = parser.serialize(original);
+      
+      const serLines = serialized.split('\n');
+      
+      // CONTROL block should be preserved
+      expect(serLines[0]).to.equal('&CONTROL');
+      expect(serLines[1]).to.contain('calculation');
+      
+      // SYSTEM block should be preserved with updated nat
+      const systemBlockStart = serLines.findIndex(l => l.trim() === '&SYSTEM');
+      expect(systemBlockStart).to.be.greaterThan(-1);
+      
+      // ATOMIC_SPECIES block should be preserved
+      const speciesStart = serLines.findIndex(l => l.trim() === 'ATOMIC_SPECIES');
+      expect(speciesStart).to.be.greaterThan(-1);
+    });
+  });
+  
+  it('should preserve namelist format on round-trip', () => {
+    const qeWithCustomSettings = `&CONTROL
+  calculation = 'relax',
+  prefix = 'my_calc',
+  outdir = './tmp'
+/
+&SYSTEM
+  ibrav = 0,
+  nat = 2,
+  ntyp = 1,
+  ecutwfc = 60,
+  ecutrho = 480
+/
+&ELECTRONS
+  conv_thr = 1.0d-10,
+  mixing_beta = 0.7
+/
+ATOMIC_SPECIES
+C  12.011  C.pbe-n-kjpaw_psl.1.0.0.UPF
+
+CELL_PARAMETERS angstrom
+  5.0  0.0  0.0
+  0.0  5.0  0.0
+  0.0  0.0  5.0
+
+ATOMIC_POSITIONS angstrom
+C  0.000  0.000  0.000
+C  1.500  1.500  1.500
+`;
+    const original = parser.parse(qeWithCustomSettings);
+    const serialized = parser.serialize(original);
+    
+    const serLines = serialized.split('\n');
+    
+    // Should preserve CONTROL block content
+    expect(serLines[1]).to.contain("calculation = 'relax'");
+    expect(serLines[2]).to.contain("prefix = 'my_calc'");
+    
+    // Should preserve SYSTEM block with updated nat
+    const systemLine = serLines.find(l => /^\s*nat\s*=/.test(l));
+    expect(systemLine).to.contain('2');
+    
+    // Should preserve ELECTRONS block
+    expect(serLines.some(l => l.includes('conv_thr = 1.0d-10'))).to.be.true;
   });
 });

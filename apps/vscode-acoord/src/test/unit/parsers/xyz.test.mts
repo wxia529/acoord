@@ -80,5 +80,28 @@ H -0.757  0.586  0.000`;
       expect(reparsed.atoms[1].x).to.be.closeTo(original.atoms[1].x, 1e-3);
       expect(reparsed.atoms[2].x).to.be.closeTo(original.atoms[2].x, 1e-3);
     });
+
+    it('should preserve original comment line (format preservation)', () => {
+      const original = parser.parse(fixtureContent);
+      const serialized = parser.serialize(original);
+      
+      const serLines = serialized.split('\n');
+      // Comment line (line 2) should preserve original text
+      expect(serLines[1]).to.equal('water molecule');
+    });
+  });
+  
+  it('should preserve comment on round-trip', () => {
+    const xyzWithComment = `3
+My custom structure with special comment
+O  0.000  0.000  0.000
+H  0.757  0.586  0.000
+H -0.757  0.586  0.000
+`;
+    const original = parser.parse(xyzWithComment);
+    const serialized = parser.serialize(original);
+    
+    const serLines = serialized.split('\n');
+    expect(serLines[1]).to.equal('My custom structure with special comment');
   });
 });
