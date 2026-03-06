@@ -70,20 +70,21 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     if (hits.length > 0) {
       const hit = hits[0];
       const atomId = hit.object.userData && (hit.object.userData as Record<string, unknown>).atomId as string | undefined;
-      if (atomId) {
-        if (event.shiftKey) {
-          const isSelected = selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.includes(atomId);
-          if (isSelected) {
-            pendingDrag = {
-              atomId,
-              hitPoint: hit.point.clone(),
-              startX: event.clientX,
-              startY: event.clientY,
-            };
-          } else {
-            const localX = event.clientX - rect.left;
-            const localY = event.clientY - rect.top;
-            boxSelect = {
+        if (atomId) {
+          if (event.shiftKey) {
+            const isSelected = selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.includes(atomId);
+            if (isSelected) {
+              pendingDrag = {
+                atomId,
+                hitPoint: hit.point.clone(),
+                startX: event.clientX,
+                startY: event.clientY,
+              };
+              renderer.setControlsEnabled(false);
+            } else {
+              const localX = event.clientX - rect.left;
+              const localY = event.clientY - rect.top;
+              boxSelect = {
               startX: localX,
               startY: localY,
               bondMode:
@@ -249,6 +250,9 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
       pickerState.lightPickerDragging = false;
       renderer.setControlsEnabled(!pickerState.activeLightPicker);
       return;
+    }
+    if (pendingDrag && !interactionStore.isDragging) {
+      renderer.setControlsEnabled(true);
     }
     if (interactionStore.isDragging) {
       interactionStore.isDragging = false;
