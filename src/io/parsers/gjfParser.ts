@@ -2,14 +2,17 @@ import { Structure } from '../../models/structure.js';
 import { Atom } from '../../models/atom.js';
 import { UnitCell } from '../../models/unitCell.js';
 import { parseElement } from '../../utils/elementData.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 /**
  * Gaussian input file format parser (GJF/COM)
  * Minimal support: title, charge/multiplicity, atom lines, and TV lattice vectors.
  */
-export class GJFParser extends BaseStructureParser {
+export class GJFParser extends StructureParser {
   parse(content: string): Structure {
+    // Save complete raw content for format preservation (Strategy 1)
+    const rawContent = content;
+    
     const lines = content.split(/\r?\n/);
     let idx = 0;
 
@@ -22,7 +25,8 @@ export class GJFParser extends BaseStructureParser {
     }
 
     // Title section (first non-empty line)
-    const title = (lines[idx] || '').trim();
+    const titleLine = (lines[idx] || '').trim();
+    const title = titleLine;
     idx++;
 
     // Skip blank line after title
@@ -55,6 +59,10 @@ export class GJFParser extends BaseStructureParser {
     const structure = new Structure(title || '');
     structure.metadata.set('charge', charge);
     structure.metadata.set('multiplicity', multiplicity);
+    
+    // Store raw content in metadata for serialization
+    structure.metadata.set('gjfRawContent', rawContent);
+    
     const latticeVectors: number[][] = [];
 
     // Atom and TV lines until blank line or EOF
@@ -103,6 +111,18 @@ export class GJFParser extends BaseStructureParser {
   }
 
   serialize(structure: Structure): string {
+    // Strategy 1: Use saved raw content and replace coordinate section
+    const savedRawContent = structure.metadata.get('gjfRawContent') as string | undefined;
+    if (!savedRawContent) {
+      // Fallback to default generation if no raw content saved
+      return this.generateDefaultGJF(structure);
+    }
+
+    // Replace charge/multiplicity and coordinate section
+    return this.replaceGJFSections(savedRawContent, structure);
+  }
+
+  private generateDefaultGJF(structure: Structure): string {
     const lines: string[] = [];
     lines.push('#P');
     lines.push('');
@@ -127,6 +147,77 @@ export class GJFParser extends BaseStructureParser {
     }
 
     return lines.join('\n');
+  }
+
+  private replaceGJFSections(rawContent: string, structure: Structure): string {
+    const lines = rawContent.split(/\r?\n/);
+    const resultLines: string[] = [];
+    
+    const charge = structure.metadata.get('charge') as number ?? 0;
+    const multiplicity = structure.metadata.get('multiplicity') as number ?? 1;
+
+    let i = 0;
+    let inCoordinates = false;
+    let coordsWritten = false;
+
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+
+      // Find charge/multiplicity line (two integers)
+      if (!inCoordinates && !coordsWritten) {
+        const parts = trimmed.split(/\s+/);
+        if (parts.length >= 2 && this.isInteger(parts[0]) && this.isInteger(parts[1])) {
+          // Replace charge/multiplicity
+          resultLines.push(`${charge} ${multiplicity}`);
+          i++;
+          inCoordinates = true;
+          continue;
+        }
+      }
+
+      // In coordinate section - skip old coordinates
+      if (inCoordinates && !coordsWritten) {
+        if (!trimmed) {
+          // Blank line marks end of coordinates
+          coordsWritten = true;
+          // Write new coordinates before the blank line
+          this.writeGJFCoordinates(resultLines, structure);
+          resultLines.push(line);
+          i++;
+          continue;
+        }
+        // Skip old coordinate line
+        i++;
+        continue;
+      }
+
+      // Copy other lines unchanged
+      resultLines.push(line);
+      i++;
+    }
+
+    // If coordinates were not found, append them
+    if (!coordsWritten) {
+      this.writeGJFCoordinates(resultLines, structure);
+    }
+
+    return resultLines.join('\n');
+  }
+
+  private writeGJFCoordinates(lines: string[], structure: Structure): void {
+    for (const atom of structure.atoms) {
+      lines.push(
+        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+      );
+    }
+
+    if (structure.unitCell) {
+      const vectors = structure.unitCell.getLatticeVectors();
+      for (const vec of vectors) {
+        lines.push(`TV  ${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+      }
+    }
   }
 
   private isInteger(value: string): boolean {

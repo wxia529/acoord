@@ -2,7 +2,7 @@ import { Structure } from '../../models/structure.js';
 import { Atom } from '../../models/atom.js';
 import { UnitCell } from '../../models/unitCell.js';
 import { parseElement } from '../../utils/elementData.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 /**
  * XYZ file format parser
@@ -12,7 +12,7 @@ import { BaseStructureParser } from './structureParser.js';
  * <element> <x> <y> <z>
  * ...
  */
-export class XYZParser extends BaseStructureParser {
+export class XYZParser extends StructureParser {
   parse(content: string): Structure {
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {
@@ -52,6 +52,14 @@ export class XYZParser extends BaseStructureParser {
         structure.isCrystal = true;
         structure.unitCell = this.unitCellFromLattice(latticeVectors);
       }
+
+      // Store raw content in metadata for serialization (Strategy 1)
+      // Save the complete frame content
+      const frameStart = i;
+      const frameEnd = i + 2 + atomCount;
+      const frameContent = lines.slice(frameStart, Math.min(frameEnd, lines.length)).join('\n');
+      structure.metadata.set('xyzRawContent', frameContent);
+      structure.metadata.set('xyzFullContent', content);
 
       const properties = this.parsePropertiesFromComment(comment);
       const speciesIndex = properties?.speciesIndex ?? 0;
@@ -108,6 +116,18 @@ export class XYZParser extends BaseStructureParser {
   }
 
   private serializeSingleFrame(structure: Structure): string {
+    // Strategy 1: Use saved raw content and replace coordinate section
+    const savedRawContent = structure.metadata.get('xyzRawContent') as string | undefined;
+    if (!savedRawContent) {
+      // Fallback to default generation if no raw content saved
+      return this.generateDefaultXYZ(structure);
+    }
+
+    // Replace comment and coordinate section
+    return this.replaceXYZSections(savedRawContent, structure);
+  }
+
+  private generateDefaultXYZ(structure: Structure): string {
     const lines: string[] = [];
     lines.push(structure.atoms.length.toString());
     let comment = structure.name || 'Structure';
@@ -130,6 +150,30 @@ export class XYZParser extends BaseStructureParser {
     }
 
     return lines.join('\n');
+  }
+
+  private replaceXYZSections(rawContent: string, structure: Structure): string {
+    const lines = rawContent.split(/\r?\n/);
+    const resultLines: string[] = [];
+    
+    // Line 0: atom count (keep original)
+    if (lines.length > 0) {
+      resultLines.push(lines[0]);
+    }
+    
+    // Line 1: comment (keep original)
+    if (lines.length > 1) {
+      resultLines.push(lines[1]);
+    }
+    
+    // Write new coordinates
+    for (const atom of structure.atoms) {
+      resultLines.push(
+        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+      );
+    }
+
+    return resultLines.join('\n');
   }
 
   private parseLatticeFromComment(comment: string): number[][] | null {

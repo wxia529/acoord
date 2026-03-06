@@ -2,13 +2,16 @@ import { Structure } from '../../models/structure.js';
 import { Atom } from '../../models/atom.js';
 import { UnitCell } from '../../models/unitCell.js';
 import { parseElement } from '../../utils/elementData.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 /**
  * PDB file format parser (basic support for CRYST1 and ATOM/HETATM)
  */
-export class PDBParser extends BaseStructureParser {
+export class PDBParser extends StructureParser {
   parse(content: string): Structure {
+    if (!content.trim()) {
+      throw new Error('PDBParser: empty input');
+    }
     const lines = content.split(/\r?\n/);
     const structure = new Structure('');
 
@@ -50,6 +53,10 @@ export class PDBParser extends BaseStructureParser {
 
         structure.addAtom(new Atom(element, x, y, z));
       }
+    }
+
+    if (structure.atoms.length === 0) {
+      throw new Error('PDBParser: no ATOM or HETATM records found');
     }
 
     return structure;

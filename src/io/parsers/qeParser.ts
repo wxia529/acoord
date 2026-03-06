@@ -4,7 +4,7 @@ import { UnitCell } from '../../models/unitCell.js';
 import { ELEMENT_DATA, parseElement } from '../../utils/elementData.js';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
 import { fractionalToCartesian } from '../../utils/parserUtils.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 type QEUnit = 'angstrom' | 'bohr' | 'alat' | 'crystal';
 
@@ -30,13 +30,21 @@ interface ParsedPositionsBlock {
  * - parse: supports pw.x input and output coordinates/cell
  * - serialize: writes pw.x input format
  */
-export class QEParser extends BaseStructureParser {
+export class QEParser extends StructureParser {
   parse(content: string): Structure {
+    // Save complete raw content for format preservation (Strategy 1)
+    const rawContent = content;
+    
     const frames = this.parseTrajectory(content);
     if (frames.length === 0) {
       throw new Error('Invalid QE content: no structure found');
     }
-    return frames[frames.length - 1];
+    const structure = frames[frames.length - 1];
+    
+    // Store raw content in metadata for serialization
+    structure.metadata.set('qeRawContent', rawContent);
+    
+    return structure;
   }
 
   parseTrajectory(content: string): Structure[] {
@@ -55,6 +63,25 @@ export class QEParser extends BaseStructureParser {
       throw new Error('Cannot write QE input: structure has no atoms');
     }
 
+    // Strategy 1: Use saved raw content and replace coordinate sections
+    const savedRawContent = structure.metadata.get('qeRawContent') as string | undefined;
+    if (!savedRawContent) {
+      // Fallback to default generation if no raw content saved
+      return this.generateDefaultQE(structure);
+    }
+
+    // Determine if this is a QE input or output file
+    const lines = savedRawContent.split(/\r?\n/);
+    if (this.looksLikeQeOutput(lines)) {
+      // For output files, generate default QE input format
+      return this.generateDefaultQE(structure);
+    }
+
+    // For input files, replace ATOMIC_POSITIONS and CELL_PARAMETERS sections
+    return this.replaceQESections(savedRawContent, structure);
+  }
+
+  private generateDefaultQE(structure: Structure): string {
     const lines: string[] = [];
     const prefixRaw = (structure.name || 'structure').trim() || 'structure';
     const prefix = prefixRaw.replace(/\s+/g, '_');
@@ -112,6 +139,132 @@ export class QEParser extends BaseStructureParser {
     return lines.join('\n');
   }
 
+  private replaceQESections(rawContent: string, structure: Structure): string {
+    const lines = rawContent.split(/\r?\n/);
+    const resultLines: string[] = [];
+    
+    const speciesOrder: string[] = [];
+    for (const atom of structure.atoms) {
+      if (!speciesOrder.includes(atom.element)) {
+        speciesOrder.push(atom.element);
+      }
+    }
+    const vectors = structure.unitCell
+      ? structure.unitCell.getLatticeVectors()
+      : null;
+    const hasFixedFlags = structure.atoms.some((atom) => atom.fixed);
+
+    let i = 0;
+    while (i < lines.length) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      const upper = trimmed.toUpperCase();
+
+      // Replace CELL_PARAMETERS block
+      if (upper.startsWith('CELL_PARAMETERS')) {
+        // Keep the header line (with unit specification)
+        resultLines.push(line);
+        i++;
+
+        // Skip old cell vectors (3 lines)
+        let vecCount = 0;
+        while (i < lines.length && vecCount < 3) {
+          const checkLine = this.cleanLine(lines[i]);
+          if (checkLine && /^-?\d/.test(checkLine)) {
+            i++;
+            vecCount++;
+          } else {
+            break;
+          }
+        }
+
+        // Write new cell vectors
+        if (vectors) {
+          for (const vec of vectors) {
+            resultLines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+          }
+        }
+        continue;
+      }
+
+      // Replace ATOMIC_SPECIES block
+      if (upper === 'ATOMIC_SPECIES') {
+        resultLines.push(line);
+        i++;
+
+        // Skip old species lines
+        while (i < lines.length) {
+          const checkLine = this.cleanLine(lines[i]);
+          if (!checkLine) break;
+          if (/^[A-Z][a-z]?/i.test(checkLine) || this.looksLikeNamelist(checkLine)) {
+            i++;
+          } else {
+            break;
+          }
+        }
+
+        // Write new species
+        for (const symbol of speciesOrder) {
+          const mass = ELEMENT_DATA[symbol]?.atomicMass ?? 1;
+          resultLines.push(`${symbol}  ${mass.toFixed(6)}  ${symbol}.UPF`);
+        }
+        continue;
+      }
+
+      // Replace ATOMIC_POSITIONS block
+      if (upper.startsWith('ATOMIC_POSITIONS')) {
+        // Keep header with unit specification
+        resultLines.push(line);
+        i++;
+
+        // Skip old atom positions
+        while (i < lines.length) {
+          const checkLine = this.cleanLine(lines[i]);
+          if (!checkLine) break;
+          if (/^[A-Z][a-z]?\s+[\d.-]/i.test(checkLine)) {
+            i++;
+          } else {
+            break;
+          }
+        }
+
+        // Write new atom positions
+        for (const atom of structure.atoms) {
+          const base = `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`;
+          if (hasFixedFlags) {
+            resultLines.push(`${base}  ${atom.fixed ? '0 0 0' : '1 1 1'}`);
+          } else {
+            resultLines.push(base);
+          }
+        }
+        continue;
+      }
+
+      // Update nat in SYSTEM block
+      if (/^\s*nat\s*=/i.test(trimmed)) {
+        const indent = trimmed.match(/^(\s*)/)?.[1] ?? '';
+        resultLines.push(`${indent}nat = ${structure.atoms.length}`);
+        i++;
+        continue;
+      }
+
+      // Copy other lines unchanged
+      resultLines.push(line);
+      i++;
+    }
+
+    return resultLines.join('\n');
+  }
+
+  private cleanLine(line: string): string {
+    if (!line) return '';
+    const withoutComment = line.split(/[!#]/)[0];
+    return withoutComment.trim();
+  }
+
+  private looksLikeNamelist(line: string): boolean {
+    return /^\s*(&[A-Z]+\b|[a-z]+\s*=)/i.test(line);
+  }
   private looksLikeQeInput(lines: string[]): boolean {
     const hasNamelist = lines.some((line) =>
       /^\s*&(?:CONTROL|SYSTEM|ELECTRONS|IONS|CELL)\b/i.test(line)
@@ -146,6 +299,31 @@ export class QEParser extends BaseStructureParser {
     }
 
     const structure = new Structure(name);
+
+    // Save QE format-specific blocks for preservation
+    const controlBlock = this.extractNamelistBlock(lines, 'CONTROL');
+    const systemBlock = this.extractNamelistBlock(lines, 'SYSTEM');
+    const electronsBlock = this.extractNamelistBlock(lines, 'ELECTRONS');
+    const ionsBlock = this.extractNamelistBlock(lines, 'IONS');
+    const cellBlock = this.extractNamelistBlock(lines, 'CELL');
+    
+    if (controlBlock) structure.metadata.set('qeControlBlock', controlBlock);
+    if (systemBlock) structure.metadata.set('qeSystemBlock', systemBlock);
+    if (electronsBlock) structure.metadata.set('qeElectronsBlock', electronsBlock);
+    if (ionsBlock) structure.metadata.set('qeIonsBlock', ionsBlock);
+    if (cellBlock) structure.metadata.set('qeCellBlock', cellBlock);
+    
+    // Save ATOMIC_SPECIES block
+    const speciesBlock = this.extractSpeciesBlock(lines);
+    if (speciesBlock) structure.metadata.set('qeSpeciesBlock', speciesBlock);
+    
+    // Save CELL_PARAMETERS block with header
+    const cellParamsBlock = this.extractCellParametersBlock(lines);
+    if (cellParamsBlock) structure.metadata.set('qeCellParametersBlock', cellParamsBlock);
+    
+    // Save ATOMIC_POSITIONS header line
+    const positionsHeader = this.extractPositionsHeader(lines);
+    if (positionsHeader) structure.metadata.set('qePositionsHeader', positionsHeader);
 
     let cellVectors: number[][] | null = null;
     let atoms: ParsedAtom[] = [];
@@ -652,5 +830,86 @@ export class QEParser extends BaseStructureParser {
 
   private unitCellFromVectors(vectors: number[][]): UnitCell {
     return UnitCell.fromVectors(vectors);
+  }
+
+  private extractNamelistBlock(lines: string[], blockName: string): string[] | null {
+    const pattern = new RegExp(`^\\s*&${blockName}\\b`, 'i');
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (pattern.test(lines[i])) {
+        startIndex = i;
+        break;
+      }
+    }
+    if (startIndex < 0) return null;
+
+    const blockLines: string[] = [];
+    for (let i = startIndex + 1; i < lines.length; i++) {
+      const line = lines[i];
+      const trimmed = line.trim();
+      if (trimmed === '/') {
+        break;
+      }
+      if (trimmed && !trimmed.startsWith('!')) {
+        blockLines.push(line);
+      }
+    }
+    return blockLines.length > 0 ? blockLines : null;
+  }
+
+  private extractSpeciesBlock(lines: string[]): string[] | null {
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^ATOMIC_SPECIES\b/i.test(lines[i].trim())) {
+        startIndex = i;
+        break;
+      }
+    }
+    if (startIndex < 0) return null;
+
+    const blockLines: string[] = [];
+    for (let i = startIndex + 1; i < lines.length; i++) {
+      const trimmed = lines[i].trim();
+      if (!trimmed) break;
+      if (/^[A-Z][a-z]?/i.test(trimmed)) {
+        blockLines.push(lines[i]);
+      } else {
+        break;
+      }
+    }
+    return blockLines.length > 0 ? blockLines : null;
+  }
+
+  private extractCellParametersBlock(lines: string[]): string[] | null {
+    let startIndex = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/^CELL_PARAMETERS\b/i.test(lines[i].trim())) {
+        startIndex = i;
+        break;
+      }
+    }
+    if (startIndex < 0) return null;
+
+    const blockLines: string[] = [lines[startIndex]];
+    for (let i = startIndex + 1; i < lines.length && blockLines.length < 4; i++) {
+      const trimmed = lines[i].trim();
+      if (!trimmed) continue;
+      if (/^[+-]?\d/.test(trimmed)) {
+        blockLines.push(lines[i]);
+      } else {
+        break;
+      }
+    }
+    return blockLines.length > 1 ? blockLines : null;
+  }
+
+  private extractPositionsHeader(lines: string[]): string | null {
+    for (let i = 0; i < lines.length; i++) {
+      const trimmed = lines[i].trim();
+      if (/^ATOMIC_POSITIONS\b/i.test(trimmed)) {
+        return trimmed;
+      }
+    }
+    return null;
   }
 }

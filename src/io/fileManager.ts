@@ -10,13 +10,13 @@ import {
   OUTCARParser,
   PDBParser,
   STRUParser,
-  BaseStructureParser,
+  StructureParser,
 } from './parsers/index.js';
 
 /**
  * File extension to parser mapping
  */
-const PARSER_MAP: Record<string, BaseStructureParser> = {
+const PARSER_MAP: Record<string, StructureParser> = {
   xyz: new XYZParser(),
   cif: new CIFParser(),
   poscar: new POSCARParser(),
@@ -77,7 +77,7 @@ export class FileManager {
     }
   }
 
-  private static selectParser(filePath: string, content: string): BaseStructureParser | null {
+  private static selectParser(filePath: string, content: string): StructureParser | null {
     const ext = this.getFileExtension(filePath).toLowerCase();
 
     const directParser = PARSER_MAP[ext];
@@ -86,14 +86,13 @@ export class FileManager {
     }
 
     if (ext === 'out' || ext === 'log') {
-      const parsersToTry: Array<{ name: string; parser: BaseStructureParser }> = [
-        { name: 'Quantum ESPRESSO', parser: PARSER_MAP['in'] },
-        { name: 'ORCA', parser: PARSER_MAP['inp'] },
-        { name: 'Gaussian', parser: PARSER_MAP['gjf'] },
-      ];
+      const parsersToTry: StructureParser[] = [
+        PARSER_MAP['in'],
+        PARSER_MAP['inp'],
+        PARSER_MAP['gjf'],
+      ].filter((parser): parser is StructureParser => parser !== undefined);
 
-      for (const { parser } of parsersToTry) {
-        if (!parser) {continue;}
+      for (const parser of parsersToTry) {
         try {
           const result = parser.parseTrajectory(content);
           if (result && result.length > 0) {

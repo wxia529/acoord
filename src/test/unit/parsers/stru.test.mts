@@ -97,5 +97,78 @@ H
       expect(reparsed.atoms[0].element).to.equal(original.atoms[0].element);
       expect(reparsed.unitCell!.a).to.be.closeTo(original.unitCell!.a, 1e-3);
     });
+
+    it('should preserve original STRU format blocks', () => {
+      const original = parser.parse(fixtureContent);
+      const serialized = parser.serialize(original);
+      
+      const serLines = serialized.split('\n');
+      
+      // Should preserve ATOMIC_SPECIES block format
+      expect(serLines[0]).to.equal('ATOMIC_SPECIES');
+      expect(serLines[1]).to.equal('2');
+      expect(serLines[2]).to.contain('O_ONCV_PBE-1.0.upf');
+      
+      // Should preserve LATTICE_CONSTANT
+      const lcIndex = serLines.findIndex(l => l.includes('LATTICE_CONSTANT'));
+      expect(lcIndex).to.be.greaterThan(-1);
+      expect(serLines[lcIndex + 1]).to.equal('1.889726');
+      
+      // Should preserve LATTICE_VECTORS
+      const lvIndex = serLines.findIndex(l => l.includes('LATTICE_VECTORS'));
+      expect(lvIndex).to.be.greaterThan(-1);
+      
+      // Should preserve coordinate type
+      const apIndex = serLines.findIndex(l => l.includes('ATOMIC_POSITIONS'));
+      expect(apIndex).to.be.greaterThan(-1);
+      expect(serLines[apIndex + 1]).to.equal('Cartesian');
+    });
+  });
+  
+  it('should preserve STRU format on round-trip', () => {
+    const struWithCustomBlocks = `ATOMIC_SPECIES
+2
+O  15.9994  O_ONCV_PBE-1.0.upf
+H  1.0079   H_ONCV_PBE-1.0.upf
+
+NUMERICAL_ORBITAL
+O.orb
+H.orb
+
+LATTICE_CONSTANT
+1.889726
+
+LATTICE_VECTORS
+10.0  0.0  0.0
+0.0  10.0  0.0
+0.0  0.0  10.0
+
+ATOMIC_POSITIONS
+Cartesian
+O
+0.0
+1
+0.0  0.0  0.0  1 1 1
+H
+0.0
+2
+0.757  0.586  0.0  1 1 1
+-0.757  0.586  0.0  1 1 1
+`;
+    const original = parser.parse(struWithCustomBlocks);
+    const serialized = parser.serialize(original);
+    
+    const serLines = serialized.split('\n');
+    
+    // Should preserve NUMERICAL_ORBITAL block
+    expect(serLines.some(l => l.includes('NUMERICAL_ORBITAL'))).to.be.true;
+    expect(serLines.some(l => l.includes('O.orb'))).to.be.true;
+    
+    // Should preserve LATTICE_CONSTANT value
+    expect(serLines.some(l => l.trim() === '1.889726')).to.be.true;
+    
+    // Should preserve coordinate type
+    const apIndex = serLines.findIndex(l => l.includes('ATOMIC_POSITIONS'));
+    expect(serLines[apIndex + 1]).to.equal('Cartesian');
   });
 });

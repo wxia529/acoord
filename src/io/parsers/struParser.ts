@@ -5,15 +5,24 @@ import { DEFAULT_NUMERICAL_ORBITALS, ELEMENT_DATA, ElementInfo } from '../../uti
 import { parseElement } from '../../utils/elementData.js';
 import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants.js';
 import { fractionalToCartesian } from '../../utils/parserUtils.js';
-import { BaseStructureParser } from './structureParser.js';
+import { StructureParser } from './structureParser.js';
 
 /**
  * ABACUS STRU file parser (basic support)
  */
-export class STRUParser extends BaseStructureParser {
+export class STRUParser extends StructureParser {
   parse(content: string): Structure {
+    if (!content.trim()) {
+      throw new Error('STRUParser: empty input');
+    }
+    // Save complete raw content for format preservation (Strategy 1)
+    const rawContent = content;
+    
     const lines = content.split(/\r?\n/);
     const structure = new Structure('');
+    
+    // Store raw content in metadata for serialization
+    structure.metadata.set('struRawContent', rawContent);
 
     let latticeConstantBohr: number | null = null;
     let latticeVectors: number[][] | null = null;
@@ -72,6 +81,11 @@ export class STRUParser extends BaseStructureParser {
           break;
         }
         const coordType = this.cleanLine(lines[i]);
+        
+        // Save ATOMIC_POSITIONS header for format preservation
+        structure.metadata.set('struAtomicPositionsHeader', 'ATOMIC_POSITIONS');
+        structure.metadata.set('struCoordType', coordType);
+        
         i++;
 
         const coordMode = coordType.toLowerCase();
@@ -173,12 +187,27 @@ export class STRUParser extends BaseStructureParser {
       i++;
     }
 
+    if (structure.atoms.length === 0) {
+      throw new Error('STRUParser: no atomic positions found');
+    }
+
     return structure;
   }
 
   serialize(structure: Structure): string {
-    const lines: string[] = [];
+    // Strategy 1: Use saved raw content and replace only coordinate section
+    const savedRawContent = structure.metadata.get('struRawContent') as string | undefined;
+    if (!savedRawContent) {
+      // Fallback to default generation if no raw content saved
+      return this.generateDefaultSTRU(structure);
+    }
+    
+    // Find and replace the ATOMIC_POSITIONS section
+    return this.replaceAtomicPositions(savedRawContent, structure);
+  }
 
+  private generateDefaultSTRU(structure: Structure): string {
+    const lines: string[] = [];
     const elements = this.collectElementGroups(structure);
 
     lines.push('ATOMIC_SPECIES');
@@ -240,9 +269,95 @@ export class STRUParser extends BaseStructureParser {
     return lines.join('\n');
   }
 
+  private replaceAtomicPositions(rawContent: string, structure: Structure): string {
+    const lines = rawContent.split(/\r?\n/);
+    const resultLines: string[] = [];
+    
+    // Find ATOMIC_POSITIONS section and rebuild it
+    let i = 0;
+    let atomsWritten = false;
+    
+    while (i < lines.length) {
+      const rawLine = lines[i];
+      const line = this.cleanLine(rawLine);
+      const upper = line.toUpperCase();
+      
+      if (upper === 'ATOMIC_POSITIONS') {
+        // Copy ATOMIC_POSITIONS header and coord type
+        resultLines.push(rawLine);
+        i++;
+        
+        // Copy coord type line
+        if (i < lines.length) {
+          const coordLine = this.cleanLine(lines[i]);
+          if (coordLine && !this.isSectionHeader(coordLine)) {
+            resultLines.push(lines[i]);
+            i++;
+          }
+        }
+        
+        // Skip element blocks until we find next section or EOF
+        while (i < lines.length) {
+          const checkLine = this.cleanLine(lines[i]);
+          if (!checkLine) {
+            i++;
+            continue;
+          }
+          if (this.isSectionHeader(checkLine)) {
+            break;
+          }
+          i++;
+        }
+        
+        // Write new atomic positions
+        this.writeAtomicPositions(resultLines, structure);
+        atomsWritten = true;
+        continue;
+      }
+      
+      resultLines.push(rawLine);
+      i++;
+    }
+    
+    // If ATOMIC_POSITIONS section was not found, append it
+    if (!atomsWritten) {
+      resultLines.push('');
+      resultLines.push('ATOMIC_POSITIONS');
+      resultLines.push(structure.unitCell ? 'Direct' : 'Cartesian_angstrom');
+      this.writeAtomicPositions(resultLines, structure);
+    }
+    
+    return resultLines.join('\n');
+  }
+
+  private writeAtomicPositions(lines: string[], structure: Structure): void {
+    const elements = this.collectElementGroups(structure);
+    
+    for (const [element, atoms] of elements) {
+      lines.push('');
+      lines.push(element);
+      lines.push('0.0');
+      lines.push(String(atoms.length));
+
+      for (const atom of atoms) {
+        let x = atom.x;
+        let y = atom.y;
+        let z = atom.z;
+        if (structure.unitCell) {
+          const frac = structure.unitCell.cartesianToFractional(atom.x, atom.y, atom.z);
+          x = frac[0];
+          y = frac[1];
+          z = frac[2];
+        }
+        const flag = atom.fixed ? '0 0 0' : '1 1 1';
+        lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}  ${flag}`);
+      }
+    }
+  }
+
   private cleanLine(line: string): string {
     if (!line) {return '';}
-    const withoutComment = line.split('//')[0];
+    const withoutComment = line.split('#')[0];
     return withoutComment.trim();
   }
 

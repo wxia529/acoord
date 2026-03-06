@@ -8,4 +8,4 @@ export { XDATCARParser } from './xdatcarParser.js';
 export { OUTCARParser } from './outcarParser.js';
 export { PDBParser } from './pdbParser.js';
 export { STRUParser } from './struParser.js';
-export { BaseStructureParser } from './structureParser.js';
+export { StructureParser } from './structureParser.js';
