@@ -25,6 +25,18 @@ export interface WireAtom {
   selectable?: boolean;
 }
 
+/**
+ * Clipboard data for cross-window copy/paste operations.
+ * Stored in global clipboard manager shared across all editor sessions.
+ */
+export interface WireClipboardData {
+  sourceSession: string;
+  sourceDocument: string;
+  timestamp: number;
+  atoms: WireAtom[];
+  offset: { x: number; y: number; z: number };
+}
+
 export interface WireBond {
   key: string;
   atomId1: string;
@@ -345,6 +357,20 @@ export interface CopyAtomsMessage {
   };
 }
 
+export interface CopySelectionMessage {
+  command: 'copySelection';
+  atomIds: string[];
+}
+
+export interface PasteSelectionMessage {
+  command: 'pasteSelection';
+  offset?: {
+    x: number;
+    y: number;
+    z: number;
+  };
+}
+
 export interface ChangeAtomsMessage {
   command: 'changeAtoms';
   atomIds: string[];
@@ -487,6 +513,8 @@ export type WebviewToExtensionMessage =
   | MoveGroupMessage
   | SetAtomsPositionsMessage
   | CopyAtomsMessage
+  | CopySelectionMessage
+  | PasteSelectionMessage
   | ChangeAtomsMessage
   | SetAtomColorMessage
   | UpdateAtomMessage
