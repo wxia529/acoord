@@ -61,11 +61,6 @@ This release includes a complete architectural overhaul for improved maintainabi
 - **Model Tests**: Unit tests for Structure and UnitCell models.
 - **Test Fixtures**: Added representative test files for each supported format.
 
-#### Documentation
-
-- **DEVELOPMENT.md**: Comprehensive 1200+ line developer guide documenting the actual architecture, design principles, directory structure, and common pitfalls.
-- **CURRENT_ISSUES.md**: Tracking document for known bugs and architectural issues.
-
 ### Performance Improvements
 
 - **Drag Preview Optimization**: Local preview updates during atom dragging without round-tripping to the extension host.
