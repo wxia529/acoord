@@ -412,10 +412,19 @@ export class Structure {
       // cross-boundary branch (atoms outside the cell should not act as the
       // "origin" atom when enumerating periodic images).
       const [fx1, fy1, fz1] = this.unitCell.cartesianToFractional(atom1.x, atom1.y, atom1.z);
-      const atom1InCell =
-        fx1 >= -eps && fx1 < 1 + eps &&
-        fy1 >= -eps && fy1 < 1 + eps &&
-        fz1 >= -eps && fz1 < 1 + eps;
+      
+      // Only consider atoms whose fractional coordinates are within [0, 1).
+      // Atoms outside this range are "ghost" images that should not participate
+      // in periodic bond detection. This fixes the asymmetry bug where atoms
+      // far outside the left boundary (fx < 0) would form bonds through their
+      // periodic images, but atoms outside the right boundary (fx >= 1) would not.
+      if (fx1 < -eps || fx1 >= 1 + eps ||
+          fy1 < -eps || fy1 >= 1 + eps ||
+          fz1 < -eps || fz1 >= 1 + eps) {
+        continue;
+      }
+      
+      const atom1InCell = true; // Already filtered above
 
       // Check against all periodic images
       for (const [ox, oy, oz] of offsets) {
@@ -459,8 +468,16 @@ export class Structure {
           const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
 
           // Build spatial hash for this image (atoms shifted by periodic offset)
+          // Only include atoms that are within the primary unit cell [0, 1)
           const imageGrid = new Map<string, Atom[]>();
           for (const atom of this.atoms) {
+            const [fax, fay, faz] = this.unitCell.cartesianToFractional(atom.x, atom.y, atom.z);
+            // Skip atoms outside the primary cell - their images are "non-existent"
+            if (fax < -eps || fax >= 1 + eps ||
+                fay < -eps || fay >= 1 + eps ||
+                faz < -eps || faz >= 1 + eps) {
+              continue;
+            }
             const ix = Math.floor((atom.x + offsetX) / cellSize);
             const iy = Math.floor((atom.y + offsetY) / cellSize);
             const iz = Math.floor((atom.z + offsetZ) / cellSize);
