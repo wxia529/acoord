@@ -143,10 +143,10 @@
             <div class="panel-title">Supercell</div>
             <div class="input-group">
               <label>Supercell (Nx, Ny, Nz)</label>
-              <div style="display:flex;gap:6px;">
-                <input type="number" id="supercell-x" step="1" min="1" value="1" />
-                <input type="number" id="supercell-y" step="1" min="1" value="1" />
-                <input type="number" id="supercell-z" step="1" min="1" value="1" />
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <input type="number" id="supercell-x" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
+                <input type="number" id="supercell-y" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
+                <input type="number" id="supercell-z" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
               </div>
             </div>
             <button id="btn-supercell-apply" type="button">Apply Supercell</button>
