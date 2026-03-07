@@ -384,8 +384,33 @@ export class MessageRouter {
       return await this.displayConfigService.handleGetCurrentDisplaySettings();
     });
 
-    this.registerTyped('updateDisplaySettings', (message) => {
+    this.registerTyped('updateDisplaySettings', async (message) => {
+      const oldSchemeId = this.displayConfigService.getSessionDisplaySettings()?.atomColorSchemeId;
+      const newSchemeId = message.settings.atomColorSchemeId;
+      
       this.displayConfigService.updateDisplaySettings(message.settings);
+      
+      // If atomColorSchemeId changed, load and apply the new color scheme
+      if (newSchemeId && newSchemeId !== oldSchemeId) {
+        try {
+          const scheme = await this.colorSchemeManager.getScheme(newSchemeId);
+          if (scheme) {
+            this.renderer.setOptions({ colorScheme: scheme });
+            // Clear atomColorByElement to prevent stale overrides from shadowing the new scheme
+            const current = this.displayConfigService.getSessionDisplaySettings();
+            if (current) {
+              current.atomColorByElement = {};
+            }
+            this.onRenderRequired();
+          }
+        } catch (error) {
+          await this.webviewPanel.webview.postMessage({
+            command: 'colorSchemeError',
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
+      }
+      
       return true;
     });
 
@@ -438,6 +463,56 @@ export class MessageRouter {
         await this.webviewPanel.webview.postMessage({
           command: 'colorSchemeLoaded',
           scheme: scheme || null,
+        });
+      } catch (error) {
+        await this.webviewPanel.webview.postMessage({
+          command: 'colorSchemeError',
+          error: error instanceof Error ? error.message : String(error),
+        });
+      }
+      return true;
+    });
+
+    this.registerTyped('promptSaveColorScheme', async (message) => {
+      // Resolve colors: prefer the active scheme stored in session.displaySettings
+      // so this works even on first launch before the webview has loaded a scheme.
+      let colors: Record<string, string> = message.colors ?? {};
+
+      const currentSettings = this.displayConfigService.getSessionDisplaySettings();
+      const schemeId = currentSettings?.atomColorSchemeId;
+      if (schemeId) {
+        try {
+          const currentScheme = await this.colorSchemeManager.getScheme(schemeId);
+          if (currentScheme?.colors && Object.keys(currentScheme.colors).length > 0) {
+            colors = currentScheme.colors;
+          }
+        } catch {
+          // fall through to webview-supplied colors
+        }
+      }
+
+      if (Object.keys(colors).length === 0) {
+        await this.webviewPanel.webview.postMessage({
+          command: 'colorSchemeError',
+          error: 'No color scheme is active. Load a color scheme first.',
+        });
+        return true;
+      }
+
+      const name = await vscode.window.showInputBox({
+        prompt: 'Enter color scheme name',
+        placeHolder: 'My Color Scheme'
+      });
+      if (!name) { return true; }
+
+      try {
+        const scheme = await this.colorSchemeManager.saveScheme(
+          name,
+          colors
+        );
+        await this.webviewPanel.webview.postMessage({
+          command: 'colorSchemeSaved',
+          scheme: { id: scheme.id, name: scheme.name },
         });
       } catch (error) {
         await this.webviewPanel.webview.postMessage({

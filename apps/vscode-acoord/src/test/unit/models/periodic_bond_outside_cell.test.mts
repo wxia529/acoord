@@ -4,11 +4,11 @@ import { Atom } from '../../../models/atom.js';
 import { UnitCell } from '../../../models/unitCell.js';
 
 describe('Periodic Bonds - Out-of-Cell Atoms', () => {
-  it('should NOT form bonds with atoms outside the left boundary', () => {
+  it('should form bonds with atoms outside the left boundary (close distance)', () => {
     const structure = new Structure('test', true);
     structure.unitCell = new UnitCell(5, 5, 5, 90, 90, 90);
 
-    // Atom outside left (fx = -0.1)
+    // Atom outside left (fx = -0.1, wrapped to 0.9)
     const atom_out_left = new Atom('H', -0.5, 2.5, 2.5);
     // Atom inside cell (fx = 0.92)
     const atom_in = new Atom('H', 4.6, 2.5, 2.5);
@@ -18,17 +18,20 @@ describe('Periodic Bonds - Out-of-Cell Atoms', () => {
 
     const bonds = structure.getPeriodicBonds();
     
-    // Should NOT form bonds because atom_out_left is outside the primary cell
-    expect(bonds).to.have.lengthOf(0);
+    // Should form a bond because the atoms are close (0.1 Angstrom apart)
+    // even though atom_out_left is outside the primary cell.
+    // The bond is formed through the periodic image [-1, 0, 0].
+    expect(bonds).to.have.lengthOf(1);
+    expect(bonds[0].image).to.deep.equal([-1, 0, 0]);
   });
 
-  it('should NOT form bonds with atoms outside the right boundary', () => {
+  it('should form bonds with atoms outside the right boundary (close distance)', () => {
     const structure = new Structure('test', true);
     structure.unitCell = new UnitCell(5, 5, 5, 90, 90, 90);
 
     // Atom inside cell (fx = 0.08)
     const atom_in = new Atom('H', 0.4, 2.5, 2.5);
-    // Atom outside right (fx = 1.1)
+    // Atom outside right (fx = 1.1, wrapped to 0.1)
     const atom_out_right = new Atom('H', 5.5, 2.5, 2.5);
     
     structure.addAtom(atom_in);
@@ -36,8 +39,12 @@ describe('Periodic Bonds - Out-of-Cell Atoms', () => {
 
     const bonds = structure.getPeriodicBonds();
     
-    // Should NOT form bonds because atom_out_right is outside the primary cell
-    expect(bonds).to.have.lengthOf(0);
+    // Should form a bond because the atoms are close (0.1 Angstrom apart)
+    // even though atom_out_right is outside the primary cell.
+    // The bond is formed through the periodic image [-1, 0, 0] (bringing
+    // atom_out_right from x=5.5 to x=0.5, close to atom_in at x=0.4).
+    expect(bonds).to.have.lengthOf(1);
+    expect(bonds[0].image).to.deep.equal([-1, 0, 0]);
   });
 
   it('should form bonds across periodic boundary when both atoms are inside', () => {
@@ -56,10 +63,10 @@ describe('Periodic Bonds - Out-of-Cell Atoms', () => {
     
     // Should form a periodic bond across the boundary
     expect(bonds).to.have.lengthOf(1);
-    expect(bonds[0].image).to.deep.equal([1, 0, 0]);
+    expect(bonds[0].image).to.deep.equal([-1, 0, 0]);
   });
 
-  it('should NOT form bonds with atoms far outside the cell', () => {
+  it('should NOT form bonds with atoms far outside the cell (too far to bond)', () => {
     const structure = new Structure('test', true);
     structure.unitCell = new UnitCell(5, 5, 5, 90, 90, 90);
 
@@ -73,8 +80,10 @@ describe('Periodic Bonds - Out-of-Cell Atoms', () => {
 
     const bonds = structure.getPeriodicBonds();
     
-    // Should NOT form bonds because atom_far_left is outside the primary cell
-    // (even though its fractional equivalent is close to atom_in)
+    // Should NOT form bonds because the atoms are too far apart
+    // (20 Angstroms distance in Cartesian space)
+    // Even though wrapped coordinates would be close, we don't form bonds
+    // with atoms that are multiple unit cells away
     expect(bonds).to.have.lengthOf(0);
   });
 

@@ -550,6 +550,13 @@ export interface LoadColorSchemeMessage {
   schemeId: string;
 }
 
+export interface PromptSaveColorSchemeMessage {
+  command: 'promptSaveColorScheme';
+  /** Colors from the webview's current state; used as fallback if the extension
+   *  cannot resolve colors from the active scheme id in session.displaySettings. */
+  colors?: Record<string, string>;
+}
+
 export interface SaveColorSchemeMessage {
   command: 'saveColorScheme';
   name: string;
@@ -623,6 +630,7 @@ export type WebviewToExtensionMessage =
   | DeleteDisplayConfigMessage
   | GetColorSchemesMessage
   | LoadColorSchemeMessage
+  | PromptSaveColorSchemeMessage
   | SaveColorSchemeMessage
   | DeleteColorSchemeMessage
   | ExportColorSchemeMessage

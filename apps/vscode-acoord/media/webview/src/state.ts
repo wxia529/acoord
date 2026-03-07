@@ -317,6 +317,7 @@ export interface AvailableColorSchemes {
 export interface ColorSchemeState {
   currentSchemeId: string;
   currentSchemeName: string;
+  currentSchemeColors: Record<string, string>;
   availableSchemes: AvailableColorSchemes;
   isLoadingScheme: boolean;
 }
@@ -324,6 +325,7 @@ export interface ColorSchemeState {
 export const colorSchemeStore: ColorSchemeState = {
   currentSchemeId: '',
   currentSchemeName: '',
+  currentSchemeColors: {},
   availableSchemes: { presets: [], user: [] },
   isLoadingScheme: false,
 };

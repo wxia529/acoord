@@ -100,14 +100,12 @@ export function init(): void {
 
   if (btnSaveScheme) {
     btnSaveScheme.addEventListener('click', () => {
-      const name = window.prompt('Enter color scheme name:');
-      if (!name) return;
-      const colors: Record<string, string> = { ...displayStore.atomColorByElement };
-      if (Object.keys(colors).length === 0) {
-        window.alert('No custom atom colors set. Set some atom colors first using the Atom Color picker.');
-        return;
-      }
-      colorSchemeHandler.saveScheme(name, colors);
+      // Pass webview-side colors as a fallback for the extension host.
+      // The host will prefer the active scheme's colors from its own store.
+      const colors: Record<string, string> = Object.keys(colorSchemeStore.currentSchemeColors).length > 0
+        ? { ...colorSchemeStore.currentSchemeColors }
+        : { ...displayStore.atomColorByElement };
+      _vscode?.postMessage({ command: 'promptSaveColorScheme', colors: Object.keys(colors).length > 0 ? colors : undefined });
     });
   }
 
