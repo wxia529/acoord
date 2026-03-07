@@ -398,41 +398,15 @@ export class Structure {
       }
     }
 
-    const isHalfSpace = (ox: number, oy: number, oz: number) =>
-      ox > 0 || (ox === 0 && oy > 0) || (ox === 0 && oy === 0 && oz > 0);
-
-    const eps = 1e-6;
-
-    // Check bonds for each atom against neighbors in all periodic images
+    // Check against all periodic images
     for (const atom1 of this.atoms) {
       const data1 = atomData.get(atom1.id)!;
       const radius1 = data1.radius;
 
-      // Compute fractional coordinates of atom1 once; used to guard the
-      // cross-boundary branch (atoms outside the cell should not act as the
-      // "origin" atom when enumerating periodic images).
-      const [fx1, fy1, fz1] = this.unitCell.cartesianToFractional(atom1.x, atom1.y, atom1.z);
-      
-      // Only consider atoms whose fractional coordinates are within [0, 1).
-      // Atoms outside this range are "ghost" images that should not participate
-      // in periodic bond detection. This fixes the asymmetry bug where atoms
-      // far outside the left boundary (fx < 0) would form bonds through their
-      // periodic images, but atoms outside the right boundary (fx >= 1) would not.
-      if (fx1 < -eps || fx1 >= 1 + eps ||
-          fy1 < -eps || fy1 >= 1 + eps ||
-          fz1 < -eps || fz1 >= 1 + eps) {
-        continue;
-      }
-      
-      const atom1InCell = true; // Already filtered above
-
       // Check against all periodic images
       for (const [ox, oy, oz] of offsets) {
-        // Skip redundant checks using half-space rule
         if (ox === 0 && oy === 0 && oz === 0) {
-          // Same cell - only check atoms with higher index to avoid duplicates.
-          // No boundary restriction: two out-of-cell atoms that are bonding
-          // distance apart should still get a bond.
+          // Same cell - check all atom pairs once (handled by id comparison)
           for (const atom2 of this.getNeighboringAtoms(atom1, grid, cellSize, maxBondLength)) {
             if (atom1.id >= atom2.id) {continue;}
 
@@ -458,26 +432,17 @@ export class Structure {
               seen.add(key);
             }
           }
-        } else if (isHalfSpace(ox, oy, oz) && atom1InCell) {
+        } else {
           // Different cell - use spatial hash of image atoms for O(n*k) performance.
-          // Only generate cross-boundary bonds when atom1 is inside the unit cell;
-          // an out-of-cell atom1 is already a periodic image of another cell and
-          // would produce spurious duplicate bonds if used as the origin here.
+          // All atoms can form cross-boundary bonds regardless of their position.
           const offsetX = ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0];
           const offsetY = ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1];
           const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
 
           // Build spatial hash for this image (atoms shifted by periodic offset)
-          // Only include atoms that are within the primary unit cell [0, 1)
+          // Wrap fractional coordinates to [0, 1) to ensure each atom has one representative
           const imageGrid = new Map<string, Atom[]>();
           for (const atom of this.atoms) {
-            const [fax, fay, faz] = this.unitCell.cartesianToFractional(atom.x, atom.y, atom.z);
-            // Skip atoms outside the primary cell - their images are "non-existent"
-            if (fax < -eps || fax >= 1 + eps ||
-                fay < -eps || fay >= 1 + eps ||
-                faz < -eps || faz >= 1 + eps) {
-              continue;
-            }
             const ix = Math.floor((atom.x + offsetX) / cellSize);
             const iy = Math.floor((atom.y + offsetY) / cellSize);
             const iz = Math.floor((atom.z + offsetZ) / cellSize);

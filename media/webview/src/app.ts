@@ -8,7 +8,7 @@ import { setup as setupLattice, updateLatticeUI, updateAtomSizePanel } from './a
 import { setup as setupView } from './appView';
 import { setup as setupTools } from './appTools';
 import { init as initInteraction } from './interaction';
-import { initVscode as initInteractionConfigVscode, updateConfigSelector } from './interactionConfig';
+import { initVscode as initInteractionConfigVscode, init as initInteractionConfig, updateConfigSelector } from './interactionConfig';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
 import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 
@@ -300,6 +300,7 @@ function start(): void {
   configHandler.init(vscode, setStatus, updateConfigSelector, rerenderCurrentStructure);
   colorSchemeHandler.init(vscode, setStatus, updateColorSchemeSelector);
   initInteractionConfigVscode(vscode);
+  initInteractionConfig();
   renderer.init(canvas, { setError, setStatus });
 
   setupUI();

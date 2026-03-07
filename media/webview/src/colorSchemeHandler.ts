@@ -62,6 +62,7 @@ function handleSchemeLoaded(scheme: WireColorScheme | null): void {
 
   colorSchemeStore.currentSchemeId = scheme.id;
   colorSchemeStore.currentSchemeName = scheme.name;
+  colorSchemeStore.currentSchemeColors = scheme.colors || {};
   colorSchemeStore.isLoadingScheme = false;
 
   // Apply color scheme colors to displayStore for reference
