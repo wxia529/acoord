@@ -147,6 +147,7 @@ function setupUI(): void {
   const btnUndo = document.getElementById('btn-undo') as HTMLButtonElement | null;
   const btnRedo = document.getElementById('btn-redo') as HTMLButtonElement | null;
   const btnSave = document.getElementById('btn-save') as HTMLButtonElement | null;
+  const btnSaveAs = document.getElementById('btn-save-as') as HTMLButtonElement | null;
   const btnExportImage = document.getElementById('btn-export-image') as HTMLButtonElement | null;
 
   if (toolbarAddAtom) {
@@ -182,6 +183,7 @@ function setupUI(): void {
   if (btnUndo) btnUndo.addEventListener('click', () => vscode.postMessage({ command: 'undo' }));
   if (btnRedo) btnRedo.addEventListener('click', () => vscode.postMessage({ command: 'redo' }));
   if (btnSave) btnSave.addEventListener('click', () => vscode.postMessage({ command: 'saveStructure' }));
+  if (btnSaveAs) btnSaveAs.addEventListener('click', () => vscode.postMessage({ command: 'saveStructureAs' }));
 
   if (btnExportImage) {
     btnExportImage.addEventListener('click', () => {
@@ -359,6 +361,7 @@ function setupInteraction(): void {
     onUndo: () => vscode.postMessage({ command: 'undo' }),
     onRedo: () => vscode.postMessage({ command: 'redo' }),
     onSave: () => vscode.postMessage({ command: 'saveStructure' }),
+    onSaveAs: () => vscode.postMessage({ command: 'saveStructureAs' }),
     onExportImage: () => {
       if (!renderer.exportHighResolutionImage) return;
       const result = renderer.exportHighResolutionImage({ scale: 4 });

@@ -49,6 +49,7 @@ export interface InteractionHandlers {
   onUndo?: () => void;
   onRedo?: () => void;
   onSave?: () => void;
+  onSaveAs?: () => void;
   onExportImage?: () => void;
   onSetAtomColor?: (atomIds: string[], color: string) => void;
   onSetAtomRadius?: (atomIds: string[], radius: number) => void;
@@ -623,6 +624,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     onSelectAll: handlers.onSelectAll,
     onClearSelection: handlers.onClearSelection,
     onSave: handlers.onSave,
+    onSaveAs: handlers.onSaveAs,
     onExportImage: handlers.onExportImage,
     onSetStatus: handlers.onSetStatus,
   };
