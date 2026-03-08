@@ -440,6 +440,11 @@ export interface SetAtomRadiusMessage {
   radius: number;
 }
 
+export interface SetCovalentRadiusMessage {
+  command: 'setCovalentRadius';
+  atomIds: string[];
+}
+
 export interface ApplyDisplaySettingsMessage {
   command: 'applyDisplaySettings';
   atomIds: string[];
@@ -617,6 +622,7 @@ export type WebviewToExtensionMessage =
   | ChangeAtomsMessage
   | SetAtomColorMessage
   | SetAtomRadiusMessage
+  | SetCovalentRadiusMessage
   | ApplyDisplaySettingsMessage
   | UpdateAtomMessage
   | SetBondLengthMessage

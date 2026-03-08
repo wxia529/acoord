@@ -561,7 +561,7 @@ function buildUnitCellGroup(edges: UnitCellEdge[], scale: number): THREE.Group |
 function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: { fitCamera?: boolean }): void {
   structureStore.currentStructure = data;
   let scale = displayStore.manualScale;
-  let sizeScale = displayStore.currentRadiusScale;
+  let sizeScale = 1;
   if (displayStore.autoScaleEnabled) {
     const auto = getAutoScales(data.atoms || []);
     scale = auto.scale;

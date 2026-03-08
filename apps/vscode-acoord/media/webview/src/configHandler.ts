@@ -168,9 +168,6 @@ export function updateUI(): void {
   setInput('bond-size-slider', displayStore.bondThicknessScale);
   setText('bond-size-value', displayStore.bondThicknessScale.toFixed(1) + 'x');
 
-  setInput('size-slider', displayStore.currentRadiusScale);
-  setText('size-value', displayStore.currentRadiusScale.toFixed(2) + 'x');
-
   setChecked('lighting-enabled', lightingStore.lightingEnabled);
 
   setInput('ambient-slider', lightingStore.ambientIntensity);

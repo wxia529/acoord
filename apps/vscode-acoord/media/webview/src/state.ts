@@ -130,7 +130,6 @@ export function extractDisplaySettings(): DisplaySettings {
     currentRadiusByElement: displayStore.currentRadiusByElement,
     manualScale: displayStore.manualScale,
     autoScaleEnabled: displayStore.autoScaleEnabled,
-    currentRadiusScale: displayStore.currentRadiusScale,
     bondThicknessScale: displayStore.bondThicknessScale,
     viewZoom: displayStore.viewZoom,
     scaleAtomsWithLattice: displayStore.scaleAtomsWithLattice,
@@ -160,7 +159,6 @@ export function applyDisplaySettings(settings: DisplaySettings): void {
   displayStore.currentRadiusByElement = settings.currentRadiusByElement ?? d.currentRadiusByElement;
   displayStore.manualScale = settings.manualScale ?? d.manualScale;
   displayStore.autoScaleEnabled = settings.autoScaleEnabled ?? d.autoScaleEnabled;
-  displayStore.currentRadiusScale = settings.currentRadiusScale ?? d.currentRadiusScale;
   displayStore.bondThicknessScale = settings.bondThicknessScale ?? d.bondThicknessScale;
   displayStore.viewZoom = settings.viewZoom ?? d.viewZoom;
   displayStore.scaleAtomsWithLattice = settings.scaleAtomsWithLattice ?? d.scaleAtomsWithLattice;
