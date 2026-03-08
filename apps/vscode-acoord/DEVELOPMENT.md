@@ -99,7 +99,7 @@ in `src/shared/protocol.ts`, which is the single source of truth for both sides.
 │    └── EditorSession (per panel)  │  WebviewToExt   │    ├── renderer.ts   (Three.js)         │
 │          ├── MessageRouter        │                  │    ├── state.ts      (stores)           │
 │          ├── TrajectoryManager    │                  │    ├── interaction.ts (input)           │
-│          ├── UndoManager          │  ExtToWebview    │    ├── configHandler.ts                │
+│          ├── UndoManager          │  ExtToWebview    │    ├── settingsUtil.ts                 │
 │          ├── SelectionService     │                  │    ├── appEdit / appLattice / ...       │
 │          ├── BondService          │                  │    └── state/selectionManager.ts       │
 │          ├── AtomEditService      │                  │                                        │
@@ -107,7 +107,7 @@ in `src/shared/protocol.ts`, which is the single source of truth for both sides.
 │          ├── DocumentService      │                  │    ✅ Render received data               │
 │          └── DisplayConfigService │                  │    ✅ Handle user input                  │
 │                                   │                  │    ✅ Send messages to extension         │
-│  ConfigManager  (global)          │                  │                                        │
+│  ColorSchemeManager  (global)     │                  │                                        │
 │  FileManager    (stateless)       │                  │  Does NOT:                              │
 │                                   │                  │    ❌ Compute colors/radii               │
 │  Computation Logic (exclusive):   │                  │    ❌ Override atom properties           │
@@ -149,15 +149,17 @@ src/
     unitCellService.ts         # Unit cell CRUD, supercell, centering
     documentService.ts         # Save, save-as, reload, image export
     displayConfigService.ts    # Display settings load / save / apply
-  renderers/
-    renderMessageBuilder.ts    # Build WireRenderData from a Structure snapshot
+   renderers/
+     renderMessageBuilder.ts    # Build WireRenderData from a Structure snapshot
    config/
-     configManager.ts           # Config lifecycle (load, save, import, export)
-     configStorage.ts           # Persistence via ExtensionContext.globalState
-     configValidator.ts         # JSON schema validation
      types.ts                   # DisplaySettings = Required<WireDisplaySettings>
-     presets/                   # Built-in presets (default, white); immutable
-     migrations/                # Versioned schema migrations
+     defaults.ts                # getDefaultDisplaySettings()
+     colorSchemeManager.ts      # ColorScheme lifecycle (load, save, import, export)
+     colorSchemeStorage.ts      # Persistence via ExtensionContext.globalState
+     colorSchemeValidator.ts    # JSON schema validation
+     colorSchemeUtils.ts        # Color scheme utility functions
+     presets/
+       color-schemes/           # Built-in presets (bright, jmol); immutable
    io/
      fileManager.ts             # Format detection, parser dispatch, serialize
      parsers/
@@ -190,8 +192,9 @@ media/webview/
     interactionConfig.ts       # Keyboard shortcuts config UI bindings
     interactionDisplay.ts      # Display toggle keyboard bindings
     interactionLighting.ts     # Lighting control UI bindings
+    settingsUtil.ts            # Display settings update utility
     types.ts                   # Webview-side interface definitions
-    configHandler.ts           # Display config message handlers
+    colorSchemeHandler.ts      # Color scheme message handlers
     appEdit.ts                 # Atom editing panel UI
     appLattice.ts              # Lattice / supercell panel UI
     appView.ts                 # View controls panel UI
@@ -814,16 +817,16 @@ See `CURRENT_ISSUES.md` §4 for the current list. Summary:
 
 ### 8.1 Architecture
 
+ACoord uses a single configuration system for color schemes:
+
 ```
-ConfigManager
-  ├── ConfigStorage    (globalState persistence)
-  ├── ConfigValidator  (JSON schema validation)
-  ├── presets/         (built-in immutable configs)
-  └── migrations/      (versioned schema upgrades)
+ColorSchemeManager
+  ├── ColorSchemeStorage    (globalState persistence)
+  ├── ColorSchemeValidator  (validation)
+  └── presets/color-schemes/ (built-in immutable color schemes)
 ```
 
-**All config access goes through `ConfigManager`.** Never read from
-`ExtensionContext.globalState` directly.
+**All color scheme access goes through `ColorSchemeManager`.**
 
 ### 8.2 DisplaySettings Type
 
@@ -832,48 +835,45 @@ ConfigManager
 export type DisplaySettings = Required<WireDisplaySettings>;
 ```
 
-`WireDisplaySettings` (in `protocol.ts`) is the canonical definition. On the
-extension side, `DisplaySettings` is just `Required<WireDisplaySettings>` —
-all fields are present, none optional. This eliminates the former
-dual-type problem where two interfaces had to be kept in sync manually.
+`DisplaySettings` represents the current rendering state passed to the webview. It is **not persisted** between sessions.
 
-### 8.3 DisplaySettings Semantics — "Current Brush"
+### 8.3 Default Settings
 
-**Key conceptual change:** DisplaySettings represents the "current brush" —
-the settings that would be applied to new atoms or when the user explicitly
-applies them to selected atoms. It does NOT automatically affect existing atoms.
+On each startup, the extension uses `getDefaultDisplaySettings()` to provide initial values:
 
-**Fields are categorized as:**
+- Background color: `#0d1015`
+- Unit cell color: `#FF6600`
+- Color scheme: `preset-bright`
+- ... (see `src/config/defaults.ts`)
 
-1. **Current brush settings** (affect new atoms, can be applied to selection):
-   - `currentColorScheme` — color scheme ID (e.g., "jmol", "cpk")
-   - `currentRadiusScale` — radius multiplier
-   - `currentColorByElement` — per-element color overrides
-   - `currentRadiusByElement` — per-element radius overrides
+### 8.4 Color Schemes
 
-2. **Global rendering settings** (affect entire scene immediately):
-   - `backgroundColor`, `showAxes`, `unitCellColor`, etc.
-   - Lighting settings (`lightingEnabled`, `ambientIntensity`, etc.)
+Color schemes define element-to-color mappings:
 
-**User workflow:**
-1. User changes `currentColorScheme` from "jmol" to "cpk"
-2. Extension updates DisplaySettings
-3. **Existing atoms are NOT modified** — they keep their current colors
-4. User selects some atoms and clicks "Apply to Selection"
-5. Extension updates those atoms' `color` property using the new color scheme
-6. Extension sends `RenderMessage` with updated atoms
+```typescript
+interface WireColorScheme {
+  id: string;
+  name: string;
+  description?: string;
+  colors: Record<string, string>;  // element -> hex color
+}
+```
 
-### 8.4 Rules
+Users can:
+- Select from built-in presets (Bright, JMol, etc.)
+- Create and save custom color schemes
+- Import/export color scheme files
 
-- User-created configs are validated against the JSON schema before storage.
-- Import rejects invalid files with a user-facing `showErrorMessage`.
-- `ConfigManager.notifyConfigChange()` iterates and notifies **all** open
-  `EditorSession`s via `StructureEditorProvider.notifyConfigChange()`.
-- Presets are immutable — they cannot be deleted or overwritten by users.
-- Migrations run on load if the stored config schema version is older than the
-  current version.
-- **DisplaySettings is NOT saved to .acoord files** — it is a global user
-  preference, like a VS Code theme.
+### 8.5 What is NOT Saved
+
+The following settings are **not persisted**:
+- Background color
+- Unit cell color/style
+- Lighting configuration
+- Projection mode
+- Bond thickness
+
+Users must reconfigure these after each session restart.
 
 ---
 

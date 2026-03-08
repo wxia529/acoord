@@ -48,7 +48,6 @@ export class MessageRouter {
     this.registerBondCommands();
     this.registerUnitCellCommands();
     this.registerDocumentCommands();
-    this.registerDisplayConfigCommands();
     this.registerColorSchemeCommands();
     this.registerClipboardCommands();
   }
@@ -358,91 +357,6 @@ export class MessageRouter {
       this.onSelectionClearRequired();
       this.onRenderRequired();
       return true;
-    });
-  }
-
-  private registerDisplayConfigCommands(): void {
-    this.registerTyped('getDisplayConfigs', async () => {
-      return await this.displayConfigService.handleGetDisplayConfigs();
-    });
-
-    this.registerTyped('loadDisplayConfig', async (message) => {
-      const result = await this.displayConfigService.handleLoadDisplayConfig(message.configId);
-      // Sync the renderer's color scheme so subsequent renders use the new scheme.
-      // handleLoadDisplayConfig posts 'colorSchemeLoaded' to the webview but does
-      // not update the RenderMessageBuilder — mirror what loadColorScheme does.
-      const settings = this.displayConfigService.getSessionDisplaySettings();
-      if (settings?.currentColorScheme) {
-        const scheme = await this.colorSchemeManager.getScheme(settings.currentColorScheme);
-        if (scheme) {
-          this.renderer.setOptions({ colorScheme: scheme });
-        }
-      }
-      this.onRenderRequired();
-      return result;
-    });
-
-    this.registerTyped('promptSaveDisplayConfig', async (message) => {
-      return await this.displayConfigService.handlePromptSaveDisplayConfig(message.settings);
-    });
-
-    this.registerTyped('saveDisplayConfig', async (message) => {
-      return await this.displayConfigService.handleSaveDisplayConfig(
-        message.name,
-        message.settings,
-        message.description,
-        message.existingId
-      );
-    });
-
-    this.registerTyped('getCurrentDisplaySettings', async () => {
-      return await this.displayConfigService.handleGetCurrentDisplaySettings();
-    });
-
-    this.registerTyped('updateDisplaySettings', async (message) => {
-      const oldSchemeId = this.displayConfigService.getSessionDisplaySettings()?.currentColorScheme;
-      const newSchemeId = message.settings.currentColorScheme;
-      
-      this.displayConfigService.updateDisplaySettings(message.settings);
-      
-      // If currentColorScheme changed, load and apply the new color scheme
-      if (newSchemeId && newSchemeId !== oldSchemeId) {
-        try {
-          const scheme = await this.colorSchemeManager.getScheme(newSchemeId);
-          if (scheme) {
-            this.renderer.setOptions({ colorScheme: scheme });
-            // Clear currentColorByElement to prevent stale overrides from shadowing the new scheme
-            const current = this.displayConfigService.getSessionDisplaySettings();
-            if (current) {
-              current.currentColorByElement = {};
-            }
-            this.onRenderRequired();
-          }
-        } catch (error) {
-          await this.webviewPanel.webview.postMessage({
-            command: 'colorSchemeError',
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
-      }
-      
-      return true;
-    });
-
-    this.registerTyped('exportDisplayConfigs', async () => {
-      return await this.displayConfigService.handleExportDisplayConfigs();
-    });
-
-    this.registerTyped('importDisplayConfigs', async () => {
-      return await this.displayConfigService.handleImportDisplayConfigs();
-    });
-
-    this.registerTyped('confirmDeleteDisplayConfig', async (message) => {
-      return await this.displayConfigService.handleConfirmDeleteDisplayConfig(message.configId);
-    });
-
-    this.registerTyped('deleteDisplayConfig', async (message) => {
-      return await this.displayConfigService.handleDeleteDisplayConfig(message.configId);
     });
   }
 

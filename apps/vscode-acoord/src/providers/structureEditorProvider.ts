@@ -1,8 +1,9 @@
 import * as vscode from 'vscode';
 import { Structure } from '../models/structure.js';
 import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
-import { ConfigManager } from '../config/configManager.js';
-import { DisplaySettings, DisplayConfig } from '../config/types.js';
+import { ColorSchemeManager } from '../config/colorSchemeManager.js';
+import { DisplaySettings } from '../config/types.js';
+import { getDefaultDisplaySettings } from '../config/defaults.js';
 import { FileManager } from '../io/fileManager.js';
 import { UndoManager } from './undoManager.js';
 import { TrajectoryManager } from './trajectoryManager.js';
@@ -69,7 +70,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
 
   constructor(
     private context: vscode.ExtensionContext,
-    private configManager: ConfigManager
+    private colorSchemeManager: ColorSchemeManager
   ) {
     this.clipboardService = new ClipboardService();
   }
@@ -98,8 +99,6 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     webviewPanel: vscode.WebviewPanel,
     _token: vscode.CancellationToken
   ): Promise<void> {
-    await this.configManager.initialize();
-
     let frames: Structure[];
     try {
       frames = document.backupFrames ?? await StructureDocumentManager.load(document.uri);
@@ -129,9 +128,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     const atomEditService = new AtomEditService(renderer, traj, undoManager);
     const unitCellService = new UnitCellService(renderer, traj, undoManager);
     const documentService = new DocumentService();
-    const displayConfigService = new DisplayConfigService(this.configManager, this.configManager.getColorSchemeManager());
-    const defaultConfig = this.configManager.getCurrentConfig();
-    const displaySettings = defaultConfig?.settings;
+    const displayConfigService = new DisplayConfigService();
+    const displaySettings = getDefaultDisplaySettings();
 
     // Create session without messageRouter first to avoid circular dependency
     const session = new EditorSession(
@@ -150,11 +148,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       displaySettings
     );
 
-    // Set up displayConfigService callbacks
-    displayConfigService.setCallbacks(
-      (message) => webviewPanel.webview.postMessage(message),
-      session
-    );
+    // Set up displayConfigService session ref
+    displayConfigService.setSessionRef(session);
 
     // Set up atomEditService session ref for applyDisplaySettings
     atomEditService.setSessionRef(session);
@@ -171,7 +166,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       documentService,
       displayConfigService,
       this.clipboardService,
-      this.configManager.getColorSchemeManager(),
+      this.colorSchemeManager,
       key,
       document.uri.fsPath,
       webviewPanel,
@@ -460,17 +455,6 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         }
       },
     };
-  }
-
-  async notifyConfigChange(config: DisplayConfig): Promise<void> {
-    // Notify ALL sessions, not just the first active one
-    for (const session of this.sessions.values()) {
-      session.displaySettings = config.settings;
-      session.webviewPanel.webview.postMessage({
-        command: 'displayConfigChanged',
-        config: config
-      });
-    }
   }
 
   async getCurrentDisplaySettings(): Promise<DisplaySettings | null> {

@@ -1,6 +1,5 @@
 import { structureStore, selectionStore, displayStore, adsorptionStore, interactionStore, applyDisplaySettings, type BoxSelectionMode } from './state';
 import { renderer } from './renderer';
-import * as configHandler from './configHandler';
 import * as colorSchemeHandler from './colorSchemeHandler';
 import * as appTrajectory from './appTrajectory';
 import { setup as setupEdit } from './appEdit';
@@ -9,7 +8,8 @@ import { setup as setupView } from './appView';
 import { setup as setupTools } from './appTools';
 import * as brushPanel from './brushPanel';
 import { init as initInteraction } from './interaction';
-import { initVscode as initInteractionConfigVscode, init as initInteractionConfig, updateConfigSelector } from './interactionConfig';
+import { initVscode as initInteractionConfigVscode, init as initInteractionConfig, updateColorSchemeSelector as updateColorSchemeSelectorFn } from './interactionConfig';
+import { initSettingsUtil } from './settingsUtil';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
 import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 
@@ -413,7 +413,7 @@ function setupInteraction(): void {
 function start(): void {
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
-  configHandler.init(vscode, setStatus, updateConfigSelector, rerenderCurrentStructure);
+  initSettingsUtil(vscode);
   colorSchemeHandler.init(vscode, setStatus, updateColorSchemeSelector);
   initInteractionConfigVscode(vscode);
   initInteractionConfig();
@@ -423,9 +423,7 @@ function start(): void {
   setupInteraction();
   setupInlineSliderValueEditing();
 
-  configHandler.requestConfigList();
   colorSchemeHandler.requestSchemeList();
-  configHandler.getCurrentSettings();
   vscode.postMessage({ command: 'getState' });
 
   document.addEventListener('selectionchange', () => {
@@ -435,7 +433,7 @@ function start(): void {
 }
 
 function updateColorSchemeSelector(): void {
-  colorSchemeHandler.updateColorSchemeSelector();
+  updateColorSchemeSelectorFn();
 }
 
 // Message handlers
@@ -453,10 +451,8 @@ function handleRenderMessage(message: RenderMessage): void {
   displayStore.supercell = message.data.supercell || [1, 1, 1];
   brushPanel.update();
 
-  // Apply display settings
   if (message.displaySettings) {
     applyDisplaySettings(message.displaySettings);
-    configHandler.updateUI();
   }
 
   appTrajectory.updateUI(
@@ -548,15 +544,6 @@ window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessag
       setError(reason);
       break;
     }
-
-    case 'displayConfigsLoaded':
-    case 'displayConfigLoaded':
-    case 'displayConfigSaved':
-    case 'displayConfigChanged':
-    case 'currentDisplaySettings':
-    case 'displayConfigError':
-      configHandler.handleMessage(message);
-      break;
 
     case 'colorSchemesLoaded':
     case 'colorSchemeLoaded':

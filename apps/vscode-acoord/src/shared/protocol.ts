@@ -143,13 +143,6 @@ export interface WireDisplaySettings {
   rimLight?: WireLightConfig;
 }
 
-export interface WireConfigEntry {
-  id: string;
-  name: string;
-  description?: string;
-  settings?: WireDisplaySettings;
-}
-
 /**
  * Full render payload sent from extension to webview.
  */
@@ -177,47 +170,6 @@ export interface RenderMessage {
   command: 'render';
   data: WireRenderData;
   displaySettings?: WireDisplaySettings;
-}
-
-export interface DisplayConfigChangedMessage {
-  command: 'displayConfigChanged';
-  config: {
-    id: string;
-    name: string;
-    settings: WireDisplaySettings;
-  };
-}
-
-export interface DisplayConfigsLoadedMessage {
-  command: 'displayConfigsLoaded';
-  presets: Array<{ id: string; name: string; description?: string }>;
-  user: WireConfigEntry[];
-}
-
-export interface DisplayConfigLoadedMessage {
-  command: 'displayConfigLoaded';
-  config: {
-    id: string;
-    name: string;
-    settings: WireDisplaySettings;
-  } | null;
-}
-
-export interface DisplayConfigSavedMessage {
-  command: 'displayConfigSaved';
-  config: {
-    name: string;
-  } | null;
-}
-
-export interface CurrentDisplaySettingsMessage {
-  command: 'currentDisplaySettings';
-  settings: WireDisplaySettings;
-}
-
-export interface DisplayConfigErrorMessage {
-  command: 'displayConfigError';
-  error: string;
 }
 
 export interface ImageSavedMessage {
@@ -263,12 +215,6 @@ export interface ColorSchemeErrorMessage {
  */
 export type ExtensionToWebviewMessage =
   | RenderMessage
-  | DisplayConfigChangedMessage
-  | DisplayConfigsLoadedMessage
-  | DisplayConfigLoadedMessage
-  | DisplayConfigSavedMessage
-  | CurrentDisplaySettingsMessage
-  | DisplayConfigErrorMessage
   | ImageSavedMessage
   | ImageSaveFailedMessage
   | ColorSchemesLoadedMessage
@@ -505,55 +451,6 @@ export interface ReloadStructureMessage {
   command: 'reloadStructure';
 }
 
-export interface GetDisplayConfigsMessage {
-  command: 'getDisplayConfigs';
-}
-
-export interface LoadDisplayConfigMessage {
-  command: 'loadDisplayConfig';
-  configId: string;
-}
-
-export interface PromptSaveDisplayConfigMessage {
-  command: 'promptSaveDisplayConfig';
-  settings?: WireDisplaySettings;
-}
-
-export interface SaveDisplayConfigMessage {
-  command: 'saveDisplayConfig';
-  name: string;
-  settings: WireDisplaySettings;
-  description?: string;
-  existingId?: string;
-}
-
-export interface GetCurrentDisplaySettingsMessage {
-  command: 'getCurrentDisplaySettings';
-}
-
-export interface UpdateDisplaySettingsMessage {
-  command: 'updateDisplaySettings';
-  settings: WireDisplaySettings;
-}
-
-export interface ExportDisplayConfigsMessage {
-  command: 'exportDisplayConfigs';
-}
-
-export interface ImportDisplayConfigsMessage {
-  command: 'importDisplayConfigs';
-}
-
-export interface ConfirmDeleteDisplayConfigMessage {
-  command: 'confirmDeleteDisplayConfig';
-  configId: string;
-}
-
-export interface DeleteDisplayConfigMessage {
-  command: 'deleteDisplayConfig';
-  configId: string;
-}
-
 export interface GetColorSchemesMessage {
   command: 'getColorSchemes';
 }
@@ -634,16 +531,6 @@ export type WebviewToExtensionMessage =
   | SaveRenderedImageMessage
   | OpenSourceMessage
   | ReloadStructureMessage
-  | GetDisplayConfigsMessage
-  | LoadDisplayConfigMessage
-  | PromptSaveDisplayConfigMessage
-  | SaveDisplayConfigMessage
-  | GetCurrentDisplaySettingsMessage
-  | UpdateDisplaySettingsMessage
-  | ExportDisplayConfigsMessage
-  | ImportDisplayConfigsMessage
-  | ConfirmDeleteDisplayConfigMessage
-  | DeleteDisplayConfigMessage
   | GetColorSchemesMessage
   | LoadColorSchemeMessage
   | PromptSaveColorSchemeMessage

@@ -308,13 +308,6 @@
               Show coordinate axes
             </label>
           </div>
-          <div class="input-group">
-            <label>Background Color</label>
-            <div style="display:flex;gap:8px;align-items:center;">
-              <input type="color" id="bg-color-picker" value="#0d1015" style="width:40px;height:32px;border:none;cursor:pointer;" />
-              <input type="text" id="bg-color-text" value="#0d1015" maxlength="7" style="flex:1;" placeholder="#0d1015" />
-            </div>
-          </div>
         </div>
       </div>
 
@@ -358,6 +351,16 @@
               <div style="display:flex;gap:8px;align-items:center;">
                 <input type="color" id="lattice-color-picker" value="#FF6600" style="width:40px;height:32px;border:none;cursor:pointer;" />
                 <input type="text" id="lattice-color-text" value="#FF6600" maxlength="7" style="flex:1;" placeholder="#FF6600" />
+              </div>
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Background</div>
+            <div class="input-group">
+              <label>Color</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="bg-color-picker" value="#0d1015" style="width:40px;height:32px;border:none;cursor:pointer;" />
+                <input type="text" id="bg-color-text" value="#0d1015" maxlength="7" style="flex:1;" placeholder="#0d1015" />
               </div>
             </div>
           </div>
@@ -561,25 +564,6 @@
               <label>Set distance (A)</label>
               <input type="number" id="adsorption-input" step="0.01" />
             </div>
-          </div>
-          <div class="panel-section">
-            <div class="panel-section-title">Configuration</div>
-            <div class="input-group">
-              <label>Current Config</label>
-              <div class="config-selector-row" style="display:flex;gap:6px;align-items:center;">
-                <select id="config-select" style="flex:1;">
-                  <option value="">Loading...</option>
-                </select>
-                <button id="btn-refresh-configs" type="button" title="Refresh list">↻</button>
-              </div>
-            </div>
-            <div class="input-group config-actions" style="display:flex;gap:6px;flex-wrap:wrap;">
-              <button id="btn-save-config" type="button">Save As...</button>
-              <button id="btn-export-config" type="button">Export</button>
-              <button id="btn-import-config" type="button">Import</button>
-              <button id="btn-delete-config" type="button" class="danger">Delete</button>
-            </div>
-            <div id="config-info" style="font-size:11px;color:#888;margin-top:6px;"></div>
           </div>
         </div>
       </div>

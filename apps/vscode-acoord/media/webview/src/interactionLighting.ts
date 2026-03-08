@@ -1,6 +1,6 @@
 import { lightingStore, displayStore } from './state';
 import { renderer } from './renderer';
-import { updateSettings } from './configHandler';
+import { updateSettings } from './settingsUtil';
 import { debounce } from './utils/performance';
 
 // Debounced lighting update to avoid excessive GPU work during slider drag (16ms = 60fps)

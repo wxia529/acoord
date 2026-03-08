@@ -264,35 +264,6 @@ export const adsorptionStore: AdsorptionState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Config Store - 配置管理
-// ─────────────────────────────────────────────────────────────────────────────
-export interface ConfigEntry {
-  id: string;
-  name: string;
-  description?: string;
-  settings?: DisplaySettings;
-}
-
-export interface AvailableConfigs {
-  presets: ConfigEntry[];
-  user: ConfigEntry[];
-}
-
-export interface ConfigState {
-  currentConfigId: string;
-  currentConfigName: string;
-  availableConfigs: AvailableConfigs;
-  isLoadingConfig: boolean;
-}
-
-export const configStore: ConfigState = {
-  currentConfigId: 'preset-default',
-  currentConfigName: 'Default',
-  availableConfigs: { presets: [], user: [] },
-  isLoadingConfig: false,
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Color Scheme Store - 颜色方案管理
 // ─────────────────────────────────────────────────────────────────────────────
 export interface ColorSchemeEntry {
