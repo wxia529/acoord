@@ -221,6 +221,7 @@ export interface ContextMenuHandlers {
   onSelectAll?: () => void;
   onClearSelection?: () => void;
   onSave?: () => void;
+  onSaveAs?: () => void;
   onExportImage?: () => void;
   onSetStatus?: (message: string) => void;
 }
@@ -705,6 +706,10 @@ export function createEmptySpaceContextMenu(
     {
       label: 'Save',
       action: () => handlers.onSave?.(),
+    },
+    {
+      label: 'Save As...',
+      action: () => handlers.onSaveAs?.(),
     },
     {
       label: 'Export image',
