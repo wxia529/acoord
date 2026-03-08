@@ -8,7 +8,7 @@
  */
 import { displayStore, structureStore, selectionStore } from './state';
 import { getElementById } from './utils/domCache';
-import { updateSettings } from './configHandler';
+import { updateSettings } from './settingsUtil';
 import { debounce } from './utils/performance';
 import type {
   UnitCellParams,

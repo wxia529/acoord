@@ -1,81 +1,14 @@
-import { configStore, colorSchemeStore, displayStore, extractDisplaySettings } from './state';
-import * as configHandler from './configHandler';
+import { colorSchemeStore, displayStore } from './state';
 import * as colorSchemeHandler from './colorSchemeHandler';
 import type { VsCodeApi } from './types';
 
 let _vscode: VsCodeApi | null = null;
 
-/** Called from app.ts before interaction.init() — stores the vscode API handle. */
 export function initVscode(vscode: VsCodeApi): void {
   _vscode = vscode;
 }
 
-/**
- * Wire up all Config panel controls (config selector, save/export/import/delete).
- * Called from interaction.ts init() after DOM is ready.
- */
 export function init(): void {
-  const configSelect = document.getElementById('config-select') as HTMLSelectElement | null;
-  const btnRefreshConfigs = document.getElementById('btn-refresh-configs') as HTMLButtonElement | null;
-  const btnSaveConfig = document.getElementById('btn-save-config') as HTMLButtonElement | null;
-  const btnExportConfig = document.getElementById('btn-export-config') as HTMLButtonElement | null;
-  const btnImportConfig = document.getElementById('btn-import-config') as HTMLButtonElement | null;
-  const btnDeleteConfig = document.getElementById('btn-delete-config') as HTMLButtonElement | null;
-
-  // Config selection change
-  if (configSelect) {
-    configSelect.addEventListener('change', () => {
-      const configId = configSelect.value;
-      if (configId) {
-        configHandler.loadConfig(configId);
-      }
-    });
-  }
-
-  // Refresh configs
-  if (btnRefreshConfigs) {
-    btnRefreshConfigs.addEventListener('click', () => {
-      configHandler.requestConfigList();
-    });
-  }
-
-  // Save config
-  if (btnSaveConfig) {
-    btnSaveConfig.addEventListener('click', () => {
-      _vscode?.postMessage({
-        command: 'promptSaveDisplayConfig',
-        settings: extractDisplaySettings(),
-      });
-    });
-  }
-
-  // Export config
-  if (btnExportConfig) {
-    btnExportConfig.addEventListener('click', () => {
-      _vscode?.postMessage({ command: 'exportDisplayConfigs' });
-    });
-  }
-
-  // Import config
-  if (btnImportConfig) {
-    btnImportConfig.addEventListener('click', () => {
-      _vscode?.postMessage({ command: 'importDisplayConfigs' });
-    });
-  }
-
-  // Delete config
-  if (btnDeleteConfig) {
-    btnDeleteConfig.addEventListener('click', () => {
-      const configId = configSelect ? configSelect.value : null;
-      if (!configId) { return; }
-      _vscode?.postMessage({
-        command: 'confirmDeleteDisplayConfig',
-        configId,
-      });
-    });
-  }
-
-  // Color scheme selector
   const colorSchemeSelect = document.getElementById('color-scheme-select') as HTMLSelectElement | null;
   const btnRefreshSchemes = document.getElementById('btn-refresh-schemes') as HTMLButtonElement | null;
   const btnSaveScheme = document.getElementById('btn-save-scheme') as HTMLButtonElement | null;
@@ -100,8 +33,6 @@ export function init(): void {
 
   if (btnSaveScheme) {
     btnSaveScheme.addEventListener('click', () => {
-      // Pass webview-side colors as a fallback for the extension host.
-      // The host will prefer the active scheme's colors from its own store.
       const colors: Record<string, string> = Object.keys(colorSchemeStore.currentSchemeColors).length > 0
         ? { ...colorSchemeStore.currentSchemeColors }
         : { ...displayStore.currentColorByElement };
@@ -135,19 +66,17 @@ export function init(): void {
     });
   }
 
-  // Initial population
-  updateConfigSelector();
+  updateColorSchemeSelector();
 }
 
-export function updateConfigSelector(): void {
-  const configSelect = document.getElementById('config-select') as HTMLSelectElement | null;
-  const configInfo = document.getElementById('config-info') as HTMLElement | null;
-  if (!configSelect) { return; }
+export function updateColorSchemeSelector(): void {
+  const colorSchemeSelect = document.getElementById('color-scheme-select') as HTMLSelectElement | null;
+  const colorSchemeInfo = document.getElementById('color-scheme-info') as HTMLElement | null;
+  if (!colorSchemeSelect) { return; }
 
-  configSelect.innerHTML = '';
+  colorSchemeSelect.innerHTML = '';
 
-  // Add presets group
-  const presets = configStore.availableConfigs.presets || [];
+  const presets = colorSchemeStore.availableSchemes.presets || [];
   if (presets.length > 0) {
     const presetGroup = document.createElement('optgroup');
     presetGroup.label = 'Presets';
@@ -155,34 +84,32 @@ export function updateConfigSelector(): void {
       const option = document.createElement('option');
       option.value = preset.id;
       option.textContent = preset.name;
-      if (preset.id === configStore.currentConfigId) {
+      if (preset.id === colorSchemeStore.currentSchemeId) {
         option.selected = true;
       }
       presetGroup.appendChild(option);
     }
-    configSelect.appendChild(presetGroup);
+    colorSchemeSelect.appendChild(presetGroup);
   }
 
-  // Add user configs group
-  const userConfigs = configStore.availableConfigs.user || [];
-  if (userConfigs.length > 0) {
+  const userSchemes = colorSchemeStore.availableSchemes.user || [];
+  if (userSchemes.length > 0) {
     const userGroup = document.createElement('optgroup');
-    userGroup.label = 'Your Configs';
-    for (const config of userConfigs) {
+    userGroup.label = 'Your Schemes';
+    for (const scheme of userSchemes) {
       const option = document.createElement('option');
-      option.value = config.id;
-      option.textContent = config.name;
-      if (config.id === configStore.currentConfigId) {
+      option.value = scheme.id;
+      option.textContent = scheme.name;
+      if (scheme.id === colorSchemeStore.currentSchemeId) {
         option.selected = true;
       }
       userGroup.appendChild(option);
     }
-    configSelect.appendChild(userGroup);
+    colorSchemeSelect.appendChild(userGroup);
   }
 
-  // Update config info
-  if (configInfo) {
-    const currentConfig = [...presets, ...userConfigs].find((c) => c.id === configStore.currentConfigId);
-    configInfo.textContent = (currentConfig && currentConfig.description) ? currentConfig.description : '';
+  if (colorSchemeInfo) {
+    const currentScheme = [...presets, ...userSchemes].find((s) => s.id === colorSchemeStore.currentSchemeId);
+    colorSchemeInfo.textContent = (currentScheme && currentScheme.description) ? currentScheme.description : '';
   }
 }

@@ -1,6 +1,6 @@
 import { structureStore, displayStore } from './state';
 import { renderer } from './renderer';
-import { updateSettings } from './configHandler';
+import { updateSettings } from './settingsUtil';
 import { debounce } from './utils/performance';
 
 // Debounced rerender to prevent excessive rendering during slider input (16ms = 60fps)
