@@ -77,7 +77,7 @@
     </div>
     <div id="sidebar">
       <div class="collapsible-panel" data-panel="properties">
-        <div class="panel-header" onclick="togglePanel('properties')">
+        <div class="panel-header">
           <span class="panel-title">Properties</span>
           <span class="panel-toggle">▼</span>
         </div>
@@ -145,7 +145,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="structure">
-        <div class="panel-header" onclick="togglePanel('structure')">
+        <div class="panel-header">
           <span class="panel-title">Structure</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -159,7 +159,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="atom-list">
-        <div class="panel-header" onclick="togglePanel('atom-list')">
+        <div class="panel-header">
           <span class="panel-title">Atom List</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -169,7 +169,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="measurements">
-        <div class="panel-header" onclick="togglePanel('measurements')">
+        <div class="panel-header">
           <span class="panel-title">Measurements</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -195,7 +195,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="lattice">
-        <div class="panel-header" onclick="togglePanel('lattice')">
+        <div class="panel-header">
           <span class="panel-title">Lattice</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -254,8 +254,8 @@
       </div>
 
       <div class="collapsible-panel" data-panel="display">
-        <div class="panel-header" onclick="togglePanel('display')">
-          <span class="panel-title">Display</span>
+        <div class="panel-header">
+          <span class="panel-title">View</span>
           <span class="panel-toggle">▶</span>
         </div>
         <div class="panel-content collapsed" id="panel-display">
@@ -313,7 +313,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="colors">
-        <div class="panel-header" onclick="togglePanel('colors')">
+        <div class="panel-header">
           <span class="panel-title">Colors</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -349,37 +349,20 @@
       </div>
 
       <div class="collapsible-panel" data-panel="size-style">
-        <div class="panel-header" onclick="togglePanel('size-style')">
+        <div class="panel-header">
           <span class="panel-title">Size & Style</span>
           <span class="panel-toggle">▶</span>
         </div>
         <div class="panel-content collapsed" id="panel-size-style">
           <div class="input-group">
-            <label>Global size: <span id="atom-size-global-value">0.30 Å</span></label>
-            <input type="range" id="atom-size-global-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
-          </div>
-          <div class="input-group">
-            <label class="checkbox-row">
-              <input type="checkbox" id="atom-size-use-default" checked />
-              Use default settings
-            </label>
-          </div>
-          <div class="input-group" id="atom-size-selected-section" style="display:none;">
-            <label>Selected (<span id="atom-size-selected-count">0</span>): <span id="atom-size-selected-value">0.30 Å</span></label>
+            <label>Atoms radius: <span id="atom-size-selected-value">--</span> Å</label>
             <input type="range" id="atom-size-selected-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
-            <button id="btn-atom-size-reset-selected" type="button">Reset to default</button>
+            <button id="btn-atom-size-reset-selected" type="button">Reset to element default</button>
+            <button id="btn-atom-size-covalent" type="button">Set to covalent radius</button>
           </div>
           <div class="input-group">
             <label>Bond thickness: <span id="bond-size-value">1.0</span>x</label>
             <input type="range" id="bond-size-slider" min="0.3" max="5" step="0.1" value="1" />
-          </div>
-          <div class="input-group">
-            <button id="atom-size-element-toggle" type="button" class="atom-size-element-toggle">By Element ▼</button>
-          </div>
-          <div id="atom-size-element-list" class="atom-size-element-list" style="display:none;"></div>
-          <div class="input-group">
-            <label>Atom scale: <span id="size-value">1.00</span>x</label>
-            <input type="range" id="size-slider" min="0.5" max="3" step="0.05" value="1" />
           </div>
           <div class="panel-section">
             <div class="panel-section-title">Unit Cell Style</div>
@@ -406,7 +389,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="lighting">
-        <div class="panel-header" onclick="togglePanel('lighting')">
+        <div class="panel-header">
           <span class="panel-title">Lighting</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -507,7 +490,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="trajectory">
-        <div class="panel-header" onclick="togglePanel('trajectory')">
+        <div class="panel-header">
           <span class="panel-title">Trajectory</span>
           <span class="panel-toggle">▶</span>
         </div>
@@ -531,7 +514,7 @@
       </div>
 
       <div class="collapsible-panel" data-panel="tools">
-        <div class="panel-header" onclick="togglePanel('tools')">
+        <div class="panel-header">
           <span class="panel-title">Tools</span>
           <span class="panel-toggle">▶</span>
         </div>

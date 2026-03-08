@@ -4,7 +4,7 @@ import * as configHandler from './configHandler';
 import * as colorSchemeHandler from './colorSchemeHandler';
 import * as appTrajectory from './appTrajectory';
 import { setup as setupEdit } from './appEdit';
-import { setup as setupLattice, updateLatticeUI, updateAtomSizePanel } from './appLattice';
+import { setup as setupLattice, updateLatticeUI, updateSelectedAtomSizePanel } from './appLattice';
 import { setup as setupView } from './appView';
 import { setup as setupTools } from './appTools';
 import { init as initInteraction } from './interaction';
@@ -90,7 +90,7 @@ const uiCallbacks = {
   updateAtomColorPreview,
   updateMeasurements,
   updateAdsorptionUI,
-  updateAtomSizePanel,
+  updateSelectedAtomSizePanel,
   updateStatusBar,
   updatePropertiesPanel,
 };
@@ -532,7 +532,7 @@ function handleRenderMessage(message: RenderMessage): void {
   updateAtomColorPreview();
   updateAdsorptionUI();
   updateBondSelectionUI();
-  updateAtomSizePanel();
+  updateSelectedAtomSizePanel();
 }
 
 window.addEventListener('message', (event: MessageEvent<ExtensionToWebviewMessage>) => {

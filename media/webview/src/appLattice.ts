@@ -2,16 +2,16 @@
  * Lattice tab module.
  *
  * Wires: Lattice Params panel, Supercell panel, Center at Cell,
- *        Atom & Bond Size panel (global, per-selected, by-element, bond thickness, atom scale).
+ *        Atom & Bond Size panel (selected atoms radius, bond thickness).
  *
  * setup(callbacks) must be called once during app initialisation.
  */
 import { displayStore, structureStore, selectionStore } from './state';
 import { getElementById } from './utils/domCache';
+import { updateSettings } from './configHandler';
 import { debounce } from './utils/performance';
 import type {
   UnitCellParams,
-  Atom,
   VscodeContext,
   ErrorContext,
   RendererContext,
@@ -22,11 +22,6 @@ import type {
 type AppLatticeContext = VscodeContext & ErrorContext & RendererContext & AtomSizeContext;
 
 let _cb: AppLatticeContext | null = null;
-
-// Module-level debounced rerender for dynamic sliders (element size rows)
-const debouncedRerenderFromPanel = debounce((): void => {
-  _cb?.rerenderCurrentStructure();
-}, 16);
 
 // ── Lattice UI sync ────────────────────────────────────────────────────────────
 
@@ -83,73 +78,20 @@ function rerenderCurrentStructure(): void {
   _cb?.rerenderCurrentStructure();
 }
 
-export function updateAtomSizePanel(): void {
-  const elementToggle = getElementById<HTMLButtonElement>('atom-size-element-toggle');
-  const elementList = getElementById<HTMLElement>('atom-size-element-list');
+export function updateSelectedAtomSizePanel(): void {
+  const atomSizeSelectedValue = getElementById<HTMLElement>('atom-size-selected-value');
+  const atomSizeSelectedSlider = getElementById<HTMLInputElement>('atom-size-selected-slider');
 
-  if (!elementToggle || !elementList) {
-    return;
-  }
+  const selectedCount = selectionStore.selectedAtomIds.length;
 
-  const { cleanupAtomSizeOverrides, getAvailableElements, getAtomSizeForElement, hasElementSizeOverride,
-    clampAtomSize, ATOM_SIZE_MIN, ATOM_SIZE_MAX } = _cb || {};
-
-  cleanupAtomSizeOverrides?.();
-
-  const availableElements = getAvailableElements?.() || [];
-
-  if (availableElements.length === 0) { displayStore.atomSizeElementExpanded = false; }
-  elementToggle.disabled = availableElements.length === 0;
-  elementToggle.textContent = `By Element ${displayStore.atomSizeElementExpanded ? '▲' : '▼'}`;
-  elementList.style.display = displayStore.atomSizeElementExpanded && availableElements.length > 0 ? '' : 'none';
-  elementList.innerHTML = '';
-
-  if (displayStore.atomSizeElementExpanded && availableElements.length > 0) {
-    for (const element of availableElements) {
-      const size = getAtomSizeForElement?.(element) ?? 0.3;
-      const hasOverride = hasElementSizeOverride?.(element) ?? false;
-
-      const row = document.createElement('div');
-      row.className = `atom-size-element-row${hasOverride ? ' size-override' : ''}`;
-
-      const header = document.createElement('div');
-      header.className = 'atom-size-element-header';
-
-      const title = document.createElement('span');
-      title.textContent = `${element}: ${size.toFixed(2)} Å`;
-
-      const resetButton = document.createElement('button');
-      resetButton.type = 'button';
-      resetButton.className = 'atom-size-element-reset';
-      resetButton.textContent = '↺';
-      resetButton.disabled = !hasOverride;
-      resetButton.addEventListener('click', () => {
-        delete displayStore.currentRadiusByElement[element];
-        updateAtomSizePanel();
-        rerenderCurrentStructure();
-      });
-
-      header.appendChild(title);
-      header.appendChild(resetButton);
-
-      const slider = document.createElement('input');
-      slider.type = 'range';
-      slider.min = String(ATOM_SIZE_MIN ?? 0.1);
-      slider.max = String(ATOM_SIZE_MAX ?? 2.0);
-      slider.step = '0.01';
-      slider.value = size.toFixed(2);
-      slider.oninput = (event: Event) => {
-        const target = event.target as HTMLInputElement;
-        const nextSize = clampAtomSize?.(target.value, size) ?? size;
-        displayStore.currentRadiusByElement[element] = nextSize;
-        updateAtomSizePanel();
-        debouncedRerenderFromPanel();
-      };
-
-      row.appendChild(header);
-      row.appendChild(slider);
-      elementList.appendChild(row);
-    }
+  if (selectedCount > 0 && atomSizeSelectedSlider && atomSizeSelectedValue) {
+    const { getAtomSizeForAtomId } = _cb || {};
+    const firstAtomId = selectionStore.selectedAtomIds[0];
+    const size = getAtomSizeForAtomId?.(firstAtomId) ?? 0.3;
+    atomSizeSelectedSlider.value = size.toFixed(2);
+    atomSizeSelectedValue.textContent = size.toFixed(2);
+  } else if (atomSizeSelectedValue) {
+    atomSizeSelectedValue.textContent = '--';
   }
 }
 
@@ -233,9 +175,8 @@ export function setup(callbacks: AppLatticeContext): void {
     });
   }
 
-  // ── Scale / size sliders ───────────────────────────────────────────────────
+  // ── Bond thickness slider ───────────────────────────────────────────────────
 
-  const sizeSlider = getElementById<HTMLInputElement>('size-slider');
   const bondSizeSlider = getElementById<HTMLInputElement>('bond-size-slider');
 
   if (bondSizeSlider) {
@@ -243,33 +184,54 @@ export function setup(callbacks: AppLatticeContext): void {
       displayStore.bondThicknessScale = parseFloat((event.target as HTMLInputElement).value);
       const bondSizeValue = getElementById<HTMLElement>('bond-size-value');
       if (bondSizeValue) bondSizeValue.textContent = displayStore.bondThicknessScale.toFixed(1);
+      updateSettings();
       if (structureStore.currentStructure) {
         debouncedRenderStructure();
       }
     });
   }
 
-  // ── Atom size panel ────────────────────────────────────────────────────────
+  // ── Selected atoms radius ────────────────────────────────────────────────────
 
-  const elementToggle = getElementById<HTMLButtonElement>('atom-size-element-toggle');
+  const atomSizeSelectedSlider = getElementById<HTMLInputElement>('atom-size-selected-slider');
+  const atomSizeSelectedValue = getElementById<HTMLElement>('atom-size-selected-value');
+  const btnAtomSizeResetSelected = getElementById<HTMLButtonElement>('btn-atom-size-reset-selected');
 
-  if (elementToggle) {
-    elementToggle.addEventListener('click', () => {
-      displayStore.atomSizeElementExpanded = !displayStore.atomSizeElementExpanded;
-      updateAtomSizePanel();
-    });
-  }
+  if (atomSizeSelectedSlider) {
+    atomSizeSelectedSlider.addEventListener('input', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (atomSizeSelectedValue) atomSizeSelectedValue.textContent = value.toFixed(2);
 
-  if (sizeSlider) {
-    sizeSlider.addEventListener('input', (event: Event) => {
-      displayStore.currentRadiusScale = parseFloat((event.target as HTMLInputElement).value);
-      const sizeValue = getElementById<HTMLElement>('size-value');
-      if (sizeValue) sizeValue.textContent = displayStore.currentRadiusScale.toFixed(2);
-      if (structureStore.currentStructure) {
-        debouncedRenderStructure();
+      if (selectionStore.selectedAtomIds.length > 0 && vscode) {
+        vscode.postMessage({
+          command: 'setAtomRadius',
+          atomIds: selectionStore.selectedAtomIds,
+          radius: value,
+        });
       }
     });
   }
 
-  updateAtomSizePanel();
+  if (btnAtomSizeResetSelected) {
+    btnAtomSizeResetSelected.addEventListener('click', () => {
+      if (selectionStore.selectedAtomIds.length > 0 && vscode) {
+        vscode.postMessage({
+          command: 'applyDisplaySettings',
+          atomIds: selectionStore.selectedAtomIds,
+        });
+      }
+    });
+  }
+
+  const btnAtomSizeCovalent = getElementById<HTMLButtonElement>('btn-atom-size-covalent');
+  if (btnAtomSizeCovalent) {
+    btnAtomSizeCovalent.addEventListener('click', () => {
+      if (selectionStore.selectedAtomIds.length > 0 && vscode) {
+        vscode.postMessage({
+          command: 'setCovalentRadius',
+          atomIds: selectionStore.selectedAtomIds,
+        });
+      }
+    });
+  }
 }

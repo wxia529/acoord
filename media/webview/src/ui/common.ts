@@ -53,8 +53,9 @@ export function setupCollapsiblePanels(): void {
     if (!panelId) { return; }
 
     const content = document.getElementById(`panel-${panelId}`);
+    const header = panel.querySelector('.panel-header');
     const toggle = panel.querySelector('.panel-toggle');
-    if (!content || !toggle) { return; }
+    if (!content || !toggle || !header) { return; }
 
     const savedState = loadPanelState(panelId);
     if (savedState !== null) {
@@ -69,6 +70,12 @@ export function setupCollapsiblePanels(): void {
       const isCollapsed = content.classList.contains('collapsed');
       toggle.textContent = isCollapsed ? '▶' : '▼';
     }
+
+    header.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      togglePanel(panelId as string);
+    });
   });
 }
 

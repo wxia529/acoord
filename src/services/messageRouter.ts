@@ -221,6 +221,11 @@ export class MessageRouter {
       return true;
     });
 
+    this.registerTyped('setCovalentRadius', (message) => {
+      this.atomEditService.setCovalentRadius(message.atomIds);
+      return true;
+    });
+
     this.registerTyped('applyDisplaySettings', (message) => {
       this.atomEditService.applyDisplaySettings(message.atomIds);
       return true;

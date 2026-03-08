@@ -1,6 +1,7 @@
 import { structureStore, selectionStore, adsorptionStore } from '../state';
 import { getAtomById } from '../utils/measurements';
 import { hasAtomSizeOverride } from '../utils/atomSize';
+import { updateSelectedAtomSizePanel } from '../appLattice';
 import type { Atom, VsCodeApi } from '../types';
 
 export function parseBondPairFromKey(bondKey: string): [string, string] | null {
@@ -97,7 +98,7 @@ export function updateAtomList(
     updateAtomColorPreview: () => void;
     updateMeasurements: () => void;
     updateAdsorptionUI: () => void;
-    updateAtomSizePanel: () => void;
+    updateSelectedAtomSizePanel: () => void;
     updateStatusBar: () => void;
     updatePropertiesPanel: () => void;
   }
@@ -153,7 +154,8 @@ export function updateAtomList(
   callbacks.updateAtomColorPreview();
   callbacks.updateMeasurements();
   callbacks.updateAdsorptionUI();
-  callbacks.updateAtomSizePanel();
+  callbacks.updateSelectedAtomSizePanel();
+  updateSelectedAtomSizePanel();
   callbacks.updateStatusBar();
   callbacks.updatePropertiesPanel();
 }
@@ -168,7 +170,7 @@ export function handleSelect(
     updateAtomColorPreview: () => void;
     updateMeasurements: () => void;
     updateAdsorptionUI: () => void;
-    updateAtomSizePanel: () => void;
+    updateSelectedAtomSizePanel: () => void;
     updateStatusBar: () => void;
     updatePropertiesPanel: () => void;
   }
@@ -207,7 +209,7 @@ export function applySelectionFromIds(
     updateAtomColorPreview: () => void;
     updateMeasurements: () => void;
     updateAdsorptionUI: () => void;
-    updateAtomSizePanel: () => void;
+    updateSelectedAtomSizePanel: () => void;
     updateStatusBar: () => void;
     updatePropertiesPanel: () => void;
   }

@@ -2,7 +2,7 @@ import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
 import { Atom } from '../models/atom.js';
 import { UndoManager } from '../providers/undoManager.js';
 import { TrajectoryManager } from '../providers/trajectoryManager.js';
-import { parseElement, getDefaultAtomColor, getDefaultAtomRadius } from '../utils/elementData.js';
+import { parseElement, getDefaultAtomColor, getDefaultAtomRadius, ELEMENT_DATA } from '../utils/elementData.js';
 import { DisplaySettings } from '../config/types.js';
 import { ColorScheme } from '../shared/protocol.js';
 
@@ -278,6 +278,32 @@ export class AtomEditService {
       const atom = editStructure.getAtom(id);
       if (atom) {
         atom.radius = radius;
+      }
+    }
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+    return true;
+  }
+
+  /**
+   * Set radius of selected atoms to their element's covalent radius (unscaled).
+   */
+  setCovalentRadius(atomIds: string[]): boolean {
+    if (atomIds.length === 0) {
+      return false;
+    }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+    
+    this.undoManager.push(editStructure);
+    for (const id of atomIds) {
+      const atom = editStructure.getAtom(id);
+      if (atom) {
+        const covalentRadius = ELEMENT_DATA[atom.element]?.covalentRadius;
+        atom.radius = covalentRadius ?? 0.3;
       }
     }
     this.renderer.setStructure(editStructure);
