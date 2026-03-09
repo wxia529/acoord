@@ -43,6 +43,11 @@ const READ_ONLY_FORMATS = new Set(['out', 'pwo', 'log', 'outcar']);
 export class FileManager {
   private static readonly DEFAULT_NAME = 'Created by ACoord';
 
+  static isReadOnlyFormat(filePath: string): boolean {
+    const ext = this.getFileExtension(filePath).toLowerCase();
+    return READ_ONLY_FORMATS.has(ext);
+  }
+
   /**
    * Load structure from file content
    */

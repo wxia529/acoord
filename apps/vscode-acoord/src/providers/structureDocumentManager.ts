@@ -30,6 +30,12 @@ export class StructureDocumentManager {
     structure: Structure,
     frames: Structure[]
   ): Promise<void> {
+    if (FileManager.isReadOnlyFormat(fsPath)) {
+      const ext = path.extname(fsPath).slice(1).toLowerCase() || path.basename(fsPath);
+      throw new Error(
+        `Cannot save to read-only format (${ext}). Use "Save As..." to export to a different format.`
+      );
+    }
     const format = FileManager.resolveFormat(fsPath, 'xyz');
     if (format === 'xyz' && frames.length > 1) {
       for (const frame of frames) {
@@ -57,6 +63,12 @@ export class StructureDocumentManager {
     destination: vscode.Uri,
     exportFrames: Structure[]
   ): Promise<void> {
+    if (FileManager.isReadOnlyFormat(destination.fsPath)) {
+      const ext = path.extname(destination.fsPath).slice(1).toLowerCase() || path.basename(destination.fsPath);
+      throw new Error(
+        `Cannot save to read-only format (${ext}). Choose a different format.`
+      );
+    }
     const format = FileManager.resolveFormat(destination.fsPath, 'xyz');
     const isMultiFrame =
       (format === 'xyz' || format === 'xdatcar') && exportFrames.length > 1;
