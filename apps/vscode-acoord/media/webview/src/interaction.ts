@@ -207,7 +207,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     const totalAngle = totalDragDist * ROTATION_SENSITIVITY;
     
     // 使用总的鼠标移动方向计算旋转轴
-    const axisDir = new Vector3(-totalDy, totalDx, 0).normalize();
+    const axisDir = new Vector3(totalDy, totalDx, 0).normalize();
     const cameraMatrix = new Matrix4().extractRotation(camera.matrixWorld);
     axisDir.applyMatrix4(cameraMatrix);
     axisDir.normalize();
