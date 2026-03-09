@@ -2,9 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
-## 0.3.0
+## 0.3.1
 
-### Major Architecture Refactoring
+### New Features
+
+- **Periodic Table Element Picker**: Interactive periodic table UI for element selection with hover tooltips showing element details. Accessible from context menu when changing atom elements.
+- **Read-Only Format Support**: Added read-only mode for specific file formats to preserve original content while allowing visualization.
+
+### Bug Fixes
+
+- **Bond Size Persistence**: Fixed bond size settings not persisting across sessions.
+- **Atom Drag Optimization**: Improved atom dragging behavior for smoother interaction.
+- **View Rendering**: Fixed view-related rendering issues.
+- **DOM Cleanup**: Resolved DOM event handling issues.
+
+## 0.3.0
 
 This release includes significant architectural improvements and new features.
 
