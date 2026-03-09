@@ -303,13 +303,12 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
             mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
             raycaster.setFromCamera(mouse, camera);
             camera.getWorldDirection(_normal);
-          const pivot = getSelectedCentroid();
-          if (pivot) {
-            renderer.getDragPlane().setFromNormalAndCoplanarPoint(_normal, pivot);
-            interactionStore.dragPlaneNormal = _normal.clone();
-            const hit = raycaster.ray.intersectPlane(renderer.getDragPlane(), _intersection);
-            interactionStore.lastDragWorld = hit ? _intersection.clone() : pivot.clone();
-          }
+            const pivot = getSelectedCentroid();
+            if (pivot) {
+              renderer.getDragPlane().setFromNormalAndCoplanarPoint(_normal, pivot);
+              interactionStore.dragPlaneNormal = _normal.clone();
+              interactionStore.lastDragWorld = pivot.clone();
+            }
           }
         } else {
           interactionStore.rightDragType = 'rotate';
