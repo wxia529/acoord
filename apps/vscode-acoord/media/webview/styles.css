@@ -98,6 +98,23 @@ button:hover {
   box-shadow: 0 6px 18px rgba(245, 158, 11, 0.2);
 }
 
+.axis-button {
+  background: #11161c;
+  color: var(--acoord-text);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  padding: 4px 10px;
+  border-radius: 999px;
+  cursor: pointer;
+  font-size: 11px;
+  min-width: 28px;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.axis-button:hover {
+  border-color: rgba(245, 158, 11, 0.6);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.2);
+}
+
 .axis-button.selected {
   border-color: rgba(245, 158, 11, 0.8);
   box-shadow: 0 6px 18px rgba(245, 158, 11, 0.35);

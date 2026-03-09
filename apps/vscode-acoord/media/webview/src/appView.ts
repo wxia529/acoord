@@ -36,6 +36,13 @@ export function setup(): void {
     }
   }
 
+  for (const axis of ['a', 'b', 'c']) {
+    const btn = document.getElementById(`btn-toolbar-view-${axis}`) as HTMLButtonElement | null;
+    if (btn) {
+      btn.addEventListener('click', () => { renderer.snapCameraToAxis(axis); });
+    }
+  }
+
   // ── Rotation panel ─────────────────────────────────────────────────────────
 
   const angleInput = document.getElementById('rot-angle') as HTMLInputElement | null;
