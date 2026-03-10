@@ -1,6 +1,7 @@
 import { structureStore, selectionStore, interactionStore, adsorptionStore } from '../state';
 import { renderer } from '../renderer';
-import { getAtomById, updateMeasurements } from './measurements';
+import { getAtomById } from './measurements';
+import { updateMeasurementDisplay } from '../ui/statusBar';
 import type { Atom, VsCodeApi } from '../types';
 
 let rotationBase: { id: string; pos: [number, number, number] }[] | null = null;
@@ -138,7 +139,7 @@ export function applyBondAngle(targetDeg: number): void {
     atomB.position[2] + rotated[2],
   ];
   updateAtomPosition(atomC.id, newPos[0], newPos[1], newPos[2]);
-  updateMeasurements();
+  updateMeasurementDisplay();
 }
 
 export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCodeApi): void {

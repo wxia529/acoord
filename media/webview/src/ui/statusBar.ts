@@ -1,5 +1,5 @@
 import { structureStore, selectionStore, interactionStore, trajectoryStore } from '../state';
-import { getFractionalCoords } from '../utils/measurements';
+import { getFractionalCoords, getMeasurementText } from '../utils/measurements';
 
 let statusSelectionLock = false;
 let lastStatusSelectedId: string | null = null;
@@ -32,6 +32,7 @@ export function updateStatusBar(force?: boolean): void {
   
   updateModeDisplay(modeEl, hintEl);
   updateSelectionDisplay(selectionEl);
+  updateMeasurementDisplay();
   updateFrameDisplay(frameEl);
   
   const selected = structureStore.currentSelectedAtom;
@@ -98,6 +99,13 @@ function updateFrameDisplay(frameEl: HTMLElement | null): void {
   const current = trajectoryStore.trajectoryFrameIndex + 1;
   const total = trajectoryStore.trajectoryFrameCount;
   frameEl.textContent = `Frame ${current}/${total}`;
+}
+
+export function updateMeasurementDisplay(): void {
+  const el = document.getElementById('status-measurement');
+  if (el) {
+    el.textContent = getMeasurementText();
+  }
 }
 
 export function syncStatusSelectionLock(): void {

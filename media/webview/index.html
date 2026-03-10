@@ -156,24 +156,6 @@
         </div>
       </div>
 
-      <div class="collapsible-panel" data-panel="measurements">
-        <div class="panel-header">
-          <span class="panel-title">Measurements</span>
-          <span class="panel-toggle">▶</span>
-        </div>
-        <div class="panel-content collapsed" id="panel-measurements">
-          <div id="measurements">
-            <div>Bond length: <span id="bond-length-display">--</span> A</div>
-            <div>Bond angle: <span id="bond-angle">--</span> deg</div>
-          </div>
-          <div class="input-group">
-            <label>Set bond angle (deg)</label>
-            <input type="number" id="bond-angle-input" step="0.1" />
-          </div>
-          <button id="btn-apply-angle">Apply Bond Angle</button>
-        </div>
-      </div>
-
       <div class="collapsible-panel" data-panel="bonds">
         <div class="panel-header">
           <span class="panel-title">Bonds</span>
@@ -576,6 +558,7 @@
     <span id="status-atoms">Atoms: 0</span>
     <span id="status-bonds">Bonds: 0</span>
     <span id="status-selection">Selected: 0</span>
+    <span id="status-measurement">--</span>
     <span id="status-hint">Move: Shift+Alt+drag | Add: type element</span>
     <span id="status-frame">Frame 1/1</span>
   </div>
