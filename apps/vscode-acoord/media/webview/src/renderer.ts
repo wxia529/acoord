@@ -328,7 +328,7 @@ function init(canvas: HTMLCanvasElement, handlers: { setError: (m: string) => vo
 
   rendererState.statusInterval = setInterval(() => {
     const calls = rendererState.renderer ? rendererState.renderer.info.render.calls : 0;
-    handlers.setStatus('Render OK. Draw calls: ' + calls + ' | Atoms: ' + rendererState.atomMeshes.size);
+    handlers.setStatus('Draw calls: ' + calls);
   }, 1000);
 }
 

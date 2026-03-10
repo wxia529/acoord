@@ -498,6 +498,11 @@ button:hover {
   font-weight: 600;
 }
 
+#status-atoms,
+#status-bonds {
+  color: var(--acoord-text);
+}
+
 #status-selection {
   color: var(--acoord-text);
 }
