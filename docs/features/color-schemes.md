@@ -220,5 +220,5 @@ Full periodic table colors available in built-in schemes.
 ## Next Steps
 
 - [3D Visualization](/features/3d-visualization) — View colored atoms
-- [Display Settings](/features/display-settings) — Other display options
+- [Atom Selection](/features/atom-selection) — Select atoms
 - [Editing Atoms](/tutorials/editing-atoms) — Change individual atom colors
