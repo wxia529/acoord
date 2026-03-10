@@ -160,10 +160,8 @@ export class XYZParser extends StructureParser {
     const lines = rawContent.split(/\r?\n/);
     const resultLines: string[] = [];
     
-    // Line 0: atom count (keep original)
-    if (lines.length > 0) {
-      resultLines.push(lines[0]);
-    }
+    // Line 0: atom count (update to current atom count)
+    resultLines.push(structure.atoms.length.toString());
     
     // Line 1: comment (keep original)
     if (lines.length > 1) {
