@@ -307,7 +307,12 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
             if (pivot) {
               renderer.getDragPlane().setFromNormalAndCoplanarPoint(_normal, pivot);
               interactionStore.dragPlaneNormal = _normal.clone();
-              interactionStore.lastDragWorld = pivot.clone();
+              const hit = raycaster.ray.intersectPlane(renderer.getDragPlane(), _intersection);
+              if (hit) {
+                interactionStore.lastDragWorld = _intersection.clone();
+              } else {
+                interactionStore.lastDragWorld = pivot.clone();
+              }
             }
           }
         } else {
