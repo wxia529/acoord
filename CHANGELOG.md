@@ -6,6 +6,7 @@ All notable changes to this project will be documented in this file.
 
 ### Bug Fixes
 
+- **XYZ File Atom Count**: Fixed atom count not updating when saving XYZ files after adding or removing atoms.
 - **QE Input File Format Preservation**: Fixed multiple issues where saving QE input files would lose format-specific content:
   - Fixed `parseTrajectory()` not preserving raw content, causing all custom namelist parameters to be lost on save
   - Fixed pseudopotential filenames being replaced with default values
