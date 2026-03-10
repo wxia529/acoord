@@ -95,23 +95,61 @@ export function getAtomById(atomId: string): Atom | null {
   return _atomIndex.get(atomId) ?? null;
 }
 
+export function getMeasurementText(): string {
+  const selected = selectionStore.selectedAtomIds;
+  
+  if (selected.length === 2) {
+    const atomA = getAtomById(selected[0]);
+    const atomB = getAtomById(selected[1]);
+    if (atomA && atomB) {
+      const dx = atomB.position[0] - atomA.position[0];
+      const dy = atomB.position[1] - atomA.position[1];
+      const dz = atomB.position[2] - atomA.position[2];
+      const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
+      return `Length: ${length.toFixed(3)} \u00C5`;
+    }
+  }
+  
+  if (selected.length === 3) {
+    const atomA = getAtomById(selected[0]);
+    const atomB = getAtomById(selected[1]);
+    const atomC = getAtomById(selected[2]);
+    if (atomA && atomB && atomC) {
+      const v1: [number, number, number] = [
+        atomA.position[0] - atomB.position[0],
+        atomA.position[1] - atomB.position[1],
+        atomA.position[2] - atomB.position[2],
+      ];
+      const v2: [number, number, number] = [
+        atomC.position[0] - atomB.position[0],
+        atomC.position[1] - atomB.position[1],
+        atomC.position[2] - atomB.position[2],
+      ];
+      const dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
+      const len1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
+      const len2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
+      if (len1 > 1e-6 && len2 > 1e-6) {
+        const cos = Math.max(-1, Math.min(1, dot / (len1 * len2)));
+        const angle = (Math.acos(cos) * 180) / Math.PI;
+        return `Angle: ${angle.toFixed(2)}\u00B0`;
+      }
+    }
+  }
+  
+  return '--';
+}
+
 export function updateMeasurements(): void {
   const lengthEl = getElementById<HTMLElement>('bond-length');
-  const lengthDisplayEl = getElementById<HTMLElement>('bond-length-display');
-  const angleEl = getElementById<HTMLElement>('bond-angle');
   const selected = selectionStore.selectedAtomIds;
   if (selected.length < 2) {
     if (lengthEl) lengthEl.textContent = '--';
-    if (lengthDisplayEl) lengthDisplayEl.textContent = '--';
-    if (angleEl) angleEl.textContent = '--';
     return;
   }
   const atomA = getAtomById(selected[0]);
   const atomB = getAtomById(selected[1]);
   if (!atomA || !atomB) {
     if (lengthEl) lengthEl.textContent = '--';
-    if (lengthDisplayEl) lengthDisplayEl.textContent = '--';
-    if (angleEl) angleEl.textContent = '--';
     return;
   }
   const dx = atomB.position[0] - atomA.position[0];
@@ -119,35 +157,4 @@ export function updateMeasurements(): void {
   const dz = atomB.position[2] - atomA.position[2];
   const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
   if (lengthEl) lengthEl.textContent = length.toFixed(4);
-  if (lengthDisplayEl) lengthDisplayEl.textContent = length.toFixed(4);
-
-  if (selected.length < 3) {
-    if (angleEl) angleEl.textContent = '--';
-    return;
-  }
-  const atomC = getAtomById(selected[2]);
-  if (!atomC) {
-    if (angleEl) angleEl.textContent = '--';
-    return;
-  }
-  const v1: [number, number, number] = [
-    atomA.position[0] - atomB.position[0],
-    atomA.position[1] - atomB.position[1],
-    atomA.position[2] - atomB.position[2],
-  ];
-  const v2: [number, number, number] = [
-    atomC.position[0] - atomB.position[0],
-    atomC.position[1] - atomB.position[1],
-    atomC.position[2] - atomB.position[2],
-  ];
-  const dot = v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
-  const len1 = Math.sqrt(v1[0] * v1[0] + v1[1] * v1[1] + v1[2] * v1[2]);
-  const len2 = Math.sqrt(v2[0] * v2[0] + v2[1] * v2[1] + v2[2] * v2[2]);
-  if (len1 > 1e-6 && len2 > 1e-6) {
-    const cos = Math.max(-1, Math.min(1, dot / (len1 * len2)));
-    const angle = (Math.acos(cos) * 180) / Math.PI;
-    if (angleEl) angleEl.textContent = angle.toFixed(2);
-  } else {
-    if (angleEl) angleEl.textContent = '--';
-  }
 }

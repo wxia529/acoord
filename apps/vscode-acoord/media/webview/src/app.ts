@@ -19,6 +19,7 @@ import {
   setError,
   setStatus,
   updateStatusBar,
+  updateMeasurementDisplay,
   syncStatusSelectionLock,
   isStatusSelectionLocked,
 } from './ui/statusBar';
@@ -40,7 +41,7 @@ import {
 } from './ui/inputs';
 
 // Measurement utilities
-import { getAtomById, updateMeasurements, rebuildAtomIndex } from './utils/measurements';
+import { getAtomById, rebuildAtomIndex } from './utils/measurements';
 
 // Atom size utilities
 import {
@@ -90,7 +91,7 @@ const vscode = acquireVsCodeApi();
 const uiCallbacks = {
   updateSelectedInputs,
   updateAtomColorPreview,
-  updateMeasurements,
+  updateMeasurements: updateMeasurementDisplay,
   updateAdsorptionUI,
   updateSelectedAtomSizePanel,
   updateStatusBar,
@@ -246,7 +247,7 @@ function setupUI(): void {
     applyBondAngle,
     applyRotation: toolCallbacks.applyRotation,
     applyAdsorptionDistance: toolCallbacks.applyAdsorptionDistance,
-    updateMeasurements,
+    updateMeasurementDisplay,
     updateAdsorptionUI,
     resetRotationBase,
   };
@@ -301,7 +302,7 @@ function setupInteraction(): void {
         if (selY) selY.value = modelY.toFixed(4);
         if (selZ) selZ.value = modelZ.toFixed(4);
       }
-      updateMeasurements();
+      updateMeasurementDisplay();
       vscode.postMessage({ command: 'moveAtom', atomId, x: modelX, y: modelY, z: modelZ, preview: true });
     },
 
@@ -329,7 +330,7 @@ function setupInteraction(): void {
       if (structureStore.currentSelectedAtom && selectionStore.selectedAtomIds.length > 0) {
         updatePositionInputs(getAtomById(structureStore.currentSelectedAtom.id));
       }
-      updateMeasurements();
+      updateMeasurementDisplay();
     },
 
     onEndDrag: () => vscode.postMessage({ command: 'endDrag' }),

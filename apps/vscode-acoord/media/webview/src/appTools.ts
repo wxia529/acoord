@@ -1,8 +1,7 @@
 /**
  * Tools tab module.
  *
- * Wires: Measurements panel (bond length/angle input, apply buttons),
- *        Bond Tools panel (create/delete/recalculate),
+ * Wires: Bond Tools panel (create/delete/recalculate),
  *        Rotate Selection panel (axis buttons, slider, input),
  *        Adjust Distance panel (slider, input).
  *
@@ -18,40 +17,12 @@ type AppToolsContext = VscodeContext & SelectionContext & TransformContext;
 export function setup(callbacks: AppToolsContext): void {
   const {
     vscode,
-    applyBondAngle,
     applyRotation,
     applyAdsorptionDistance,
     getSelectedBondKeys,
     setSelectedBondSelection,
-    updateMeasurements,
     updateAdsorptionUI,
   } = callbacks;
-
-  // ── Measurements ───────────────────────────────────────────────────────────
-
-  const btnApplyBond = document.getElementById('btn-apply-bond') as HTMLButtonElement | null;
-  const btnApplyAngle = document.getElementById('btn-apply-angle') as HTMLButtonElement | null;
-
-  if (btnApplyBond) {
-    btnApplyBond.addEventListener('click', () => {
-      const value = parseFloat((document.getElementById('bond-length-input') as HTMLInputElement | null)?.value ?? '');
-      if (!Number.isFinite(value)) { return; }
-      if (selectionStore.selectedAtomIds.length < 2) { return; }
-      vscode.postMessage({
-        command: 'setBondLength',
-        atomIds: selectionStore.selectedAtomIds.slice(0, 2),
-        length: value,
-      });
-    });
-  }
-
-  if (btnApplyAngle) {
-    btnApplyAngle.addEventListener('click', () => {
-      const value = parseFloat((document.getElementById('bond-angle-input') as HTMLInputElement | null)?.value ?? '');
-      if (!Number.isFinite(value)) { return; }
-      applyBondAngle(value);
-    });
-  }
 
   // ── Bond Tools ─────────────────────────────────────────────────────────────
 
