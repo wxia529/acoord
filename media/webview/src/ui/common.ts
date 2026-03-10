@@ -1,8 +1,8 @@
 export function updateCounts(atomCount: number, bondCount: number): void {
-  const atomCountEl = document.getElementById('atom-count') as HTMLElement | null;
-  const bondCountEl = document.getElementById('bond-count') as HTMLElement | null;
-  if (atomCountEl) atomCountEl.textContent = String(atomCount);
-  if (bondCountEl) bondCountEl.textContent = String(bondCount);
+  const atomsEl = document.getElementById('status-atoms') as HTMLElement | null;
+  const bondsEl = document.getElementById('status-bonds') as HTMLElement | null;
+  if (atomsEl) atomsEl.textContent = `Atoms: ${atomCount}`;
+  if (bondsEl) bondsEl.textContent = `Bonds: ${bondCount}`;
 }
 
 export function getImageFileName(): string {
