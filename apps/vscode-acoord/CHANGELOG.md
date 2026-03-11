@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.4]
+
+### Fixed
+
+- Right-drag rotation now correctly persists atom positions after the rotation operation completes. Previously, rotated atoms would snap back to their original positions when the canvas was clicked. The fix adds a proper `onSetAtomsPositions` callback to the interaction handlers, following the existing callback pattern used by other drag operations.
+
 ## [0.3.3]
 
 ### Changed

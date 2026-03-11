@@ -247,7 +247,7 @@ function setupUI(): void {
     applyBondAngle,
     applyRotation: toolCallbacks.applyRotation,
     applyAdsorptionDistance: toolCallbacks.applyAdsorptionDistance,
-    updateMeasurementDisplay,
+    updateMeasurements: updateMeasurementDisplay,
     updateAdsorptionUI,
     resetRotationBase,
   };
