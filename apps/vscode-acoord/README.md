@@ -1,7 +1,7 @@
 # ACoord
 
 **Version:** 0.3.4
-**License:** GPL-3.0-only
+**License:** MIT
 
 Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It supports 12 file formats and provides interactive 3D rendering via Three.js inside VS Code's Custom Editor API.
 
@@ -148,7 +148,7 @@ Then press `F5` in VS Code to launch the Extension Development Host.
 
 ## License
 
-GPL-3.0-only. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE).
 
 ## Repository
 

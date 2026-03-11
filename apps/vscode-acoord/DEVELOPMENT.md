@@ -2,7 +2,7 @@
 
 **Version:** 0.3.4
 **Last Updated:** 2026-03-11
-**License:** GPL-3.0-only
+**License:** MIT
 
 This document is the authoritative reference for ACoord development. It
 describes the **actual, current architecture** — not aspirational targets. All
