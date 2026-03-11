@@ -107,7 +107,7 @@ Protein Data Bank format for biomolecules.
 - ✅ Element detection
 - ❌ CONECT bonds (not parsed)
 
-### Gaussian/ORCA Input
+### Gaussian Input
 
 Quantum chemistry input files.
 
@@ -126,8 +126,6 @@ Quantum chemistry input files.
 - ✅ Output file parsing (final structure)
 
 ### ABACUS STRU
-
-Chinese materials simulation code format.
 
 **Support:**
 - ✅ Atom types and positions
