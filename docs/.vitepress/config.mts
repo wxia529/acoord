@@ -67,7 +67,7 @@ export default defineConfig({
 
     // 页脚
     footer: {
-      message: 'Released under the GPL-3.0 License.',
+      message: 'Released under the MIT License.',
       copyright: 'Copyright © 2026 ACoord',
     },
 

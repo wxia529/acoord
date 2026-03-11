@@ -4,7 +4,7 @@
   "description": "Atomic Coordinate Toolkit",
   "publisher": "wxia529",
   "version": "0.3.4",
-  "license": "GPL-3.0-only",
+  "license": "MIT",
   "type": "module",
   "icon": "media/acoord-icon.png",
   "keywords": [
