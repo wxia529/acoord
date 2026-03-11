@@ -38,57 +38,49 @@ Traditional Jmol colors (CPK convention):
 
 **Change color scheme:**
 
-1. Open **Display** panel
-2. Click **Color Scheme** dropdown
-3. Select a scheme (Bright, Jmol, etc.)
-4. Colors update immediately
+1. Open the **Brush** panel (color scheme dropdown)
+2. Select a scheme (Bright, Jmol, or custom)
+3. Colors update for the current session
 
-### Apply to Structure
+### Apply to Selected Atoms
 
-**Apply scheme to atoms:**
+**Apply scheme colors to atoms:**
 
-1. Select color scheme
-2. Click **Apply** button
-3. Atom colors update
-4. Changes saved in `.acoord` format
+1. Select atoms (or select none to apply to all)
+2. Select desired color scheme
+3. Click **Apply** in the Brush panel
+4. Atom colors update permanently
 
 ## Custom Color Schemes
 
-### Create Custom Scheme
+### Save Current Colors as Scheme
 
-**Define custom colors:**
-
-1. Open **Color Scheme** panel
-2. Click **Create New Scheme**
-3. Enter scheme name
-4. Define colors for each element
-5. Click **Save**
-
-### Edit Element Colors
-
-**Change element color:**
-
-1. Open color scheme editor
-2. Select element
-3. Click color picker
-4. Choose new color
-5. Click **Apply**
+1. Set up colors using element-specific overrides
+2. Open the **Display** panel
+3. Click **Save As...** button
+4. Enter a name for the scheme
+5. Scheme is saved to your user schemes
 
 ### Import/Export Schemes
 
-**Share color schemes:**
-
 **Export:**
-1. Open **Color Scheme** panel
-2. Select scheme to export
-3. Click **Export**
+1. Open the **Display** panel
+2. Select scheme in dropdown
+3. Click **Export** button
 4. Save as `.json` file
 
 **Import:**
-1. Click **Import** button
-2. Select `.json` file
-3. Scheme added to list
-4. Ready to use
+1. Open the **Display** panel
+2. Click **Import** button
+3. Select `.json` file
+4. Scheme added to your schemes
+
+### Delete Custom Scheme
+
+1. Open the **Display** panel
+2. Select the custom scheme in dropdown
+3. Click **Delete** button
+4. Confirm deletion
 
 ## Color Scheme Format
 
@@ -209,13 +201,6 @@ Full periodic table colors available in built-in schemes.
 **Problem:** Can't import scheme
 - **Solution:** Check JSON format
 - **Solution:** Verify element keys are valid
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| C | Open color scheme panel |
-| Ctrl+Shift+C | Import color scheme |
 
 ## Next Steps
 

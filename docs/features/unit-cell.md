@@ -21,12 +21,10 @@ Or as lattice vectors:
 
 ### Display Unit Cell
 
-**Show/hide unit cell:**
+**Show/hide unit cell edges:**
 
-1. Open **Lattice** panel
-2. Check **Show Unit Cell**
-3. Cell edges display as lines
-4. Optional: show cell faces
+- Use the Display panel to customize unit cell appearance
+- Cell edges display as lines (color and thickness adjustable)
 
 ## Editing Lattice Parameters
 
@@ -36,9 +34,9 @@ Or as lattice vectors:
 
 1. Open **Lattice** panel
 2. Enter new values for a, b, c
-3. Click **Apply**
-4. Lattice vectors update
-5. Atom positions scale accordingly
+3. Check/uncheck **Scale atoms with lattice**
+4. Click **Apply Lattice**
+5. Lattice vectors update
 
 ### Edit Angles
 
@@ -46,18 +44,13 @@ Or as lattice vectors:
 
 1. Open **Lattice** panel
 2. Enter new angle values
-3. Click **Apply**
-4. Cell shape changes
-5. Atoms transform with cell
+3. Check/uncheck **Scale atoms with lattice**
+4. Click **Apply Lattice**
+5. Cell shape changes
 
 ### Edit Vectors Directly
 
-**Cartesian vector editing:**
-
-1. Open **Lattice** panel
-2. Switch to **Vector** mode
-3. Edit vector components
-4. Click **Apply**
+**Note:** Direct vector editing is not currently supported. Use lattice parameters (a, b, c, α, β, γ) to define the unit cell.
 
 ## Fractional vs Cartesian
 
@@ -77,11 +70,9 @@ Or as lattice vectors:
 
 ### Toggle Display
 
-**Switch coordinate display:**
+**Coordinate display:**
 
-1. Open **Lattice** panel
-2. Toggle **Fractional/Cartesian**
-3. Atom positions update
+- Positions in the Properties panel are always shown in Cartesian coordinates (Å)
 
 ### Convert Coordinates
 
@@ -97,20 +88,19 @@ ACoord handles conversion automatically.
 
 ### Build Supercell
 
-**Create supercell:**
+**Create supercell display:**
 
 1. Open **Lattice** panel
 2. Enter supercell dimensions (n×m×p)
-3. Click **Build Supercell**
-4. Structure expands with replicated atoms
-5. New unit cell defined
+3. Click **Apply Supercell**
+4. Structure expands with periodic images displayed
 
 ### Example: 2×2×2 Supercell
 
-Original cell → 2×2×2 supercell:
-- Atoms: 8× increase
-- Cell vectors: 2× longer
-- Preserves crystal symmetry
+Original cell → 2×2×2 supercell display:
+- Shows 8 unit cells
+- Periodic images of atoms displayed
+- Original atoms remain in their positions
 
 ### Use Cases
 
@@ -125,43 +115,21 @@ Original cell → 2×2×2 supercell:
 
 **Move atoms to cell center:**
 
-1. Select atoms (or all)
-2. Use **Center in Cell** command
-3. Atoms wrap to [0, 1) fractional
+1. Click **Center** button in the Lattice panel
+2. Confirm the operation in the dialog
+3. All atoms are translated so the geometric center aligns with the cell center
 
-### Wrap Atoms
-
-**Apply periodic boundary:**
-
-1. Use **Wrap Atoms** command
-2. All atoms inside unit cell
-3. Removes duplicates across boundaries
+> **Note:** This operation moves all atoms and can be undone with Ctrl+Z.
 
 ## Lattice Visualization
 
 ### Cell Edges
 
-**Display options:**
+**Display options in Display panel:**
 
-- Show/hide edges
-- Edge color
-- Edge thickness
-
-### Cell Faces
-
-**Display options:**
-
-- Show/hide faces
-- Face transparency
-- Face color
-
-### Lattice Vectors
-
-**Display option:**
-
-- Show vector arrows
-- Label vectors (⃗a, ⃗b, ⃗c)
-- Show vector lengths
+- **Color:** Change unit cell edge color
+- **Thickness:** Adjust edge line thickness (0.5-6)
+- **Line style:** Solid or dashed
 
 ## Crystal Systems
 
@@ -185,8 +153,9 @@ ACoord supports all crystal systems:
 
 1. Open **Lattice** panel
 2. Increase c parameter (for slab)
-3. Atoms stay fixed
-4. Vacuum added
+3. Uncheck **Scale atoms with lattice**
+4. Click **Apply Lattice**
+5. Vacuum added without moving atoms
 
 ### Change Cell Shape
 
@@ -225,21 +194,20 @@ ACoord supports all crystal systems:
 
 - Use fractional for crystallographic work
 - Use Cartesian for molecular systems
-- Wrap atoms after large cell changes
 
 ### Visualization
 
 - Show cell edges for context
-- Use transparency for faces
-- Generate supercell for clarity
+- Adjust edge color and thickness for visibility
+- Use supercell display for periodicity
 
 ## Troubleshooting
 
 ### Atoms Outside Cell
 
 **Problem:** Atoms appear outside cell
-- **Solution:** Use **Wrap Atoms** command
-- **Solution:** Check fractional coordinates
+- **Solution:** This is normal for visualization; atoms can be outside the displayed unit cell
+- **Note:** The structure is still valid; supercell display shows periodic images
 
 ### Distorted Structure
 
@@ -252,13 +220,6 @@ ACoord supports all crystal systems:
 **Problem:** Atoms overlap in supercell
 - **Solution:** Check original cell is complete
 - **Solution:** Verify no partial occupancies
-
-## Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| L | Toggle lattice display |
-| Ctrl+L | Open lattice panel |
 
 ## Next Steps
 

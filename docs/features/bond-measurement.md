@@ -23,83 +23,76 @@ bond_threshold = (radius_A + radius_B) × tolerance_factor
 - **tolerance_factor:** Typically 1.1-1.2
 - **Adjustable:** In advanced settings (future)
 
-## Bond Display
-
-### Toggle Bonds
-
-**Show/hide bonds:**
-
-- Press `B` key
-- Or use **Toggle Bonds** command
-- Or check **Show Bonds** in Display panel
-
-### Bond Styling
-
-**Bond appearance:**
-
-- **Radius:** Adjust bond thickness
-- **Color:** Element-based or uniform
-- **Style:** Cylinder (default) or lines (future)
-
-## Distance Measurement
-
-### Measure Bond Length
-
-**Two-atom selection:**
-
-1. Select first atom (click)
-2. Hold **Shift**, select second atom
-3. Distance displays in side panel
-4. Updates in real-time if atoms move
-
-### Units
-
-- **Default:** Angstroms (Å)
-- **Alternative:** Nanometers, Bohr (future)
-
-### Precision
-
-- Displayed to 0.001 Å
-- Internal precision: double (15 digits)
-
-## Manual Bond Creation
+## Bond Operations
 
 ### Create Bond
 
-**Force bond between atoms:**
+**Manually create a bond between atoms:**
 
-1. Select two atoms
-2. Use **Create Bond** command
+1. Select two atoms (Ctrl/Cmd+click)
+2. Right-click and select **Create Bond**
 3. Bond appears immediately
 4. Saved in `.acoord` format
 
 ### Delete Bond
 
-**Remove specific bond:**
+**Remove a specific bond:**
 
-1. Select bonded atoms
-2. Use **Delete Bond** command
-3. Bond is removed
-4. May auto-recreate if atoms are close
+1. Select the bond (click on it in the 3D view)
+2. Press **Delete** or **Backspace**
+3. Or right-click and select **Delete Bond**
+4. Bond is removed from the structure
+
+### Recalculate Bonds
+
+**Re-detect bonds based on distance:**
+
+1. Right-click in the 3D canvas
+2. Select **Calculate Bonds**
+3. Bonds are recalculated based on current atom positions
+
+### Clear All Bonds
+
+**Remove all bonds from structure:**
+
+1. Right-click in the 3D canvas
+2. Select **Clear Bonds**
+3. All bonds are removed
+
+## Distance Measurement
+
+### Measure Distance
+
+**Select atoms to measure:**
+
+1. Select first atom (click)
+2. Hold **Ctrl/Cmd**, select second atom
+3. Distance displays in the Properties panel
+4. Updates in real-time if atoms move
+
+### Measure Angle
+
+**Select 3 atoms to measure angle:**
+
+1. Select three atoms (Ctrl/Cmd+click)
+2. Angle displays in the Properties panel
+3. Angle is measured at the middle atom
+
+### Units
+
+- **Distance:** Angstroms (Å)
+- **Angle:** Degrees (°)
 
 ## Bond Analysis
 
 ### Bond Statistics
 
-For selected atoms:
+When atoms are selected, the Properties panel shows:
 
-- **Min distance:** Shortest bond
-- **Max distance:** Longest bond
-- **Average:** Mean bond length
-- **Count:** Number of bonds
-
-### Coordination Number
-
-**Count neighbors:**
-
-1. Select central atom
-2. View coordination in panel
-3. Lists all bonded neighbors
+- **Element** — Atom type
+- **Position** — Cartesian coordinates
+- **Distance** — Between 2 selected atoms
+- **Angle** — Between 3 selected atoms
 
 ## Common Bond Lengths
 
@@ -181,9 +174,10 @@ Reference values (Å):
 
 | Key | Action |
 |-----|--------|
-| B | Toggle bonds |
-| Shift+click | Select 2 atoms for measurement |
-| M | Enter measurement mode |
+| Ctrl/Cmd+click | Add/remove atom from selection |
+| Ctrl+A | Select all atoms |
+| Ctrl+I | Invert selection |
+| Delete/Backspace | Delete selected atoms/bonds |
 
 ## Next Steps
 

@@ -15,10 +15,10 @@ ACoord provides powerful atom selection tools for analysis and editing.
 
 ### Multi-Selection
 
-**Shift+click for multiple:**
+**Ctrl/Cmd+click for multiple:**
 
 1. Click first atom
-2. Hold **Shift**
+2. Hold **Ctrl/Cmd**
 3. Click additional atoms
 4. All selected atoms highlight
 5. Panel shows combined info
@@ -27,10 +27,12 @@ ACoord provides powerful atom selection tools for analysis and editing.
 
 **Drag to select region:**
 
-1. Hold the box-select modifier key
-2. Click and drag to draw a rectangle
-3. Release to select
-4. All atoms in box are selected
+1. Ensure **Select** tool is active (press `V` or click Select button)
+2. Click and drag in empty space (not on an atom)
+3. A selection box appears
+4. Release to select all atoms inside
+5. Hold **Ctrl/Cmd** while releasing to add to selection
+6. Hold **Alt** while releasing to subtract from selection
 
 ### Deselect
 
@@ -46,9 +48,8 @@ ACoord provides powerful atom selection tools for analysis and editing.
 
 Selected atoms are highlighted with:
 
-- **Glow effect** — Emissive outline
-- **Color change** — Slightly brighter
-- **Label emphasis** — Bold labels (if shown)
+- **Glow effect** — Brighter appearance
+- **Selection indicator** — Clear visual distinction
 
 ### Selection Info
 
@@ -56,8 +57,8 @@ The side panel displays:
 
 - **Element** — Atom type
 - **Position** — Cartesian coordinates
-- **Distance** — Between selected atoms
-- **Count** — Number of selected atoms
+- **Distance** — Between selected atoms (2 atoms)
+- **Angle** — Between 3 selected atoms
 
 ## Selection Persistence
 
@@ -86,8 +87,8 @@ Once atoms are selected, you can:
 
 - **Position:** (x, y, z) coordinates
 - **Element:** Atom type
-- **Label:** Custom label if assigned
-- **Distance:** To other selected atoms
+- **Distance:** Between 2 selected atoms
+- **Angle:** Between 3 selected atoms
 
 ### Edit Atoms
 
@@ -98,29 +99,24 @@ Once atoms are selected, you can:
 
 ### Measure
 
-- **Bond distance:** Select 2 atoms
-- **Angle:** Select 3 atoms (future)
-- **Dihedral:** Select 4 atoms (future)
-
-### Hide/Show
-
-- **Hide:** Temporarily hide selected
-- **Show All:** Restore hidden atoms
-- **Isolate:** Hide all except selected
+- **Distance:** Select 2 atoms — displays distance in Å
+- **Angle:** Select 3 atoms — displays angle in degrees
 
 ## Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
 | Click | Select single atom |
-| Shift+click | Add to selection |
+| Ctrl/Cmd+click | Add/remove from selection |
+| Ctrl+A | Select all atoms |
+| Ctrl+I | Invert selection |
 | Esc | Deselect all |
-| Delete | Delete selected |
+| Delete/Backspace | Delete selected |
 | Ctrl+C | Copy selected atoms |
 | Ctrl+V | Paste atoms |
-| S | Center view on selection |
-| H | Hide selected atoms |
-| U | Show all hidden atoms |
+| `A` | Enter add atom mode |
+| `D` | Delete mode |
+| `V` | Select mode |
 
 ## Selection Tips
 
@@ -128,22 +124,20 @@ Once atoms are selected, you can:
 
 - Zoom in for small/dense structures
 - Rotate to access occluded atoms
-- Use element filter (if available)
+- Use box selection for regions
 
 ### Efficient Workflow
 
 1. Select atoms of interest
-2. Center view on selection (S)
-3. Perform desired operation
-4. Deselect when done
+2. Perform desired operation
+3. Deselect when done (Esc or click empty space)
 
 ### Large Structures
 
 For structures with many atoms:
 
 - Use box selection for regions
-- Select by element type (future)
-- Use search/filter (future)
+- Use Ctrl+A to select all
 
 ## Use Cases
 

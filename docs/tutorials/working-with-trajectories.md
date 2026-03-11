@@ -54,16 +54,6 @@ The Trajectory panel provides playback controls:
 2. Or click **Previous/Next** buttons
 3. View updates immediately
 
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `←` | Previous frame |
-| `→` | Next frame |
-| `Home` | First frame |
-| `End` | Last frame |
-| `Space` | Play/Pause |
-
 ### Jump to Frame
 
 1. Enter frame number in the input box
@@ -74,20 +64,18 @@ The Trajectory panel provides playback controls:
 
 ### Start Playback
 
-1. Click the **Play** button (▶️)
-2. Or press **Space**
-3. Frames advance automatically
+1. Click the **Play** button
+2. Frames advance automatically
 
 ### Pause Playback
 
-1. Click the **Pause** button (⏸️)
-2. Or press **Space**
-3. Current frame is held
+1. Click the **Pause** button (same button toggles)
+2. Current frame is held
 
 ### Adjust Speed
 
-1. Find the **FPS** (frames per second) slider
-2. Adjust to desired speed
+1. Use the **FPS** (frames per second) slider
+2. Range: 1-30 fps
 3. Playback speed updates immediately
 
 ## Analyzing Trajectories
@@ -106,36 +94,20 @@ The Trajectory panel provides playback controls:
 3. Distance updates each frame
 4. Observe bond length changes
 
-### Visualize Diffusion
-
-1. Enable **Trail** display (if available)
-2. Play trajectory
-3. Atom paths are shown
-4. Analyze diffusion patterns
-
 ## Exporting Frames
 
-### Export Current Frame
+### Export Current Frame as New Structure File
 
 1. Navigate to desired frame
-2. Use **File → Export Structure**
+2. Click **Save As** button
 3. Choose format (POSCAR, XYZ, etc.)
 4. Save the single frame
 
-### Export Frame Range
+### Export HD Image
 
-1. Open **Export** dialog
-2. Select **Frame Range**
-3. Enter start and end frames
-4. Choose output format
-5. Files are saved as `filename_001.xyz`, `filename_002.xyz`, etc.
-
-### Export as Animation
-
-1. Set up desired view angle
-2. Use **Export → Animation** (if available)
-3. Choose format (GIF, MP4)
-4. Animation is generated
+1. Navigate to desired frame
+2. Click the **Export Image** button
+3. High-resolution PNG is generated
 
 ## Tips and Best Practices
 
@@ -178,9 +150,9 @@ The Trajectory panel provides playback controls:
 ### Diffusion Study
 
 1. Load trajectory with mobile ions
-2. Enable atom trails
-3. Track ion movement
-4. Measure displacement over time
+2. Select an atom to track
+3. Play through the trajectory
+4. Observe the atom's movement path
 
 ### Vibrational Analysis
 

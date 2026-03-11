@@ -30,8 +30,8 @@ Open any supported structure file (e.g., `.cif`, `.xyz`, `POSCAR`) in VS Code, a
 | VASP Output | `OUTCAR` | VASP output with structure data |
 | PDB | `.pdb` | Protein Data Bank format |
 | Gaussian | `.gjf`, `.com` | Gaussian input files |
-| ORCA | `.inp`, `.in` | ORCA input files |
-| Quantum ESPRESSO | `.pwi`, `.out` | QE input and output files |
+| ORCA | `.inp` | ORCA input files |
+| Quantum ESPRESSO | `.in`, `.pwi`, `.out`, `.pwo`, `.log` | QE input and output files |
 | ABACUS | `.stru` | ABACUS STRU format |
 | ACoord Native | `.acoord` | Native format with full metadata |
 

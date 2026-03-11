@@ -19,7 +19,7 @@ Interactive 3D rendering powered by Three.js:
 Powerful selection tools:
 
 - Click to select single atoms
-- Shift+click for multi-select
+- Ctrl/Cmd+click for multi-select
 - Box selection for regions
 - Selection persistence across frames
 - Visual highlighting
@@ -42,7 +42,6 @@ Crystal structure editing:
 - Unit cell visualization
 - Supercell generation
 - Fractional/Cartesian conversion
-- Symmetry operations
 
 ### [Color Schemes](/features/color-schemes)
 
@@ -80,28 +79,27 @@ Customizable atom colors:
 
 Full undo/redo support:
 
-- Unlimited history depth
-- Configurable max depth
+- Up to 100 history steps
+- Memory-limited for large structures
 - Session-based storage
 - All edit operations supported
 
 ### Keyboard Shortcuts
 
-Customizable keyboard shortcuts:
+Keyboard shortcuts for efficient workflow:
 
 - Navigation controls
 - Selection tools
 - Edit commands
-- Display toggles
-- Quick access to all features
+- Quick access to common features
 
 ### Display Settings
 
 Comprehensive display options:
 
 - Atom size adjustment
-- Bond style selection
-- Label visibility
+- Bond thickness control
+- Color scheme selection
 - Lighting controls
 - Background color
 
@@ -133,18 +131,21 @@ Comprehensive display options:
 | **Navigation** | Left-drag | Rotate |
 | | Right-drag | Pan |
 | | Scroll | Zoom |
-| | A | Frame all |
-| | S | Frame selection |
 | **Selection** | Click | Select atom |
-| | Shift+click | Multi-select |
-| | Esc | Deselect |
-| **Editing** | A | Add atom |
-| | D | Delete selected |
+| | Ctrl/Cmd+click | Multi-select |
+| | Ctrl+A | Select all |
+| | Ctrl+I | Invert selection |
+| | Esc | Deselect all |
+| **Editing** | A | Enter add atom mode |
+| | D | Delete mode |
+| | V | Select mode |
+| | Delete/Backspace | Delete selected |
 | | Ctrl+Z | Undo |
 | | Ctrl+Y | Redo |
-| **Display** | B | Toggle bonds |
-| | L | Toggle labels |
-| | H | Hide selected |
+| | Ctrl+S | Save |
+| | Ctrl+Shift+S | Save as |
+| | Ctrl+C | Copy selected atoms |
+| | Ctrl+V | Paste atoms |
 
 ## Tips and Tricks
 

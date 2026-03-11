@@ -9,8 +9,8 @@ Welcome to the ACoord tutorials! These step-by-step guides will help you master 
 Learn how to:
 - Open structure files in ACoord
 - Navigate the 3D view (rotate, pan, zoom)
-- Use different rendering styles
-- Adjust lighting and display settings
+- Adjust display settings
+- Adjust lighting
 
 ### [Editing Atoms](/tutorials/editing-atoms)
 
@@ -19,7 +19,7 @@ Learn how to:
 - Delete selected atoms
 - Move atoms by dragging
 - Copy and paste atoms
-- Change atom colors and labels
+- Change atom colors
 
 ### [Working with Trajectories](/tutorials/working-with-trajectories)
 
@@ -40,13 +40,15 @@ Learn how to:
 
 | Task | Action |
 |------|--------|
-| Rotate view | Left-click + drag |
-| Pan view | Right-click + drag |
+| Rotate view | Left-click + drag in empty space |
+| Pan view | Right-click + drag in empty space |
 | Zoom | Scroll wheel |
 | Select atom | Click on atom |
-| Multi-select | Shift + click |
+| Multi-select | Ctrl/Cmd + click |
 | Delete atom | Select + Delete key |
-| Move atom | Drag atom |
+| Move atom | Drag atom with left mouse |
+| Move selection | Select + right-click + Shift + Alt + drag |
+| Rotate selection | Select + right-click + Shift + drag |
 | Undo | Ctrl+Z |
 | Redo | Ctrl+Y |
 

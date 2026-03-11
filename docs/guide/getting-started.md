@@ -47,17 +47,17 @@ Once opened, you'll see:
 
 ### Select Atoms
 - Click on an atom to select it
-- Hold Shift + click to multi-select
-- Use box selection (drag with modifier key)
+- Hold **Ctrl/Cmd + click** to multi-select
+- Use box selection (drag in empty space with Select tool)
 
 ### View Bonds
 - Bonds are automatically calculated
-- Click **Measure** to see bond distances
+- Select two atoms to see the distance between them
 
 ### Change View Settings
-- Use the display settings panel to adjust:
+- Use the side panels to adjust:
   - Atom size
-  - Bond style
+  - Bond thickness
   - Color scheme
   - Lighting
 

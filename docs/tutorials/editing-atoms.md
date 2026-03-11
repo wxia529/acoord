@@ -4,26 +4,26 @@ This tutorial covers how to edit atomic structures in ACoord.
 
 ## Adding Atoms
 
-### Method 1: Add Atom Command
+### Method 1: Quick Add Panel
 
-1. Open the **Edit** panel
-2. Click **Add Atom**
-3. Enter the element symbol (e.g., "C", "H", "O")
-4. Enter coordinates (x, y, z in Angstroms)
-5. Click **Add**
-
-### Method 2: Copy Existing Atom
-
-1. Select an atom
-2. Right-click and choose **Copy Atom**
-3. Modify the position of the new atom
+1. Locate the **Quick Add** panel in the sidebar
+2. Enter the element symbol (e.g., "C", "H", "O")
+3. Enter coordinates (x, y, z in Angstroms)
 4. Click **Add**
 
-### Method 3: From Clipboard
+### Method 2: Keyboard Shortcut
 
-1. Copy atom data from another file
-2. In ACoord, use **Paste Atom** command
-3. The atom is added at the specified position
+1. Press `A` to enter add atom mode
+2. Type the element symbol (e.g., "C", "H", "O")
+3. Click in the 3D canvas to place the atom
+4. Press `Esc` to exit add mode
+
+### Method 3: Right-Click Menu
+
+1. Right-click in the 3D canvas
+2. Navigate to **Add Atom** submenu
+3. Select the element to add
+4. Click to place the atom
 
 ## Deleting Atoms
 
@@ -36,32 +36,35 @@ This tutorial covers how to edit atomic structures in ACoord.
 
 ### Delete Multiple
 
-1. Multi-select atoms (Shift+click)
-2. Press **Delete**
+1. Multi-select atoms (Ctrl/Cmd+click)
+2. Press **Delete** or **Backspace**
 3. All selected atoms are removed
 
 ## Moving Atoms
 
-### Drag to Move
+### Drag to Move (Left Mouse)
 
-1. Click and hold on an atom
-2. Drag to the new position
-3. Release to drop
-4. The atom moves in real-time
+1. Click and drag the atom with **left mouse button**
+2. The atom follows the mouse in the viewing plane
+3. Release to place at the new position
 
 ### Precise Position
 
 1. Select the atom
-2. In the **Edit** panel, enter exact coordinates
-3. Press **Update Position**
-4. The atom moves to the exact location
+2. In the side panel, enter exact coordinates in the X, Y, Z fields
+3. The atom moves to the exact location
 
-### Nudge Atoms
+### Move Multiple Atoms (Right Mouse)
 
-Use arrow keys for small movements:
-- **Arrow keys:** Move along X/Y axis
-- **Shift + Arrow:** Move along Z axis
-- **Ctrl + Arrow:** Fine adjustment (0.01 Å)
+1. Select multiple atoms (Ctrl/Cmd+click)
+2. **Right-click + Shift + Alt + drag** to move all selected atoms together
+3. Release to place
+
+### Rotate Selection (Right Mouse)
+
+1. Select multiple atoms (Ctrl/Cmd+click)
+2. **Right-click + Shift + drag** to rotate the selection around its center
+3. Release to apply
 
 ## Copying Atoms
 
@@ -75,8 +78,8 @@ Use arrow keys for small movements:
 ### Create Supercell
 
 1. Open the **Lattice** panel
-2. Enter supercell dimensions (e.g., 2x2x2)
-3. Click **Build Supercell**
+2. Enter supercell dimensions (e.g., 2×2×2)
+3. Click **Apply Supercell**
 4. The structure expands with replicated atoms
 
 ## Changing Atom Properties
@@ -84,25 +87,17 @@ Use arrow keys for small movements:
 ### Change Element
 
 1. Select the atom
-2. In the **Edit** panel, change the element
-3. Click **Update**
-4. Color and radius update automatically
+2. In the side panel, change the element symbol
+3. Color and radius update automatically
 
 ### Change Color
 
 1. Select the atom
-2. Open the **Color** picker
+2. Use the color picker in the side panel
 3. Choose a new color
-4. Click **Apply**
+4. The color applies immediately
 
 > **Note:** Custom colors are saved only in `.acoord` format
-
-### Add Label
-
-1. Select the atom
-2. Enter label text in the **Edit** panel
-3. Press **Update Label**
-4. Label appears next to the atom
 
 ## Undo and Redo
 
@@ -120,24 +115,24 @@ Use arrow keys for small movements:
 
 ### Undo History
 
-- Unlimited undo/redo within session
+- Up to 100 undo steps (or memory-limited)
+- Large structures (>5000 atoms) may have limited undo
 - History is cleared when file is closed
-- Max depth configurable in settings
 
 ## Saving Edits
 
 ### Save to File
 
-1. Use **File → Save** (or `Ctrl+S`)
-2. Changes are saved to the current file
-3. Format-specific serialization applies
+- Press `Ctrl+S` (or `Cmd+S` on macOS)
+- Or click the **Save** button in the toolbar
+- Changes are saved to the current file
 
 ### Save As New Format
 
-1. Use **File → Export Structure**
-2. Choose target format
-3. Specify filename
-4. Structure is exported
+- Click the **Save As** button in the toolbar
+- Choose target format from the dropdown
+- Specify filename
+- Structure is exported
 
 ### Native Format
 
@@ -157,20 +152,23 @@ For full fidelity (preserving colors, labels, etc.):
 ### Precise Editing
 
 - Use coordinate input for exact positions
-- Enable grid snapping if available
 - Check bond distances after moving
 
 ### Keyboard Shortcuts
 
 | Key | Action |
 |-----|--------|
-| `A` | Add atom |
-| `D` | Delete selected |
-| `M` | Move mode toggle |
+| `A` | Enter add atom mode (type element symbol) |
+| `D` | Delete mode |
+| `V` | Select mode |
 | `Ctrl+Z` | Undo |
 | `Ctrl+Y` | Redo |
-| `Ctrl+C` | Copy atom |
-| `Ctrl+V` | Paste atom |
+| `Ctrl+S` | Save |
+| `Ctrl+Shift+S` | Save as |
+| `Ctrl+C` | Copy selected atoms |
+| `Ctrl+V` | Paste atoms |
+| `Delete/Backspace` | Delete selected |
+| `Esc` | Cancel current operation |
 
 ## Next Steps
 

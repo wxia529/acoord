@@ -15,29 +15,49 @@ ACoord uses **Three.js** (WebGL) for hardware-accelerated 3D rendering inside VS
 
 ## Navigation
 
-### Rotate
+### Rotate View (Left Mouse)
 
-- **Action:** Left-click and drag
-- **Effect:** Rotate the structure around its center
+- **Action:** Left-click and drag in empty space
+- **Effect:** Rotate the camera around the structure
 - **Use:** View from different angles
 
-### Pan
+### Pan View (Right Mouse)
 
-- **Action:** Right-click and drag
-- **Effect:** Move the view horizontally/vertically
+- **Action:** Right-click and drag in empty space
+- **Effect:** Move the camera horizontally/vertically
 - **Use:** Explore different regions
 
-### Zoom
+### Zoom (Scroll Wheel)
 
-- **Action:** Scroll wheel
+- **Action:** Scroll wheel up/down
 - **Effect:** Move camera closer/farther
 - **Use:** Examine details or see full structure
 
-### Frame All
+### Frame All (Reset View)
 
-- **Action:** Press `A` or double-click
+- **Action:** Click the **Reset** button in the toolbar
 - **Effect:** Center and fit all atoms in view
 - **Use:** Reset view after navigation
+
+## Moving and Rotating Atoms
+
+### Move Single Atom (Left Mouse Drag)
+
+- **Action:** Left-click and drag on an atom
+- **Effect:** Move the atom in the viewing plane
+- **Use:** Reposition individual atoms
+
+### Move Multiple Atoms (Right Mouse + Shift + Alt)
+
+- **Action:** Select atoms, then right-click + Shift + Alt + drag
+- **Effect:** Move all selected atoms together
+- **Use:** Translate groups of atoms
+
+### Rotate Selection (Right Mouse + Shift)
+
+- **Action:** Select atoms, then right-click + Shift + drag
+- **Effect:** Rotate selected atoms around their center
+- **Use:** Rotate molecular fragments
 
 ## Atom Rendering
 
@@ -71,11 +91,13 @@ Bonds are automatically calculated based on:
 - **Element types** — Covalent radius consideration
 - **Periodic boundaries** — Bonds across unit cell edges
 
-### Display Options
+### Bond Operations
 
-- **Show/Hide bonds** — Toggle visibility
-- **Bond radius** — Adjust thickness
-- **Bond color** — Element-based or uniform
+- **Create bond:** Select two atoms → Right-click → Create Bond
+- **Delete bond:** Click on bond → Press Delete
+- **Recalculate:** Right-click → Calculate Bonds
+- **Clear all:** Right-click → Clear Bonds
+- **Adjust thickness:** Use bond thickness slider in Lattice panel
 
 See [Bond Measurement](/features/bond-measurement) for details.
 
@@ -88,50 +110,17 @@ ACoord supports multiple light types:
 | Type | Description |
 |------|-------------|
 | Ambient | Uniform base illumination |
-| Directional | Sun-like parallel light rays |
-| Point | Omnidirectional point source |
+| Key | Main directional light (like the sun) |
+| Fill | Secondary light to fill shadows |
+| Rim | Edge highlighting from behind |
 
 ### Adjusting Lighting
 
 1. Open the **Lighting** panel
 2. Adjust individual light intensity
-3. Change light positions (for point lights)
-4. Toggle lights on/off
-
-### Presets
-
-Common lighting setups:
-
-- **Default** — Balanced illumination
-- **Bright** — Maximum visibility
-- **Dramatic** — High contrast shadows
-- **Flat** — Minimal shading (for publications)
-
-## Display Styles
-
-### Ball-and-Stick
-
-Classic representation:
-
-- Atoms as spheres
-- Bonds as cylinders
-- Clear structure visualization
-
-### Space-Filling (CPK)
-
-Atoms at full van der Waals radius:
-
-- Shows molecular surface
-- No bonds displayed
-- Useful for packing analysis
-
-### Polyhedral
-
-Coordination polyhedra:
-
-- Shows coordination environment
-- Useful for crystal structures
-- Custom polyhedron definition
+3. Change light colors
+4. Pick light direction by clicking **Pick in Canvas** and dragging in the 3D view
+5. Toggle custom lighting on/off
 
 ## Background
 
@@ -140,17 +129,8 @@ Coordination polyhedra:
 Change the view background:
 
 1. Open **Display** panel
-2. Click **Background Color**
-3. Choose a color
-4. Applies immediately
-
-### Transparent Background
-
-For screenshots with transparency:
-
-1. Set background alpha to 0
-2. Export as PNG
-3. Composite in image editor
+2. Use the **Background** color picker
+3. Applies immediately
 
 ## Performance
 
@@ -174,20 +154,13 @@ For screenshots with transparency:
 
 ## Export Images
 
-### Screenshot
-
-1. Set up desired view
-2. Use **Export → Image** command
-3. Choose resolution
-4. Save as PNG
-
-### High Resolution
+### High Resolution Export
 
 For publications:
 
-1. Set view angle
-2. Export at 2x or 4x resolution
-3. High-quality PNG or SVG
+1. Set up desired view
+2. Click the **Export Image** button in the toolbar
+3. High-resolution PNG (4x scale) is generated automatically
 
 ## Tips and Tricks
 
@@ -217,7 +190,8 @@ For publications:
 - **Solution:** Check lighting settings, increase ambient light
 
 **Problem:** Structure not visible
-- **Solution:** Press `A` to frame all, check zoom level
+- **Solution:** Click **Reset** button in toolbar to frame all atoms
+- **Solution:** Check zoom level
 
 **Problem:** Choppy rotation
 - **Solution:** Reduce atom count or geometry quality

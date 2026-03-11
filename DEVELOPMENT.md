@@ -1,7 +1,7 @@
 # ACoord Developer Guide
 
-**Version:** 0.3.2
-**Last Updated:** 2026-03-10
+**Version:** 0.3.4
+**Last Updated:** 2026-03-11
 **License:** GPL-3.0-only
 
 This document is the authoritative reference for ACoord development. It
@@ -149,17 +149,20 @@ src/
     unitCellService.ts         # Unit cell CRUD, supercell, centering
     documentService.ts         # Save, save-as, reload, image export
     displayConfigService.ts    # Display settings load / save / apply
-   renderers/
-     renderMessageBuilder.ts    # Build WireRenderData from a Structure snapshot
-   config/
-     types.ts                   # DisplaySettings = Required<WireDisplaySettings>
-     defaults.ts                # getDefaultDisplaySettings()
-     colorSchemeManager.ts      # ColorScheme lifecycle (load, save, import, export)
-     colorSchemeStorage.ts      # Persistence via ExtensionContext.globalState
-     colorSchemeValidator.ts    # JSON schema validation
-     colorSchemeUtils.ts        # Color scheme utility functions
-     presets/
-       color-schemes/           # Built-in presets (bright, jmol); immutable
+    clipboardService.ts        # Cross-session clipboard operations
+  renderers/
+    renderMessageBuilder.ts    # Build WireRenderData from a Structure snapshot
+  config/
+    types.ts                   # DisplaySettings = Required<WireDisplaySettings>
+    defaults.ts                # getDefaultDisplaySettings()
+    bondSchemes.ts             # Bond detection scheme definitions
+    colorSchemeManager.ts      # ColorScheme lifecycle (load, save, import, export)
+    colorSchemeStorage.ts      # Persistence via ExtensionContext.globalState
+    colorSchemeValidator.ts    # JSON schema validation
+    colorSchemeUtils.ts        # Color scheme utility functions
+    configMigration.ts         # Config migration for backward compatibility
+    presets/
+      color-schemes/           # Built-in presets (bright, jmol); immutable
    io/
      fileManager.ts             # Format detection, parser dispatch, serialize
      parsers/
@@ -195,6 +198,8 @@ media/webview/
     settingsUtil.ts            # Display settings update utility
     types.ts                   # Webview-side interface definitions
     colorSchemeHandler.ts      # Color scheme message handlers
+    brushPanel.ts              # Current brush settings UI panel
+    axisIndicator.ts           # 3D axis indicator overlay
     appEdit.ts                 # Atom editing panel UI
     appLattice.ts              # Lattice / supercell panel UI
     appView.ts                 # View controls panel UI
@@ -202,6 +207,9 @@ media/webview/
     appTrajectory.ts           # Trajectory slider UI
     state/
       selectionManager.ts      # Selection logic (multi-select, box-select)
+    components/
+      contextMenu.ts           # Right-click context menu
+      elementPicker.ts         # Element selection picker UI
     ui/
       common.ts                # Shared DOM helpers
       inputs.ts                # Input element constructors / binders
@@ -221,9 +229,10 @@ src/test/
   fixtures/                    # One representative file per supported format
   unit/
     models/                    # Structure, UnitCell unit tests
-    parsers/                   # Round-trip tests for all 11 parsers
+    parsers/                   # Round-trip tests for all parsers
     services/                  # AtomEditService, BondService, SelectionService,
-                               # MessageRouter, UndoManager unit tests
+                               # MessageRouter, UndoManager, ClipboardService unit tests
+    config/                    # Color scheme utility and validator tests
 
 out/                           # Compiled output (gitignored)
 ```
@@ -275,18 +284,16 @@ sort, or compare IDs structurally.
 // Extension → Webview
 type ExtensionToWebviewMessage =
   | RenderMessage            // 'render'
-  | DisplayConfigChangedMessage
-  | DisplayConfigsLoadedMessage
-  | DisplayConfigLoadedMessage
-  | DisplayConfigSavedMessage
-  | CurrentDisplaySettingsMessage
-  | DisplayConfigErrorMessage
   | ImageSavedMessage
-  | ImageSaveFailedMessage;
+  | ImageSaveFailedMessage
+  | ColorSchemesLoadedMessage
+  | ColorSchemeLoadedMessage
+  | ColorSchemeSavedMessage
+  | ColorSchemeErrorMessage;
 
 // Webview → Extension
 type WebviewToExtensionMessage =
-  | ... (37 commands covering structural edits, selection, display, document I/O)
+  | ... (50 commands covering structural edits, selection, display, document I/O)
 ```
 
 ### 4.4 Utility Types
@@ -484,7 +491,7 @@ panel gets its own independent session even when displaying the same file.
 ### 5.3 MessageRouter
 
 `MessageRouter` is the **only** class that maps `command` strings to handler
-functions. All 37 webview-to-extension commands are registered here.
+functions. All 50 webview-to-extension commands are registered here.
 
 **Handler registration is fully typed:**
 
@@ -1042,8 +1049,8 @@ User: Changes color to #FF0000 via color picker
 
 ### 9.1 Extension Host
 
-- **Compiler:** `tsc` (strict mode, `src/tsconfig.json`)
-- **Target:** `ES2022`, module system: `commonjs`
+- **Compiler:** `tsc` (strict mode, `tsconfig.json`)
+- **Target:** `ES2022`, module system: `Node16`
 - **Output:** `out/` directory
 
 ### 9.2 Webview

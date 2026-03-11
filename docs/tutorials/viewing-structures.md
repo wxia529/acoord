@@ -40,45 +40,43 @@ This tutorial covers the basics of viewing atomic structures in ACoord.
 
 ### Reset View
 
-- **Action:** Double-click in empty space
-- **Use:** Return to the default view angle
+- Click the **Reset** button in the toolbar
+- Returns to the default view angle
 
 ## Display Settings
 
-Access display settings from the side panel or command palette.
+Access display settings from the side panels.
 
 ### Atom Size
 
 Adjust the displayed size of atoms:
 
-1. Open the **Display** panel
-2. Find **Atom Size** slider
-3. Adjust to your preference
-4. Click **Apply** to update the view
+1. Open the **Lattice** panel
+2. Use the **Atoms radius** slider to adjust selected atoms
+3. Click **Reset to element default** or **Set to covalent radius** for defaults
 
-### Bond Display
+### Bond Operations
 
-Toggle bond visibility:
+Bonds are displayed automatically when atoms are close enough. To manage bonds:
 
-1. Open the **Display** panel
-2. Check/uncheck **Show Bonds**
-3. Bonds appear/disappear immediately
+- **Create bond:** Select two atoms → Right-click → Create Bond
+- **Delete bond:** Click on bond → Press Delete
+- **Recalculate:** Right-click → Calculate Bonds
 
 ### Color Scheme
 
 Change atom colors:
 
-1. Open the **Display** panel
-2. Click the **Color Scheme** dropdown
-3. Select a preset (Bright, Jmol, etc.)
-4. Click **Apply** to update
+1. Open the **Brush** panel (top of sidebar)
+2. Select a color scheme from the dropdown (Bright, Jmol, or custom)
+3. Click **Apply** to update selected atoms (or all if none selected)
 
 ### Lighting
 
 Adjust scene lighting:
 
 1. Open the **Lighting** panel
-2. Adjust **Ambient**, **Directional**, or **Point** lights
+2. Adjust **Ambient**, **Key**, **Fill**, or **Rim** lights
 3. Changes apply in real-time
 
 ## Selection
@@ -91,15 +89,18 @@ Adjust scene lighting:
 
 ### Multi-Select
 
-- Hold **Shift** and click multiple atoms
+- Hold **Ctrl/Cmd** and click multiple atoms
 - All selected atoms highlight
 - Panel shows combined info
 
 ### Box Select
 
-- Hold the box-select modifier key
-- Drag to draw a selection box
-- All atoms in the box are selected
+- Ensure the **Select** tool is active (press `V` or click Select in toolbar)
+- Click and drag in empty space (not on an atom)
+- A selection box appears
+- Release to select all atoms inside the box
+- Hold **Ctrl/Cmd** while releasing to add to current selection
+- Hold **Alt** while releasing to subtract from current selection
 
 ### Deselect
 
@@ -108,28 +109,11 @@ Adjust scene lighting:
 
 ## Measuring Bonds
 
-1. Select two bonded atoms (Shift+click both)
+1. Select two bonded atoms (Ctrl/Cmd+click both)
 2. The **Measurement** panel shows the distance
 3. Distance updates in real-time if you move atoms
 
 ## Tips and Tricks
-
-### Focus on Selection
-
-After selecting an atom, center the view on it:
-- The view automatically centers on selected atoms
-- Or double-click on the selected atom
-
-### Keyboard Shortcuts
-
-| Key | Action |
-|-----|--------|
-| `A` | Frame all atoms |
-| `S` | Frame selection |
-| `B` | Toggle bonds |
-| `L` | Toggle labels |
-| `H` | Hide selected |
-| `U` | Show all hidden |
 
 ### Performance Tips
 
