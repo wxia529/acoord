@@ -1,7 +1,7 @@
 # ACoord — Current Codebase Issues
 
-**Last Updated:** 2026-03-10
-**Codebase Version:** 0.3.2
+**Last Updated:** 2026-03-11
+**Codebase Version:** 0.3.3
 **Scope:** Issues verified against current source code. No aspirational items.
 
 This document catalogs **verified, open issues** in the current ACoord
@@ -27,43 +27,29 @@ a record of why a design decision was made.
 
 ---
 
-## 8. Active Bugs
+## Resolved Issues
 
-### 8.1 Atom Rotation Not Persisted After Canvas Click
+### [2026-03-11] Right-Drag Rotation Not Persisted
 
 **Severity:** High  
-**Status:** Open  
-**Last Verified:** 2026-03-10 (v0.3.2)
+**Status:** Resolved
 
-**Description:**  
-After rotating selected atoms using the rotation tool (axis selection + angle slider), clicking anywhere in the 3D canvas causes the rotated atoms to snap back to their original pre-rotation positions. The rotation transformation is not committed to the structure model.
+**Root Cause:**  
+In `interaction.ts:588-590`, the code attempted to access `window.vscode` to send the `setAtomsPositions` message after a right-drag rotation. However, `window.vscode` does not exist — the `vscode` API object is a module-local variable in `app.ts` obtained via `acquireVsCodeApi()`.
 
-**Steps to Reproduce:**
-1. Open any structure file
-2. Select one or more atoms
-3. Open the rotation panel (Edit tab → Rotate section)
-4. Pick an axis (X/Y/Z)
-5. Move the angle slider to rotate the selected atoms
-6. Click anywhere in the 3D canvas (or perform any other interaction)
+**Fix Applied:**
+1. Added `onSetAtomsPositions` callback to `InteractionHandlers` interface in `interaction.ts:66`
+2. Modified `interaction.ts:582-594` to use `handlers.onSetAtomsPositions()` instead of `window.vscode.postMessage()`
+3. Added `onSetAtomsPositions` implementation in `app.ts:338-340` that properly sends the message via the module-local `vscode` object
 
-**Expected Behavior:**  
-Rotated atoms should remain at their new positions after the rotation operation completes.
+**Files Changed:**
+- `media/webview/src/interaction.ts` — Added callback to interface, replaced direct `window.vscode` access with handler callback
+- `media/webview/src/app.ts` — Added `onSetAtomsPositions` handler
 
-**Actual Behavior:**  
-Atoms instantly return to their original positions when the canvas is clicked.
-
-**Impact:**  
-- Rotation tool is effectively unusable
-- Users cannot perform rotational transformations on atoms
-- Data loss of user's rotation operation
-
-**Affected Files:**
-- `media/webview/src/appEdit.ts` — Rotation UI handler
-- `media/webview/src/interaction.ts` — Canvas click handling
-- `src/services/atomEditService.ts` — Rotation command handler (if exists)
-- `src/shared/protocol.ts` — `rotateGroup` message definition
-
-**Workaround:**  
-Use the rotation tools in the **Tools** panel instead of the Edit panel's rotation slider. The Tools panel rotation functionality works correctly and persists the transformed positions.
+**Note:** This fix follows the existing pattern used by other handlers (e.g., `onEndDrag`, `onDragGroup`) which correctly use the handler callback mechanism.
 
 ---
+
+## 8. Active Bugs
+
+*(No active bugs at this time)*
