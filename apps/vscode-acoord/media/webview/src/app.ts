@@ -335,6 +335,10 @@ function setupInteraction(): void {
 
     onEndDrag: () => vscode.postMessage({ command: 'endDrag' }),
 
+    onSetAtomsPositions: (positions) => {
+      vscode.postMessage({ command: 'setAtomsPositions', atomPositions: positions });
+    },
+
     onDelete: () => {
       if (selectionStore.selectedAtomIds.length > 0) {
         vscode.postMessage({ command: 'deleteAtoms', atomIds: selectionStore.selectedAtomIds });

@@ -63,6 +63,7 @@ export interface InteractionHandlers {
   onDeleteBonds?: (bondKeys: string[]) => void;
   onCalculateBonds?: () => void;
   onClearBonds?: () => void;
+  onSetAtomsPositions?: (positions: Array<{ id: string; x: number; y: number; z: number }>) => void;
 }
 
 let controller: AbortController | null = null;
@@ -585,9 +586,8 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
             return mesh ? { id, x: mesh.position.x, y: mesh.position.y, z: mesh.position.z } : null;
           }).filter((e): e is { id: string; x: number; y: number; z: number } => e !== null);
           
-          const vscode = (window as unknown as { vscode?: { postMessage: (msg: unknown) => void } }).vscode;
-          if (vscode && updated.length > 0) {
-            vscode.postMessage({ command: 'setAtomsPositions', atomPositions: updated, preview: false });
+          if (handlers.onSetAtomsPositions && updated.length > 0) {
+            handlers.onSetAtomsPositions(updated);
           }
           if (handlers.onEndDrag) {
             handlers.onEndDrag();
