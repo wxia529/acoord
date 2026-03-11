@@ -1,7 +1,7 @@
 # ACoord — Current Codebase Issues
 
 **Last Updated:** 2026-03-11
-**Codebase Version:** 0.3.3
+**Codebase Version:** 0.3.4
 **Scope:** Issues verified against current source code. No aspirational items.
 
 This document catalogs **verified, open issues** in the current ACoord
