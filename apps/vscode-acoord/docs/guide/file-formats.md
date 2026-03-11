@@ -13,9 +13,9 @@ ACoord supports 12+ file formats for reading and writing atomic structures.
 | OUTCAR | ✅ | ❌ | `OUTCAR`, `.outcar` | VASP output file |
 | PDB | ✅ | ✅ | `.pdb` | Protein Data Bank |
 | Gaussian | ✅ | ✅ | `.gjf`, `.com` | Gaussian input |
-| ORCA | ✅ | ✅ | `.inp`, `.in` | ORCA input |
-| Quantum ESPRESSO | ✅ | ✅ | `.pwi` | QE input |
-| QE Output | ✅ | ❌ | `.out` | QE output |
+| ORCA | ✅ | ✅ | `.inp` | ORCA input |
+| Quantum ESPRESSO | ✅ | ✅ | `.in`, `.pwi` | QE input |
+| QE Output | ✅ | ❌ | `.out`, `.pwo`, `.log` | QE output |
 | ABACUS | ✅ | ✅ | `.stru` | ABACUS STRU |
 | ACoord Native | ✅ | ✅ | `.acoord` | Native format with full metadata |
 
@@ -48,9 +48,11 @@ Crystallographic Information File for crystal structures.
 **Support:**
 - ✅ Atom positions (fractional and Cartesian)
 - ✅ Unit cell parameters
-- ✅ Space group symmetry
+- ✅ Space group symmetry operations (applied automatically on read)
 - ✅ Atom labels and types
-- ✅ Bond calculation from symmetry
+
+**Limitations:**
+- ❌ Export always uses P 1 space group (symmetry-expanded atoms)
 
 ### VASP Formats
 
@@ -101,9 +103,9 @@ Protein Data Bank format for biomolecules.
 **Support:**
 - ✅ ATOM records
 - ✅ HETATM records
-- ✅ Chain IDs
-- ✅ Residue information
-- ✅ CONECT bonds
+- ✅ CRYST1 unit cell
+- ✅ Element detection
+- ❌ CONECT bonds (not parsed)
 
 ### Gaussian/ORCA Input
 
@@ -112,8 +114,8 @@ Quantum chemistry input files.
 **Support:**
 - ✅ Atom coordinates
 - ✅ Charge and multiplicity
-- ✅ Route section parsing
-- ✅ Molecular orbitals (future)
+- ✅ TV lattice vectors (for periodic systems)
+- ✅ Format preservation (headers, route section preserved on save)
 
 ### Quantum ESPRESSO
 
@@ -174,7 +176,7 @@ ACoord automatically detects file formats by:
 ### Converting Between Formats
 
 1. Open a file in ACoord
-2. Use **File → Export Structure** (or command palette)
+2. Click **Save As** button in the toolbar
 3. Choose the target format
 4. Save the converted file
 

@@ -6,6 +6,7 @@ ACoord (Atomic Coordinate Toolkit) is a VS Code extension for 3D visualization a
 
 **Key characteristics:**
 - Supports 12 file formats (XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, .acoord native)
+- 50 webview-to-extension commands, 7 extension-to-webview commands
 - Interactive 3D rendering via Three.js inside VS Code Custom Editor API
 - Trajectory support for multi-frame files
 - Features: atom selection, bond measurement, lattice editing, supercell display, lighting controls, color schemes
@@ -74,10 +75,12 @@ src/
   config/
     types.ts                        # DisplaySettings = Required<WireDisplaySettings>
     defaults.ts                     # getDefaultDisplaySettings()
+    bondSchemes.ts                  # Bond detection scheme definitions
     colorSchemeManager.ts           # ColorScheme lifecycle (load, save, import, export)
     colorSchemeStorage.ts           # Persistence via ExtensionContext.globalState
     colorSchemeValidator.ts         # JSON schema validation
     colorSchemeUtils.ts             # Color scheme utilities
+    configMigration.ts              # Config migration for backward compatibility
     presets/color-schemes/          # Built-in presets (bright, jmol); immutable
   io/
     fileManager.ts                  # Format detection, parser dispatch, serialize
@@ -106,8 +109,11 @@ media/webview/
     interactionLighting.ts          # Lighting control UI bindings
     settingsUtil.ts                 # Display settings update utility
     colorSchemeHandler.ts           # Color scheme message handlers
+    brushPanel.ts                   # Current brush settings UI panel
+    axisIndicator.ts                # 3D axis indicator overlay
     appEdit.ts, appLattice.ts, ...  # Panel UI modules
     state/selectionManager.ts       # Selection logic (multi-select, box-select)
+    components/                     # contextMenu, elementPicker
     ui/                             # DOM helpers, input constructors
     utils/                          # Atom size, DOM cache, measurements, transformations
 
@@ -129,9 +135,9 @@ The project uses `"type": "module"` in package.json (native ES modules).
 
 | Target | Module System | Output |
 |--------|---------------|--------|
-| Extension host | ES2022 | Node16 | out/ |
-| Webview | ES2020 | ES2020 | out/webview/webview.js (bundled) |
-| Unit tests | ES2022 | Node16 | .mts (loaded via tsx) |
+| Extension host | ES2022 / Node16 | out/ |
+| Webview | ES2020 / ESNext | out/webview/webview.js (bundled) |
+| Unit tests | ES2022 / Node16 | .mts (loaded via tsx) |
 
 ### ESLint Rules
 
@@ -265,7 +271,7 @@ type WebviewToExtensionMessage =
   | AddAtomMessage           // 'addAtom'
   | MoveAtomMessage          // 'moveAtom'
   | ApplyDisplaySettingsMessage  // 'applyDisplaySettings'
-  | ...;  // 37 commands total
+  | ...;  // 50 commands total
 ```
 
 **Position convention:** `[number, number, number]` tuples (Cartesian, Angstroms)
@@ -416,7 +422,7 @@ atom.radius = radius;
 
 ## Additional Resources
 
-- [DEVELOPMENT.md](DEVELOPMENT.md) — Complete architecture reference (1839 lines)
+- [DEVELOPMENT.md](DEVELOPMENT.md) — Complete architecture reference (1845 lines)
 - [CURRENT_ISSUES.md](CURRENT_ISSUES.md) — Verified open issues
 - [CHANGELOG.md](CHANGELOG.md) — Version history
 - [README.md](README.md) — User-facing feature documentation
