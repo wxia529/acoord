@@ -9,4 +9,6 @@ export { OUTCARParser } from './outcarParser.js';
 export { PDBParser } from './pdbParser.js';
 export { STRUParser } from './struParser.js';
 export { ACoordParser } from './acoordParser.js';
+export { CellParser } from './cellParser.js';
+export { CastepParser } from './castepParser.js';
 export { StructureParser } from './structureParser.js';

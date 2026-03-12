@@ -1,6 +1,6 @@
 # ACoord Developer Guide
 
-**Version:** 0.3.4
+**Version:** 0.3.5
 **Last Updated:** 2026-03-11
 **License:** MIT
 

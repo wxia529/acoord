@@ -44,6 +44,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **Quantum ESPRESSO input** (.in / .pwi)
 - **Quantum ESPRESSO output log** (.out / .pwo / .log)
 - **ABACUS STRU** (.stru)
+- **CASTEP cell** (.cell) — LATTICE_CART/ABC, POSITIONS_ABS/FRAC, custom species, ionic constraints
 - **ACoord native** (.acoord) — JSON-based format preserving all atom properties
 
 ### Format Notes
@@ -55,6 +56,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **XDATCAR trajectories** can be opened and exported
 - **OUTCAR** can be read as trajectory frames from `POSITION ... TOTAL-FORCE` blocks
 - **STRU**: fixed atoms are written as `0 0 0` and free atoms `1 1 1`
+- **CASTEP .cell**: supports LATTICE_CART/ABC, POSITIONS_ABS/FRAC, custom species (e.g., Fe:1), ionic constraints mapping to selectiveDynamics, SPIN/LABEL metadata, SPECIES_MASS, and unit conversion (bohr, nm, pm, etc.)
 - **ORCA export** uses the default header:
   - `! B3LYP D3 def2-SVP`
   - `%maxcore     8192`

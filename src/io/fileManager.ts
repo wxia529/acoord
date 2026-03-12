@@ -11,6 +11,8 @@ import {
   PDBParser,
   STRUParser,
   ACoordParser,
+  CellParser,
+  CastepParser,
   StructureParser,
 } from './parsers/index.js';
 
@@ -33,9 +35,11 @@ const PARSER_MAP: Record<string, StructureParser> = {
   pdb: new PDBParser(),
   stru: new STRUParser(),
   acoord: new ACoordParser(),
+  cell: new CellParser(),
+  castep: new CastepParser(),
 };
 
-const READ_ONLY_FORMATS = new Set(['out', 'pwo', 'log', 'outcar']);
+const READ_ONLY_FORMATS = new Set(['out', 'pwo', 'log', 'outcar', 'castep']);
 
 /**
  * Manage structure file I/O

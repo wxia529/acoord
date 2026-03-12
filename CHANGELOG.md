@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.5]
+
+### Added
+
+- CASTEP .cell format support:
+  - Parse LATTICE_CART and LATTICE_ABC blocks
+  - Parse POSITIONS_ABS (Cartesian) and POSITIONS_FRAC (fractional) blocks
+  - Support custom species notation (e.g., Fe:1, O:custom)
+  - Parse IONIC_CONSTRAINTS block and map to selectiveDynamics/fixed flags
+  - Preserve SPIN, LABEL, and SPECIES_MASS metadata
+  - Unit conversion (bohr, nm, pm, cm, m) with CODATA2002 standard
+  - Round-trip serialization preserving all metadata
+
 ## [0.3.4]
 
 ### Fixed
