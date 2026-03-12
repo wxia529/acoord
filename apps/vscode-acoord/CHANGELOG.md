@@ -17,6 +17,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Preserve SPIN, LABEL, and SPECIES_MASS metadata
   - Unit conversion (bohr, nm, pm, cm, m) with CODATA2002 standard
   - Round-trip serialization preserving all metadata
+- CASTEP .castep output format support:
+  - Parse lattice from "Unit Cell" block
+  - Parse atomic positions from "Fractional coordinates of atoms" block
+  - Trajectory extraction from BFGS geometry optimization and MD iterations
 
 ## [0.3.4]
 

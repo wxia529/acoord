@@ -1,6 +1,6 @@
 # Supported File Formats
 
-ACoord supports 12+ file formats for reading and writing atomic structures.
+ACoord supports 14+ file formats for reading and writing atomic structures.
 
 ## Format Overview
 
@@ -17,6 +17,8 @@ ACoord supports 12+ file formats for reading and writing atomic structures.
 | Quantum ESPRESSO | ✅ | ✅ | `.in`, `.pwi` | QE input |
 | QE Output | ✅ | ❌ | `.out`, `.pwo`, `.log` | QE output |
 | ABACUS | ✅ | ✅ | `.stru` | ABACUS STRU |
+| CASTEP Cell | ✅ | ✅ | `.cell` | CASTEP input structure |
+| CASTEP Output | ✅ | ❌ | `.castep` | CASTEP output file |
 | ACoord Native | ✅ | ✅ | `.acoord` | Native format with full metadata |
 
 ## Format Details
@@ -131,6 +133,31 @@ Quantum chemistry input files.
 - ✅ Atom types and positions
 - ✅ Unit cell
 - ✅ Numerical orbital info
+
+### CASTEP Formats
+
+#### CASTEP Cell (.cell)
+
+CASTEP input structure file.
+
+**Support:**
+- ✅ LATTICE_CART and LATTICE_ABC blocks
+- ✅ POSITIONS_ABS (Cartesian) and POSITIONS_FRAC (fractional)
+- ✅ Custom species notation (e.g., Fe:1, O:custom)
+- ✅ IONIC_CONSTRAINTS mapping to selective dynamics
+- ✅ SPIN, LABEL, SPECIES_MASS metadata
+- ✅ Unit conversion (bohr, nm, pm, cm, m)
+- ✅ Round-trip serialization preserving all metadata
+
+#### CASTEP Output (.castep)
+
+CASTEP output file from geometry optimization or MD runs.
+
+**Support:**
+- ✅ Lattice extraction from "Unit Cell" block
+- ✅ Atomic positions from "Fractional coordinates of atoms"
+- ✅ Trajectory extraction from BFGS and MD iterations
+- ❌ Writing (export as .cell format)
 
 ### ACoord Native (.acoord)
 
