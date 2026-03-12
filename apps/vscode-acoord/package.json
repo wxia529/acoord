@@ -3,7 +3,7 @@
   "displayName": "ACoord",
   "description": "Atomic Coordinate Toolkit",
   "publisher": "wxia529",
-  "version": "0.3.4",
+  "version": "0.3.5",
   "license": "MIT",
   "type": "module",
   "icon": "media/acoord-icon.png",
@@ -19,7 +19,9 @@
     "vasp",
     "poscar",
     "xdatcar",
-    "outcar"
+    "outcar",
+    "castep",
+    "cell"
   ],
   "homepage": "https://github.com/wxia529/vscode-acoord",
   "bugs": {
@@ -119,6 +121,12 @@
           },
           {
             "filenamePattern": "*.stru"
+          },
+          {
+            "filenamePattern": "*.cell"
+          },
+          {
+            "filenamePattern": "*.castep"
           }
         ]
       }
@@ -127,7 +135,7 @@
       "editor/title": [
         {
           "command": "acoord.openStructureEditor",
-          "when": "resourceExtname =~ /\\.(cif|xyz|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
+          "when": "resourceExtname =~ /\\.(cif|xyz|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
           "group": "navigation"
         }
       ]

@@ -30,6 +30,7 @@ export class DocumentService {
       { id: 'xdatcar', label: 'XDATCAR (.xdatcar)' },
       { id: 'poscar', label: 'POSCAR' },
       { id: 'vasp', label: 'VASP (.vasp)' },
+      { id: 'cell', label: 'CASTEP cell (.cell)' },
       { id: 'pdb', label: 'PDB (.pdb)' },
       { id: 'gjf', label: 'Gaussian input (.gjf)' },
       { id: 'inp', label: 'ORCA input (.inp)' },

@@ -1,0 +1,16 @@
+kpoint_mp_grid 1 1 1
+snap_to_symmetry true
+
+%block species_pot
+C19MK2
+%endblock species_pot
+
+%block lattice_cart ang
+  10.0  0.0   0.0
+  0.0   10.0  0.0
+  0.0   0.0   10.0
+%endblock lattice_cart
+
+%block positions_frac
+Si  0.0  0.0  0.0
+%endblock positions_frac
