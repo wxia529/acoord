@@ -11,6 +11,8 @@ This tutorial shows how to visualize molecular dynamics trajectories.
 | VASP XDATCAR | `XDATCAR`, `.xdatcar` | VASP MD trajectory |
 | Multi-frame XYZ | `.xyz` | XYZ with multiple frames |
 | VASP OUTCAR | `OUTCAR`, `.outcar` | VASP output with ionic steps |
+| QE Output | `.out`, `.pwo`, `.log` | QE output with ATOMIC_POSITIONS blocks |
+| CASTEP Output | `.castep` | CASTEP geometry optimization/MD |
 
 ### Open a Trajectory
 

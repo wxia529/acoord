@@ -5,7 +5,7 @@
 ACoord (Atomic Coordinate Toolkit) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It uses a two-process architecture: Node.js extension host + sandboxed browser webview (Three.js). All inter-process communication (IPC) is typed JSON defined in `src/shared/protocol.ts`.
 
 **Key characteristics:**
-- Supports 12 file formats (XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, .acoord native)
+- Supports 14 file formats (XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP .cell/.castep, .acoord native)
 - 50 webview-to-extension commands, 7 extension-to-webview commands
 - Interactive 3D rendering via Three.js inside VS Code Custom Editor API
 - Trajectory support for multi-frame files

@@ -15,8 +15,8 @@ hero:
       link: https://github.com/wxia529/vscode-acoord
 
 features:
-  - title: '12+ File Formats'
-    details: 'Support for XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, and native .acoord format'
+  - title: '14+ File Formats'
+    details: 'Support for XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP, and native .acoord format'
     icon: 📁
   - title: 'Interactive 3D'
     details: 'Real-time 3D rendering with Three.js inside VS Code. Rotate, zoom, and explore atomic structures'
