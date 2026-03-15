@@ -56,14 +56,14 @@ Customizable atom colors:
 
 ### File Format Support
 
-14+ formats supported:
+15+ formats supported:
 
 | Category | Formats |
 |----------|---------|
 | Crystal | CIF, POSCAR, CONTCAR |
 | Molecule | XYZ, PDB |
 | Trajectory | XDATCAR, OUTCAR |
-| Quantum | Gaussian, ORCA, QE, ABACUS, CASTEP |
+| Quantum | Gaussian, ORCA, QE, ABACUS, CASTEP, SIESTA |
 | Native | .acoord |
 
 ### Undo/Redo
