@@ -1,6 +1,6 @@
 # Supported File Formats
 
-ACoord supports 14+ file formats for reading and writing atomic structures.
+ACoord supports 15+ file formats for reading and writing atomic structures.
 
 ## Format Overview
 
@@ -19,6 +19,7 @@ ACoord supports 14+ file formats for reading and writing atomic structures.
 | ABACUS | ✅ | ✅ | `.stru` | ABACUS STRU |
 | CASTEP Cell | ✅ | ✅ | `.cell` | CASTEP input structure |
 | CASTEP Output | ✅ | ❌ | `.castep` | CASTEP output file |
+| SIESTA fdf | ✅ | ✅ | `.fdf` | SIESTA input structure |
 | ACoord Native | ✅ | ✅ | `.acoord` | Native format with full metadata |
 
 ## Format Details
@@ -159,6 +160,53 @@ CASTEP output file from geometry optimization or MD runs.
 - ✅ Trajectory extraction from BFGS and MD iterations
 - ❌ Writing (export as .cell format)
 
+### SIESTA fdf Format
+
+SIESTA input file format with calculation parameters.
+
+```fdf
+SystemName          Water
+SystemLabel         H2O
+
+NumberOfAtoms       3
+NumberOfSpecies     2
+
+%block ChemicalSpeciesLabel
+  1  8   O
+  2  1   H
+%endblock ChemicalSpeciesLabel
+
+%block LatticeVectors
+  15.0   0.0   0.0
+  0.0   15.0   0.0
+  0.0    0.0  15.0
+%endblock LatticeVectors
+
+AtomicCoordinatesFormat  Fractional
+
+%block AtomicCoordinatesAndAtomicSpecies
+  0.5   0.5   0.5   1
+  0.5375   0.5   0.675   2
+  0.4625   0.5   0.675   2
+%endblock AtomicCoordinatesAndAtomicSpecies
+
+# SIESTA calculation parameters
+XC.functional          GGA
+XC.authors             PBE
+Mesh.Cutoff            300.0 Ry
+kgrid_Monkhorst_Pack    1  1  1
+```
+
+**Support:**
+- ✅ `%block LatticeVectors` - unit cell vectors
+- ✅ `%block AtomicCoordinatesAndAtomicSpecies` - atomic positions and species
+- ✅ `%block ChemicalSpeciesLabel` - element mapping
+- ✅ Calculation parameters (XC.functional, Mesh.Cutoff, kgrid, etc.)
+- ✅ Automatic update of `NumberOfAtoms` and `NumberOfSpecies` on edit
+- ✅ Format preservation (all non-block parameters preserved on save)
+- ❌ Selective Dynamics (per-atom fixed flags)
+- ❌ Trajectory parsing (multi-frame)
+
 ### ACoord Native (.acoord)
 
 Native JSON format preserving all information.
@@ -218,3 +266,4 @@ For trajectory files like XDATCAR:
 - Use CIF for crystal structures (standard format)
 - Use XYZ for simple molecules (universal compatibility)
 - Use PDB for biomolecules (standard in structural biology)
+- Use SIESTA fdf for SIESTA DFT calculations

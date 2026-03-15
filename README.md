@@ -3,7 +3,7 @@
 **Version:** 0.3.8
 **License:** MIT
 
-Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It supports 14 file formats and provides interactive 3D rendering via Three.js inside VS Code's Custom Editor API.
+Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It supports 15 file formats and provides interactive 3D rendering via Three.js inside VS Code's Custom Editor API.
 
 ## Features
 
@@ -46,6 +46,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **ABACUS STRU** (.stru)
 - **CASTEP cell** (.cell) — LATTICE_CART/ABC, POSITIONS_ABS/FRAC, custom species, ionic constraints
 - **CASTEP output** (.castep) — trajectory extraction from geometry optimization and MD runs
+- **SIESTA fdf** (.fdf) — input structure with species, lattice, coordinates, and calculation parameters
 - **ACoord native** (.acoord) — JSON-based format preserving all atom properties
 
 ### Format Notes
@@ -59,6 +60,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **STRU**: fixed atoms are written as `0 0 0` and free atoms `1 1 1`
 - **CASTEP .cell**: supports LATTICE_CART/ABC, POSITIONS_ABS/FRAC, custom species (e.g., Fe:1), ionic constraints mapping to selectiveDynamics, SPIN/LABEL metadata, SPECIES_MASS, and unit conversion (bohr, nm, pm, etc.)
 - **CASTEP .castep**: output files from CASTEP geometry optimization and MD runs are parsed as trajectories, extracting lattice and atomic positions from BFGS and MD iteration blocks
+- **SIESTA .fdf**: input files with automatic parsing of `%block LatticeVectors`, `%block AtomicCoordinatesAndAtomicSpecies`, `%block ChemicalSpeciesLabel`; preserves all calculation parameters (XC.functional, Mesh.Cutoff, kgrid, etc.) on save; updates NumberOfAtoms, NumberOfSpecies, and block contents when atoms are added/removed
 - **ORCA export** uses the default header:
   - `! B3LYP D3 def2-SVP`
   - `%maxcore     8192`
