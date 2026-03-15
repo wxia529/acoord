@@ -36,6 +36,7 @@ export class DocumentService {
       { id: 'inp', label: 'ORCA input (.inp)' },
       { id: 'in', label: 'QE input (.in)' },
       { id: 'stru', label: 'ABACUS STRU (.stru)' },
+      { id: 'fdf', label: 'SIESTA fdf (.fdf)' },
     ];
 
     const selected = await vscode.window.showQuickPick(formatOptions, {

@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.8]
+
+### Added
+
+- SIESTA fdf format support
+
+### Fixed
+
+- File extension detection priority for files with special keywords (e.g., `STRU_NOW.cif`, `POSCAR.vasp`, `STRU.cell`). Previously, files containing keywords like "STRU", "POSCAR", "XDATCAR", "OUTCAR" were incorrectly matched by substring regardless of their actual extension. Now files with explicit extensions (e.g., `.cif`, `.cell`, `.vasp`) are correctly identified by their extension, while extension-less filenames (e.g., `POSCAR`, `STRU`) still use keyword matching
+
+
 ## [0.3.7]
 
 ### Fixed
