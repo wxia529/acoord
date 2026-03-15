@@ -13,6 +13,7 @@ import {
   ACoordParser,
   CellParser,
   CastepParser,
+  SIESTAParser,
   StructureParser,
 } from './parsers/index.js';
 
@@ -37,6 +38,7 @@ const PARSER_MAP: Record<string, StructureParser> = {
   acoord: new ACoordParser(),
   cell: new CellParser(),
   castep: new CastepParser(),
+  fdf: new SIESTAParser(),
 };
 
 const READ_ONLY_FORMATS = new Set(['out', 'pwo', 'log', 'outcar', 'castep']);

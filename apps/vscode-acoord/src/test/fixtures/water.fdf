@@ -1,0 +1,38 @@
+SystemName          Water
+SystemLabel         H2O
+
+NumberOfAtoms       3
+NumberOfSpecies     2
+
+%block ChemicalSpeciesLabel
+  1  8   O
+  2  1   H
+%endblock ChemicalSpeciesLabel
+
+%block LatticeVectors
+  15.0   0.0   0.0
+  0.0   15.0   0.0
+  0.0    0.0  15.0
+%endblock LatticeVectors
+
+AtomicCoordinatesFormat  Fractional
+
+%block AtomicCoordinatesAndAtomicSpecies
+  0.500000000000   0.500000000000   0.500000000000   1
+  0.537500000000   0.500000000000   0.675000000000   2
+  0.462500000000   0.500000000000   0.675000000000   2
+%endblock AtomicCoordinatesAndAtomicSpecies
+
+# SIESTA calculation parameters
+XC.functional          GGA
+XC.authors             PBE
+
+Mesh.Cutoff            300.0 Ry
+PAO.EnergyShift         0.02 Ry
+MaxSCFIterations        50
+SCF.DM.Tolerance        1.d-4
+
+OccupationFunction     FD
+ElectronicTemperature  300 K
+
+kgrid_Monkhorst_Pack    1  1  1
