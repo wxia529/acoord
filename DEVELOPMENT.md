@@ -733,16 +733,16 @@ All parsers extend `StructureParser`:
 
 ```typescript
 abstract class StructureParser {
-  abstract readonly name: string;           // e.g. 'XYZ'
-  abstract readonly extensions: string[];   // e.g. ['xyz']
-  abstract parse(content: string, fileName?: string): Structure[];
+  abstract parse(content: string): Structure;
   abstract serialize(structure: Structure): string;
-  serializeMulti?(structures: Structure[]): string;
+  parseTrajectory(content: string): Structure[];
+  serializeTrajectory(structures: Structure[]): string;
 }
 ```
 
-`parse()` always returns `Structure[]`. Single-structure formats return a
-one-element array. Trajectory formats return the full frame array.
+`parse()` returns a single `Structure`. `parseTrajectory()` returns `Structure[]`
+for multi-frame formats; default implementation wraps `parse()` in an array.
+`serializeTrajectory()` serializes the first structure by default.
 
 **Parser responsibility for atom properties:**
 - Parsers MUST set `atom.color` and `atom.radius` during parsing
@@ -762,7 +762,8 @@ one-element array. Trajectory formats return the full frame array.
 
 Every parser must:
 
-1. **Return an empty array for empty input.** Never throw on an empty string.
+1. **Throw descriptive `Error` for empty input.** Empty files typically indicate
+   read errors or corrupted data. Include parser name in the message.
 2. **Throw a descriptive `Error` for malformed input.** Include the parser
    name, line number, and what was expected. Never return an empty structure
    in place of an error.
@@ -1190,11 +1191,11 @@ Each parser test must verify:
 
 1. `parse(fixtureContent)` produces the correct atom count, element types, and
    positions (within `1e-6` Angstrom tolerance).
-2. `serialize(parsed[0])` → `parse(serialized)` produces an equivalent structure
+2. `serialize(parsed)` → `parse(serialized)` produces an equivalent structure
    (round-trip identity).
 3. **Atoms have valid color and radius** (not undefined, not null).
 4. Format-specific metadata is preserved after round-trip.
-5. Empty input returns `[]` (no throw).
+5. Empty input throws descriptive `Error` with parser name.
 6. Malformed input throws an `Error` with a descriptive message.
 
 For `.acoord` parser, also verify:

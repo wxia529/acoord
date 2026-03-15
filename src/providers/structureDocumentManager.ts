@@ -54,14 +54,18 @@ export class StructureDocumentManager {
     );
   }
 
-  /**
+/**
    * Write frames to a user-chosen destination URI.
    * For multi-frame formats (xyz, xdatcar) the caller should already have
    * resolved which frames to export.
+   * @param destination - The target URI to save to
+   * @param exportFrames - The frames to save
+   * @param format - The explicit format to use (e.g., 'xyz', 'poscar', 'cif')
    */
   static async saveAs(
     destination: vscode.Uri,
-    exportFrames: Structure[]
+    exportFrames: Structure[],
+    format: string
   ): Promise<void> {
     if (FileManager.isReadOnlyFormat(destination.fsPath)) {
       const ext = path.extname(destination.fsPath).slice(1).toLowerCase() || path.basename(destination.fsPath);
@@ -69,9 +73,9 @@ export class StructureDocumentManager {
         `Cannot save to read-only format (${ext}). Choose a different format.`
       );
     }
-    const format = FileManager.resolveFormat(destination.fsPath, 'xyz');
+    const resolvedFormat = FileManager.resolveFormat(format, 'xyz');
     const isMultiFrame =
-      (format === 'xyz' || format === 'xdatcar') && exportFrames.length > 1;
+      (resolvedFormat === 'xyz' || resolvedFormat === 'xdatcar') && exportFrames.length > 1;
 
     if (isMultiFrame) {
       for (const frame of exportFrames) {
@@ -81,8 +85,8 @@ export class StructureDocumentManager {
     FileManager.ensureStructureName(exportFrames[0], destination.fsPath);
 
     const content = isMultiFrame
-      ? FileManager.saveStructures(exportFrames, format)
-      : FileManager.saveStructure(exportFrames[0], format);
+      ? FileManager.saveStructures(exportFrames, resolvedFormat)
+      : FileManager.saveStructure(exportFrames[0], resolvedFormat);
 
     await vscode.workspace.fs.writeFile(
       destination,

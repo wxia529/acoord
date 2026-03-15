@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - File extension detection priority for files with special keywords (e.g., `STRU_NOW.cif`, `POSCAR.vasp`, `STRU.cell`). Previously, files containing keywords like "STRU", "POSCAR", "XDATCAR", "OUTCAR" were incorrectly matched by substring regardless of their actual extension. Now files with explicit extensions (e.g., `.cif`, `.cell`, `.vasp`) are correctly identified by their extension, while extension-less filenames (e.g., `POSCAR`, `STRU`) still use keyword matching
+- Save As format selection now respects user's choice instead of inferring from file extension. Previously, selecting "POSCAR" format but entering "1.xyz" as filename would incorrectly save as XYZ format. Now the selected format is always used, with an information message shown when the file extension doesn't match the selected format
 
 
 ## [0.3.7]

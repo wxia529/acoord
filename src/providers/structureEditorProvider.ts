@@ -398,7 +398,7 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         }
         exportFrames = chosen;
       }
-      await StructureDocumentManager.saveAs(destination, exportFrames);
+      await StructureDocumentManager.saveAs(destination, exportFrames, format);
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
