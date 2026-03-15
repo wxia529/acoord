@@ -85,7 +85,16 @@ export class DocumentService {
     }
 
     try {
-      await StructureDocumentManager.saveAs(uri, exportFrames);
+      await StructureDocumentManager.saveAs(uri, exportFrames, selectedFormat);
+
+      const actualFormat = FileManager.resolveFormat(selectedFormat, 'xyz');
+      const fileExt = path.extname(uri.fsPath).slice(1).toLowerCase();
+
+      if (fileExt && fileExt !== actualFormat && !(isPoscarFormat && fileExt === 'vasp')) {
+        vscode.window.showInformationMessage(
+          `Saved as ${actualFormat.toUpperCase()} format to ${path.basename(uri.fsPath)}`
+        );
+      }
     } catch (error) {
       vscode.window.showErrorMessage(
         `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`

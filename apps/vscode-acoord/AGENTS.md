@@ -5,7 +5,7 @@
 ACoord (Atomic Coordinate Toolkit) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It uses a two-process architecture: Node.js extension host + sandboxed browser webview (Three.js). All inter-process communication (IPC) is typed JSON defined in `src/shared/protocol.ts`.
 
 **Key characteristics:**
-- Supports 14 file formats (XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP .cell/.castep, .acoord native)
+- Supports 15 file formats (XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP .cell/.castep, SIESTA fdf, .acoord native)
 - 50 webview-to-extension commands, 7 extension-to-webview commands
 - Interactive 3D rendering via Three.js inside VS Code Custom Editor API
 - Trajectory support for multi-frame files
@@ -305,7 +305,7 @@ throw new Error(`addAtom: invalid element symbol "${message.element}"`);
 ### Parsers
 
 - Throw `Error` with parser name, line number, and what was expected
-- Return `[]` for empty input (never throw on empty string)
+- Throw descriptive `Error` for empty input (indicates read error or corruption)
 - Never return an empty `Structure` for errors
 
 ```typescript
@@ -333,7 +333,7 @@ throw new Error(`XYZParser: line ${lineNum}: expected integer atom count, got "$
 - Correct atom count/elements/positions (1e-6 tolerance)
 - Round-trip identity
 - Metadata preservation
-- Empty input returns `[]`
+- Empty input throws descriptive error
 - Malformed input throws
 - Atoms have valid color and radius
 
@@ -422,7 +422,7 @@ atom.radius = radius;
 
 ## Additional Resources
 
-- [DEVELOPMENT.md](DEVELOPMENT.md) — Complete architecture reference (1845 lines)
+- [DEVELOPMENT.md](DEVELOPMENT.md) — Complete architecture reference (1846 lines)
 - [CURRENT_ISSUES.md](CURRENT_ISSUES.md) — Verified open issues
 - [CHANGELOG.md](CHANGELOG.md) — Version history
 - [README.md](README.md) — User-facing feature documentation
