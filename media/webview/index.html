@@ -10,29 +10,29 @@
 <body>
   <div id="toolbar">
     <div class="toolbar-group">
-      <select id="toolbar-add-atom" title="Add atom">
-        <option value="">Add Atom...</option>
-        <option value="C">Carbon (C)</option>
-        <option value="H">Hydrogen (H)</option>
-        <option value="O">Oxygen (O)</option>
-        <option value="N">Nitrogen (N)</option>
-        <option value="S">Sulfur (S)</option>
-        <option value="P">Phosphorus (P)</option>
-        <option value="F">Fluorine (F)</option>
-        <option value="Cl">Chlorine (Cl)</option>
-        <option value="Br">Bromine (Br)</option>
-        <option value="more">More elements...</option>
-      </select>
-      <button id="toolbar-delete" title="Delete selected (Delete)">Delete</button>
+      <vscode-dropdown id="toolbar-add-atom" title="Add atom">
+        <vscode-option value="">Add Atom...</vscode-option>
+        <vscode-option value="C">Carbon (C)</vscode-option>
+        <vscode-option value="H">Hydrogen (H)</vscode-option>
+        <vscode-option value="O">Oxygen (O)</vscode-option>
+        <vscode-option value="N">Nitrogen (N)</vscode-option>
+        <vscode-option value="S">Sulfur (S)</vscode-option>
+        <vscode-option value="P">Phosphorus (P)</vscode-option>
+        <vscode-option value="F">Fluorine (F)</vscode-option>
+        <vscode-option value="Cl">Chlorine (Cl)</vscode-option>
+        <vscode-option value="Br">Bromine (Br)</vscode-option>
+        <vscode-option value="more">More elements...</vscode-option>
+      </vscode-dropdown>
+      <vscode-button id="toolbar-delete" appearance="secondary" title="Delete selected (Delete)">Delete</vscode-button>
     </div>
     <div class="toolbar-separator"></div>
     <div class="toolbar-group">
       <label>Box:</label>
-      <select id="toolbar-box-mode" title="Box selection mode">
-        <option value="atoms">Atoms Only</option>
-        <option value="bonds">Bonds Only</option>
-        <option value="both">Atoms and Bonds</option>
-      </select>
+      <vscode-dropdown id="toolbar-box-mode" title="Box selection mode">
+        <vscode-option value="atoms">Atoms Only</vscode-option>
+        <vscode-option value="bonds">Bonds Only</vscode-option>
+        <vscode-option value="both">Atoms and Bonds</vscode-option>
+      </vscode-dropdown>
     </div>
     <div class="toolbar-separator"></div>
     <div class="toolbar-group">
@@ -42,13 +42,13 @@
     </div>
     <div class="toolbar-spacer"></div>
     <div class="toolbar-group toolbar-right">
-      <button id="btn-calculate-bonds" title="Calculate Bonds">Calculate Bonds</button>
-      <button id="btn-reset" title="Reset View">Reset</button>
-      <button id="btn-undo" title="Undo (Ctrl+Z)">↶</button>
-      <button id="btn-redo" title="Redo (Ctrl+Y)">↷</button>
-      <button id="btn-save" title="Save (Ctrl+S)">Save</button>
-      <button id="btn-save-as" title="Save As (Ctrl+Shift+S)">Save As</button>
-      <button id="btn-export-image" title="Export PNG">Export</button>
+      <vscode-button id="btn-calculate-bonds" appearance="secondary" title="Calculate Bonds">Calculate Bonds</vscode-button>
+      <vscode-button id="btn-reset" appearance="secondary" title="Reset View">Reset</vscode-button>
+      <vscode-button id="btn-undo" appearance="icon" title="Undo (Ctrl+Z)">↶</vscode-button>
+      <vscode-button id="btn-redo" appearance="icon" title="Redo (Ctrl+Y)">↷</vscode-button>
+      <vscode-button id="btn-save" appearance="secondary" title="Save (Ctrl+S)">Save</vscode-button>
+      <vscode-button id="btn-save-as" appearance="secondary" title="Save As (Ctrl+Shift+S)">Save As</vscode-button>
+      <vscode-button id="btn-export-image" appearance="secondary" title="Export PNG">Export</vscode-button>
     </div>
   </div>
   <div id="error-banner"></div>
@@ -104,7 +104,7 @@
               <label>Z (A)</label>
               <input type="number" id="sel-z" step="0.01" />
             </div>
-            <button id="btn-apply-atom">Apply</button>
+            <vscode-button id="btn-apply-atom" appearance="primary">Apply</vscode-button>
           </div>
           <div id="properties-multi-atom" style="display:none;">
             <div class="properties-message">
@@ -121,7 +121,7 @@
               <label>Set bond length (A)</label>
               <input type="number" id="bond-length-input" step="0.01" />
             </div>
-            <button id="btn-apply-bond">Apply Bond Length</button>
+            <vscode-button id="btn-apply-bond" appearance="primary">Apply Bond Length</vscode-button>
           </div>
           <div class="panel-section">
             <div class="panel-section-title">Quick Add</div>
@@ -141,7 +141,7 @@
               <label>Z (A)</label>
               <input type="number" id="pos-z" placeholder="0.0" step="0.1" />
             </div>
-            <button id="btn-add-atom-form">Add</button>
+            <vscode-button id="btn-add-atom-form" appearance="primary">Add</vscode-button>
           </div>
         </div>
       </div>
@@ -164,20 +164,20 @@
         <div class="panel-content collapsed" id="panel-bonds">
           <div class="input-group">
             <label>Bond Scheme</label>
-            <select id="bond-scheme-select">
-              <option value="all">All Bonds</option>
-              <option value="no-sf-shell">No s/f-Shell Bonds</option>
-            </select>
+            <vscode-dropdown id="bond-scheme-select">
+              <vscode-option value="all">All Bonds</vscode-option>
+              <vscode-option value="no-sf-shell">No s/f-Shell Bonds</vscode-option>
+            </vscode-dropdown>
           </div>
           <div style="display:flex;gap:6px;margin-top:8px;">
-            <button id="btn-calculate-bonds-panel" type="button">Calculate Bonds</button>
-            <button id="btn-clear-bonds" type="button">Clear All</button>
+            <vscode-button id="btn-calculate-bonds-panel" appearance="secondary">Calculate Bonds</vscode-button>
+            <vscode-button id="btn-clear-bonds" appearance="secondary">Clear All</vscode-button>
           </div>
           <div class="panel-section" style="margin-top:12px;">
             <div class="panel-section-title">Manual Bonds</div>
             <div style="display:flex;gap:6px;">
-              <button id="btn-create-bond" type="button">Create</button>
-              <button id="btn-delete-bond" type="button">Delete</button>
+              <vscode-button id="btn-create-bond" appearance="secondary">Create</vscode-button>
+              <vscode-button id="btn-delete-bond" appearance="secondary">Delete</vscode-button>
             </div>
           </div>
         </div>
@@ -214,14 +214,11 @@
             <input type="number" id="lattice-gamma" step="0.1" min="0" max="180" />
           </div>
           <div class="input-group">
-            <label class="checkbox-row">
-              <input type="checkbox" id="lattice-scale" />
-              Scale atoms with lattice
-            </label>
+            <vscode-checkbox id="lattice-scale">Scale atoms with lattice</vscode-checkbox>
           </div>
           <div class="input-group" style="display:flex;gap:6px;flex-direction:row;">
-            <button id="btn-lattice-apply" type="button">Apply Lattice</button>
-            <button id="btn-lattice-remove" type="button">Remove Lattice</button>
+            <vscode-button id="btn-lattice-apply" appearance="primary">Apply Lattice</vscode-button>
+            <vscode-button id="btn-lattice-remove" appearance="secondary">Remove Lattice</vscode-button>
           </div>
           <div class="panel-section">
             <div class="panel-section-title">Supercell</div>
@@ -233,11 +230,11 @@
                 <input type="number" id="supercell-z" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
               </div>
             </div>
-            <button id="btn-supercell-apply" type="button">Apply Supercell</button>
+            <vscode-button id="btn-supercell-apply" appearance="primary">Apply Supercell</vscode-button>
           </div>
           <div class="panel-section">
             <div class="panel-section-title">Center at Cell</div>
-            <button id="btn-center-cell" type="button">Center At Cell</button>
+            <vscode-button id="btn-center-cell" appearance="secondary">Center At Cell</vscode-button>
           </div>
         </div>
       </div>
@@ -250,10 +247,10 @@
         <div class="panel-content collapsed" id="panel-display">
           <div class="input-group">
             <label>Projection</label>
-            <select id="proj-select">
-              <option value="perspective">Perspective</option>
-              <option value="orthographic">Orthographic</option>
-            </select>
+            <vscode-dropdown id="proj-select">
+              <vscode-option value="perspective">Perspective</vscode-option>
+              <vscode-option value="orthographic">Orthographic</vscode-option>
+            </vscode-dropdown>
           </div>
           <div class="input-group">
             <label>Axis Views</label>
@@ -286,10 +283,7 @@
             </div>
           </div>
           <div class="input-group">
-            <label class="checkbox-row">
-              <input type="checkbox" id="show-axes" checked />
-              Show coordinate axes
-            </label>
+            <vscode-checkbox id="show-axes" checked>Show coordinate axes</vscode-checkbox>
           </div>
         </div>
       </div>
@@ -303,17 +297,17 @@
           <div class="input-group">
             <label>Color Scheme</label>
             <div class="config-selector-row" style="display:flex;gap:6px;align-items:center;">
-              <select id="color-scheme-select" style="flex:1;">
-                <option value="">Loading...</option>
-              </select>
-              <button id="btn-refresh-schemes" type="button" title="Refresh list">↻</button>
+              <vscode-dropdown id="color-scheme-select" style="flex:1;">
+                <vscode-option value="">Loading...</vscode-option>
+              </vscode-dropdown>
+              <vscode-button id="btn-refresh-schemes" appearance="icon" title="Refresh list">↻</vscode-button>
             </div>
           </div>
           <div class="input-group" style="display:flex;gap:6px;flex-wrap:wrap;">
-            <button id="btn-save-scheme" type="button">Save As...</button>
-            <button id="btn-export-scheme" type="button">Export</button>
-            <button id="btn-import-scheme" type="button">Import</button>
-            <button id="btn-delete-scheme" type="button" class="danger">Delete</button>
+            <vscode-button id="btn-save-scheme" appearance="secondary">Save As...</vscode-button>
+            <vscode-button id="btn-export-scheme" appearance="secondary">Export</vscode-button>
+            <vscode-button id="btn-import-scheme" appearance="secondary">Import</vscode-button>
+            <vscode-button id="btn-delete-scheme" appearance="secondary">Delete</vscode-button>
           </div>
           <div id="color-scheme-info" style="font-size:11px;color:#888;margin-top:6px;"></div>
           <div class="panel-section">
@@ -325,7 +319,7 @@
                 <input type="text" id="atom-color-text" value="#C0C0C0" maxlength="7" style="flex:1;" placeholder="#RRGGBB" />
               </div>
             </div>
-            <button id="btn-apply-atom-color">Apply to Selected</button>
+            <vscode-button id="btn-apply-atom-color" appearance="primary">Apply to Selected</vscode-button>
           </div>
           <div class="panel-section">
             <div class="panel-section-title">Unit Cell Color</div>
@@ -359,8 +353,8 @@
           <div class="input-group">
             <label>Atoms radius: <span id="atom-size-selected-value">--</span> Å</label>
             <input type="range" id="atom-size-selected-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
-            <button id="btn-atom-size-reset-selected" type="button">Reset to element default</button>
-            <button id="btn-atom-size-covalent" type="button">Set to covalent radius</button>
+            <vscode-button id="btn-atom-size-reset-selected" appearance="secondary">Reset to element default</vscode-button>
+            <vscode-button id="btn-atom-size-covalent" appearance="secondary">Set to covalent radius</vscode-button>
           </div>
           <div class="input-group">
             <label>Bond thickness: <span id="bond-size-value">1.0</span>x</label>
@@ -374,10 +368,10 @@
             </div>
             <div class="input-group">
               <label>Line Style</label>
-              <select id="lattice-line-style">
-                <option value="solid">Solid</option>
-                <option value="dashed">Dashed</option>
-              </select>
+              <vscode-dropdown id="lattice-line-style">
+                <vscode-option value="solid">Solid</vscode-option>
+                <vscode-option value="dashed">Dashed</vscode-option>
+              </vscode-dropdown>
             </div>
           </div>
         </div>
@@ -390,10 +384,7 @@
         </div>
         <div class="panel-content collapsed" id="panel-lighting">
           <div class="input-group">
-            <label class="checkbox-row">
-              <input type="checkbox" id="lighting-enabled" checked />
-              Enable custom lighting
-            </label>
+            <vscode-checkbox id="lighting-enabled" checked>Enable custom lighting</vscode-checkbox>
           </div>
           <div class="input-group">
             <label>Ambient Intensity: <span id="ambient-value">0.5</span></label>
@@ -429,7 +420,7 @@
               <label>Z: <span id="key-z-value">10</span></label>
               <input type="range" id="key-z-slider" min="-50" max="50" step="1" value="10" />
             </div>
-            <button id="btn-pick-key-light" class="light-pick-button" type="button">Pick in Canvas</button>
+            <vscode-button id="btn-pick-key-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
           </div>
           <div class="light-sub-panel">
             <div class="light-sub-title">Fill Light</div>
@@ -453,7 +444,7 @@
               <label>Z: <span id="fill-z-value">5</span></label>
               <input type="range" id="fill-z-slider" min="-50" max="50" step="1" value="5" />
             </div>
-            <button id="btn-pick-fill-light" class="light-pick-button" type="button">Pick in Canvas</button>
+            <vscode-button id="btn-pick-fill-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
           </div>
           <div class="light-sub-panel">
             <div class="light-sub-title">Rim Light</div>
@@ -477,10 +468,10 @@
               <label>Z: <span id="rim-z-value">-10</span></label>
               <input type="range" id="rim-z-slider" min="-50" max="50" step="1" value="-10" />
             </div>
-            <button id="btn-pick-rim-light" class="light-pick-button" type="button">Pick in Canvas</button>
+            <vscode-button id="btn-pick-rim-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
           </div>
           <div class="light-pick-hint">Tip: Click a Pick button, then drag in canvas to set light direction (Esc to exit).</div>
-          <button id="btn-reset-lighting">Reset Lighting</button>
+          <vscode-button id="btn-reset-lighting" appearance="secondary">Reset Lighting</vscode-button>
         </div>
       </div>
 
@@ -491,14 +482,14 @@
         </div>
         <div class="panel-content collapsed" id="panel-trajectory">
           <div class="input-group trajectory-row">
-            <button id="btn-first-frame" type="button">|&lt;</button>
-            <button id="btn-prev-frame" type="button">&lt;</button>
+            <vscode-button id="btn-first-frame" appearance="icon" title="First frame">|&lt;</vscode-button>
+            <vscode-button id="btn-prev-frame" appearance="icon" title="Previous frame">&lt;</vscode-button>
             <input type="number" id="traj-frame-input" min="1" step="1" value="1" />
-            <button id="btn-next-frame" type="button">&gt;</button>
-            <button id="btn-last-frame" type="button">&gt;|</button>
+            <vscode-button id="btn-next-frame" appearance="icon" title="Next frame">&gt;</vscode-button>
+            <vscode-button id="btn-last-frame" appearance="icon" title="Last frame">&gt;|</vscode-button>
           </div>
           <div class="input-group trajectory-row">
-            <button id="btn-play-trajectory" type="button">Play</button>
+            <vscode-button id="btn-play-trajectory" appearance="primary">Play</vscode-button>
           </div>
           <div class="input-group trajectory-row">
             <label for="traj-speed-slider">Speed</label>

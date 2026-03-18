@@ -34,7 +34,7 @@ function getLightLabel(prefix: string): string {
 
 function updateLightPickerButtons(canvas: HTMLCanvasElement | null): void {
   for (const prefix of ['key', 'fill', 'rim']) {
-    const button = document.getElementById(`btn-pick-${prefix}-light`) as HTMLButtonElement | null;
+    const button = document.getElementById(`btn-pick-${prefix}-light`) as (HTMLElement & { textContent: string }) | null;
     if (!button) continue;
     const isActive = pickerState.activeLightPicker === prefix;
     button.classList.toggle('active', isActive);
@@ -171,8 +171,13 @@ function updateLightSliderUI(prefix: string, lightObj: { intensity: number; colo
   if (colorPicker) colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff');
 }
 
+// vscode-checkbox is a custom element with a 'checked' property
+type VscodeCheckbox = HTMLElement & { checked: boolean };
+// vscode-button is a custom element
+type VscodeButton = HTMLElement;
+
 export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => void): void {
-  const lightingEnabled = document.getElementById('lighting-enabled') as HTMLInputElement | null;
+  const lightingEnabled = document.getElementById('lighting-enabled') as VscodeCheckbox | null;
   if (lightingEnabled) {
     lightingEnabled.addEventListener('change', () => {
       lightingStore.lightingEnabled = lightingEnabled.checked;
@@ -226,7 +231,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
   updateLightSliderUI('rim', lightingStore.rimLight);
 
   for (const prefix of ['key', 'fill', 'rim']) {
-    const button = document.getElementById(`btn-pick-${prefix}-light`) as HTMLButtonElement | null;
+    const button = document.getElementById(`btn-pick-${prefix}-light`) as VscodeButton | null;
     if (!button) continue;
     button.addEventListener('click', () => {
       setActiveLightPicker(
@@ -238,7 +243,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
   }
   updateLightPickerButtons(canvas);
 
-  const btnResetLighting = document.getElementById('btn-reset-lighting') as HTMLButtonElement | null;
+  const btnResetLighting = document.getElementById('btn-reset-lighting') as VscodeButton | null;
   if (btnResetLighting) {
     btnResetLighting.addEventListener('click', () => {
       lightingStore.keyLight = { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' };

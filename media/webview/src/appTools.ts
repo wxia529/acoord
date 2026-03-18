@@ -14,6 +14,9 @@ import type { VscodeContext, SelectionContext, TransformContext } from './types'
 /** Combined context for appTools module */
 type AppToolsContext = VscodeContext & SelectionContext & TransformContext;
 
+// vscode-dropdown is a custom element with a 'value' property
+type VscodeDropdown = HTMLElement & { value: string };
+
 export function setup(callbacks: AppToolsContext): void {
   const {
     vscode,
@@ -26,12 +29,12 @@ export function setup(callbacks: AppToolsContext): void {
 
   // ── Bond Tools ─────────────────────────────────────────────────────────────
 
-  const btnCreateBond = document.getElementById('btn-create-bond') as HTMLButtonElement | null;
-  const btnDeleteBond = document.getElementById('btn-delete-bond') as HTMLButtonElement | null;
-  const btnCalculateBonds = document.getElementById('btn-calculate-bonds') as HTMLButtonElement | null;
-  const btnCalculateBondsPanel = document.getElementById('btn-calculate-bonds-panel') as HTMLButtonElement | null;
-  const btnClearBonds = document.getElementById('btn-clear-bonds') as HTMLButtonElement | null;
-  const bondSchemeSelect = document.getElementById('bond-scheme-select') as HTMLSelectElement | null;
+  const btnCreateBond = document.getElementById('btn-create-bond') as HTMLElement | null;
+  const btnDeleteBond = document.getElementById('btn-delete-bond') as HTMLElement | null;
+  const btnCalculateBonds = document.getElementById('btn-calculate-bonds') as HTMLElement | null;
+  const btnCalculateBondsPanel = document.getElementById('btn-calculate-bonds-panel') as HTMLElement | null;
+  const btnClearBonds = document.getElementById('btn-clear-bonds') as HTMLElement | null;
+  const bondSchemeSelect = document.getElementById('bond-scheme-select') as VscodeDropdown | null;
 
   if (btnCreateBond) {
     btnCreateBond.addEventListener('click', () => {

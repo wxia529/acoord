@@ -21,6 +21,11 @@ import type {
 /** Combined context for appLattice module */
 type AppLatticeContext = VscodeContext & ErrorContext & RendererContext & AtomSizeContext;
 
+// vscode-checkbox is a custom element with a 'checked' property
+type VscodeCheckbox = HTMLElement & { checked: boolean };
+// vscode-button is a custom element
+type VscodeButton = HTMLElement;
+
 let _cb: AppLatticeContext | null = null;
 
 // ── Lattice UI sync ────────────────────────────────────────────────────────────
@@ -36,9 +41,9 @@ export function updateLatticeUI(
   const alphaInput = getElementById<HTMLInputElement>('lattice-alpha');
   const betaInput = getElementById<HTMLInputElement>('lattice-beta');
   const gammaInput = getElementById<HTMLInputElement>('lattice-gamma');
-  const scaleToggle = getElementById<HTMLInputElement>('lattice-scale');
-  const removeBtn = getElementById<HTMLButtonElement>('btn-lattice-remove');
-  const centerBtn = getElementById<HTMLButtonElement>('btn-center-cell');
+  const scaleToggle = getElementById<VscodeCheckbox>('lattice-scale');
+  const removeBtn = getElementById<VscodeButton>('btn-lattice-remove');
+  const centerBtn = getElementById<VscodeButton>('btn-center-cell');
   const superX = getElementById<HTMLInputElement>('supercell-x');
   const superY = getElementById<HTMLInputElement>('supercell-y');
   const superZ = getElementById<HTMLInputElement>('supercell-z');
@@ -114,10 +119,10 @@ export function setup(callbacks: AppLatticeContext): void {
 
   // ── Lattice params ────────────────────────────────────────────────────────
 
-  const latticeApply = getElementById<HTMLButtonElement>('btn-lattice-apply');
-  const latticeRemove = getElementById<HTMLButtonElement>('btn-lattice-remove');
-  const latticeCenter = getElementById<HTMLButtonElement>('btn-center-cell');
-  const latticeScale = getElementById<HTMLInputElement>('lattice-scale');
+  const latticeApply = getElementById<VscodeButton>('btn-lattice-apply');
+  const latticeRemove = getElementById<VscodeButton>('btn-lattice-remove');
+  const latticeCenter = getElementById<VscodeButton>('btn-center-cell');
+  const latticeScale = getElementById<VscodeCheckbox>('lattice-scale');
   const latticeInputIds = ['lattice-a', 'lattice-b', 'lattice-c', 'lattice-alpha', 'lattice-beta', 'lattice-gamma'];
   const latticeInputs = latticeInputIds
     .map((id) => getElementById<HTMLInputElement>(id))
@@ -125,7 +130,7 @@ export function setup(callbacks: AppLatticeContext): void {
 
   if (latticeScale) {
     latticeScale.addEventListener('change', (event: Event) => {
-      displayStore.scaleAtomsWithLattice = (event.target as HTMLInputElement).checked;
+      displayStore.scaleAtomsWithLattice = (event.target as VscodeCheckbox).checked;
     });
   }
 
