@@ -1,11 +1,21 @@
 :root {
-  --acoord-bg: #0f1114;
-  --acoord-bg-2: #171a1f;
-  --acoord-panel: #1c2026;
-  --acoord-panel-2: #21262d;
-  --acoord-border: #2d333b;
-  --acoord-text: #e6edf3;
-  --acoord-muted: #9da7b3;
+  /* VS Code theme variables as primary source */
+  --acoord-bg: var(--vscode-editor-background, #0f1114);
+  --acoord-bg-2: var(--vscode-sideBar-background, #171a1f);
+  --acoord-panel: var(--vscode-panel-background, #1c2026);
+  --acoord-panel-2: var(--vscode-editor-inactiveSelectionBackground, #21262d);
+  --acoord-border: var(--vscode-panel-border, #2d333b);
+  --acoord-text: var(--vscode-foreground, #e6edf3);
+  --acoord-muted: var(--vscode-descriptionForeground, #9da7b3);
+
+  /* VS Code input/button colors */
+  --vscode-input-bg: var(--vscode-input-background, #11161c);
+  --vscode-input-fg: var(--vscode-input-foreground, #e6edf3);
+  --vscode-input-border: var(--vscode-input-border, rgba(255, 255, 255, 0.08));
+  --vscode-button-bg: var(--vscode-button-background, #1b2026);
+  --vscode-button-fg: var(--vscode-button-foreground, #e6edf3);
+  --vscode-button-hover: var(--vscode-button-hoverBackground, rgba(52, 211, 153, 0.25));
+  --vscode-focus-border: var(--vscode-focusBorder, rgba(52, 211, 153, 0.5));
 }
 
 * {
@@ -98,6 +108,57 @@ button:hover {
   box-shadow: 0 6px 18px rgba(245, 158, 11, 0.2);
 }
 
+/* VS Code Webview UI Toolkit button styles */
+vscode-button {
+  --border-radius: 999px;
+  --foreground: var(--acoord-text);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+vscode-button[appearance="primary"] {
+  --background: linear-gradient(135deg, rgba(52, 211, 153, 0.3), rgba(52, 211, 153, 0.1));
+}
+
+vscode-button[appearance="secondary"] {
+  --background: linear-gradient(135deg, rgba(52, 211, 153, 0.18), rgba(52, 211, 153, 0.05));
+}
+
+vscode-button[appearance="icon"] {
+  --background: transparent;
+  min-width: 28px;
+  padding: 4px 8px;
+}
+
+vscode-button:hover {
+  --background: linear-gradient(135deg, rgba(245, 158, 11, 0.3), rgba(245, 158, 11, 0.1));
+}
+
+/* VS Code Webview UI Toolkit dropdown styles */
+vscode-dropdown {
+  --background: var(--vscode-input-bg);
+  --foreground: var(--vscode-input-fg);
+  --border: var(--vscode-input-border);
+  font-size: 11px;
+}
+
+vscode-option {
+  --background: var(--acoord-panel);
+  --foreground: var(--acoord-text);
+}
+
+/* VS Code Webview UI Toolkit checkbox styles */
+vscode-checkbox {
+  --foreground: var(--acoord-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+vscode-checkbox::part(control) {
+  --checkbox-background: var(--vscode-input-bg);
+  --checkbox-border: var(--vscode-input-border);
+}
+
 .axis-button {
   background: #11161c;
   color: var(--acoord-text);
@@ -151,9 +212,9 @@ button:hover {
 .tool-btn {
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: var(--acoord-bg-2);
-  color: var(--acoord-muted);
+  border: 1px solid var(--vscode-toolbar-border, rgba(255, 255, 255, 0.1));
+  background: var(--vscode-toolbar-hoverBackground, var(--acoord-bg-2));
+  color: var(--vscode-foreground, var(--acoord-muted));
   cursor: pointer;
   font-weight: bold;
   font-size: 12px;
@@ -162,15 +223,15 @@ button:hover {
 }
 
 .tool-btn:hover {
-  background: var(--acoord-panel-2);
-  color: var(--acoord-text);
-  border-color: rgba(52, 211, 153, 0.4);
+  background: var(--vscode-toolbar-activeBackground, var(--acoord-panel-2));
+  color: var(--vscode-foreground, var(--acoord-text));
+  border-color: var(--vscode-focusBorder, rgba(52, 211, 153, 0.4));
 }
 
 .tool-btn.active {
   background: linear-gradient(135deg, rgba(52, 211, 153, 0.3), rgba(52, 211, 153, 0.1));
-  color: var(--acoord-text);
-  border-color: rgba(52, 211, 153, 0.7);
+  color: var(--vscode-foreground, var(--acoord-text));
+  border-color: var(--vscode-focusBorder, rgba(52, 211, 153, 0.7));
   box-shadow: 0 2px 8px rgba(52, 211, 153, 0.25);
 }
 

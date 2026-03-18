@@ -1,3 +1,4 @@
+import { provideVSCodeDesignSystem, vsCodeButton, vsCodeDropdown, vsCodeOption, vsCodeTextField, vsCodeCheckbox, vsCodePanels, vsCodePanelTab, vsCodePanelView } from '@vscode/webview-ui-toolkit';
 import { structureStore, selectionStore, displayStore, adsorptionStore, interactionStore, applyDisplaySettings, type BoxSelectionMode } from './state';
 import { renderer } from './renderer';
 import * as colorSchemeHandler from './colorSchemeHandler';
@@ -13,6 +14,18 @@ import { initSettingsUtil } from './settingsUtil';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
 import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 import { showElementPickerDialog } from './components/elementPicker';
+
+// Initialize VS Code Design System with needed components
+provideVSCodeDesignSystem().register(
+  vsCodeButton(),
+  vsCodeDropdown(),
+  vsCodeOption(),
+  vsCodeTextField(),
+  vsCodeCheckbox(),
+  vsCodePanels(),
+  vsCodePanelTab(),
+  vsCodePanelView()
+);
 
 // UI utilities
 import {
@@ -142,15 +155,17 @@ function setupUI(): void {
 
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
-  const toolbarAddAtom = document.getElementById('toolbar-add-atom') as HTMLSelectElement | null;
-  const toolbarDelete = document.getElementById('toolbar-delete') as HTMLButtonElement | null;
-  const toolbarBoxMode = document.getElementById('toolbar-box-mode') as HTMLSelectElement | null;
-  const btnReset = document.getElementById('btn-reset') as HTMLButtonElement | null;
-  const btnUndo = document.getElementById('btn-undo') as HTMLButtonElement | null;
-  const btnRedo = document.getElementById('btn-redo') as HTMLButtonElement | null;
-  const btnSave = document.getElementById('btn-save') as HTMLButtonElement | null;
-  const btnSaveAs = document.getElementById('btn-save-as') as HTMLButtonElement | null;
-  const btnExportImage = document.getElementById('btn-export-image') as HTMLButtonElement | null;
+  // vscode-dropdown is a custom element with a 'value' property
+  type VscodeDropdown = HTMLElement & { value: string };
+  const toolbarAddAtom = document.getElementById('toolbar-add-atom') as VscodeDropdown | null;
+  const toolbarDelete = document.getElementById('toolbar-delete') as HTMLElement | null;
+  const toolbarBoxMode = document.getElementById('toolbar-box-mode') as VscodeDropdown | null;
+  const btnReset = document.getElementById('btn-reset') as HTMLElement | null;
+  const btnUndo = document.getElementById('btn-undo') as HTMLElement | null;
+  const btnRedo = document.getElementById('btn-redo') as HTMLElement | null;
+  const btnSave = document.getElementById('btn-save') as HTMLElement | null;
+  const btnSaveAs = document.getElementById('btn-save-as') as HTMLElement | null;
+  const btnExportImage = document.getElementById('btn-export-image') as HTMLElement | null;
 
   if (toolbarAddAtom) {
     toolbarAddAtom.addEventListener('change', () => {

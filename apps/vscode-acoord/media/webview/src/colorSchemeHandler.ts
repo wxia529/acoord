@@ -126,37 +126,38 @@ export function updateUI(): void {
 }
 
 export function updateColorSchemeSelector(): void {
-  const select = document.getElementById('color-scheme-select') as HTMLSelectElement | null;
+  const select = document.getElementById('color-scheme-select') as HTMLElement & { value: string } | null;
 
   const selectedId = colorSchemeStore.currentSchemeId || '';
   const presets = colorSchemeStore.availableSchemes.presets || [];
   const user = colorSchemeStore.availableSchemes.user || [];
 
+  // Build vscode-option elements
   const options: string[] = [];
 
   if (presets.length > 0) {
-    options.push('<optgroup label="Presets">');
     for (const preset of presets) {
       const selected = preset.id === selectedId ? ' selected' : '';
-      options.push(`<option value="${preset.id}"${selected}>${preset.name}</option>`);
+      options.push(`<vscode-option value="${preset.id}"${selected}>${preset.name}</vscode-option>`);
     }
-    options.push('</optgroup>');
   }
 
   if (user.length > 0) {
-    options.push('<optgroup label="User Schemes">');
     for (const u of user) {
       const selected = u.id === selectedId ? ' selected' : '';
-      options.push(`<option value="${u.id}"${selected}>${u.name}</option>`);
+      options.push(`<vscode-option value="${u.id}"${selected}>${u.name}</vscode-option>`);
     }
-    options.push('</optgroup>');
   }
 
   if (options.length === 0) {
-    options.push('<option value="">No schemes available</option>');
+    options.push('<vscode-option value="">No schemes available</vscode-option>');
   }
 
   if (select) {
     select.innerHTML = options.join('');
+    // Set the current value
+    if (selectedId) {
+      select.value = selectedId;
+    }
   }
 }

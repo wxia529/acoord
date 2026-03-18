@@ -9,10 +9,13 @@
 import { displayStore } from './state';
 import { renderer } from './renderer';
 
+// vscode-dropdown is a custom element with a 'value' property
+type VscodeDropdown = HTMLElement & { value: string };
+
 export function setup(): void {
   // ── Projection select ──────────────────────────────────────────────────────
 
-  const projSelect = document.getElementById('proj-select') as HTMLSelectElement | null;
+  const projSelect = document.getElementById('proj-select') as VscodeDropdown | null;
   const setProjection = (mode: string) => {
     const next = mode === 'orthographic' ? 'orthographic' : 'perspective';
     displayStore.projectionMode = next;
@@ -22,7 +25,7 @@ export function setup(): void {
   };
 
   if (projSelect) {
-    projSelect.addEventListener('change', (event: Event) => { setProjection((event.target as HTMLSelectElement).value); });
+    projSelect.addEventListener('change', (event: Event) => { setProjection((event.target as VscodeDropdown).value); });
   }
   setProjection(displayStore.projectionMode || 'perspective');
 

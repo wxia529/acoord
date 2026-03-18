@@ -4,17 +4,20 @@ import type { VsCodeApi } from './types';
 
 let _vscode: VsCodeApi | null = null;
 
+// vscode-dropdown is a custom element with a 'value' property
+type VscodeDropdown = HTMLElement & { value: string };
+
 export function initVscode(vscode: VsCodeApi): void {
   _vscode = vscode;
 }
 
 export function init(): void {
-  const colorSchemeSelect = document.getElementById('color-scheme-select') as HTMLSelectElement | null;
-  const btnRefreshSchemes = document.getElementById('btn-refresh-schemes') as HTMLButtonElement | null;
-  const btnSaveScheme = document.getElementById('btn-save-scheme') as HTMLButtonElement | null;
-  const btnExportScheme = document.getElementById('btn-export-scheme') as HTMLButtonElement | null;
-  const btnImportScheme = document.getElementById('btn-import-scheme') as HTMLButtonElement | null;
-  const btnDeleteScheme = document.getElementById('btn-delete-scheme') as HTMLButtonElement | null;
+  const colorSchemeSelect = document.getElementById('color-scheme-select') as VscodeDropdown | null;
+  const btnRefreshSchemes = document.getElementById('btn-refresh-schemes') as HTMLElement | null;
+  const btnSaveScheme = document.getElementById('btn-save-scheme') as HTMLElement | null;
+  const btnExportScheme = document.getElementById('btn-export-scheme') as HTMLElement | null;
+  const btnImportScheme = document.getElementById('btn-import-scheme') as HTMLElement | null;
+  const btnDeleteScheme = document.getElementById('btn-delete-scheme') as HTMLElement | null;
 
   if (colorSchemeSelect) {
     colorSchemeSelect.addEventListener('change', () => {
@@ -70,7 +73,7 @@ export function init(): void {
 }
 
 export function updateColorSchemeSelector(): void {
-  const colorSchemeSelect = document.getElementById('color-scheme-select') as HTMLSelectElement | null;
+  const colorSchemeSelect = document.getElementById('color-scheme-select') as VscodeDropdown | null;
   const colorSchemeInfo = document.getElementById('color-scheme-info') as HTMLElement | null;
   if (!colorSchemeSelect) { return; }
 
@@ -78,34 +81,28 @@ export function updateColorSchemeSelector(): void {
 
   const presets = colorSchemeStore.availableSchemes.presets || [];
   if (presets.length > 0) {
-    const presetGroup = document.createElement('optgroup');
-    presetGroup.label = 'Presets';
     for (const preset of presets) {
-      const option = document.createElement('option');
-      option.value = preset.id;
+      const option = document.createElement('vscode-option');
+      option.setAttribute('value', preset.id);
       option.textContent = preset.name;
       if (preset.id === colorSchemeStore.currentSchemeId) {
-        option.selected = true;
+        option.setAttribute('selected', '');
       }
-      presetGroup.appendChild(option);
+      colorSchemeSelect.appendChild(option);
     }
-    colorSchemeSelect.appendChild(presetGroup);
   }
 
   const userSchemes = colorSchemeStore.availableSchemes.user || [];
   if (userSchemes.length > 0) {
-    const userGroup = document.createElement('optgroup');
-    userGroup.label = 'Your Schemes';
     for (const scheme of userSchemes) {
-      const option = document.createElement('option');
-      option.value = scheme.id;
+      const option = document.createElement('vscode-option');
+      option.setAttribute('value', scheme.id);
       option.textContent = scheme.name;
       if (scheme.id === colorSchemeStore.currentSchemeId) {
-        option.selected = true;
+        option.setAttribute('selected', '');
       }
-      userGroup.appendChild(option);
+      colorSchemeSelect.appendChild(option);
     }
-    colorSchemeSelect.appendChild(userGroup);
   }
 
   if (colorSchemeInfo) {

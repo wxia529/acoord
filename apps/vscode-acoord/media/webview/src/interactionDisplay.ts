@@ -9,15 +9,18 @@ const debouncedRerenderStructure = debounce((): void => {
   renderer.renderStructure(structureStore.currentStructure);
 }, 16);
 
+// vscode-checkbox is a custom element with a 'checked' property
+type VscodeCheckbox = HTMLElement & { checked: boolean };
+
 export function init(): void {
-  const showAxes = document.getElementById('show-axes') as HTMLInputElement | null;
+  const showAxes = document.getElementById('show-axes') as VscodeCheckbox | null;
   const bgColorPicker = document.getElementById('bg-color-picker') as HTMLInputElement | null;
   const bgColorText = document.getElementById('bg-color-text') as HTMLInputElement | null;
   const latticeColorPicker = document.getElementById('lattice-color-picker') as HTMLInputElement | null;
   const latticeColorText = document.getElementById('lattice-color-text') as HTMLInputElement | null;
   const latticeThicknessSlider = document.getElementById('lattice-thickness-slider') as HTMLInputElement | null;
   const latticeThicknessValue = document.getElementById('lattice-thickness-value');
-  const latticeLineStyle = document.getElementById('lattice-line-style') as HTMLSelectElement | null;
+  const latticeLineStyle = document.getElementById('lattice-line-style') as (HTMLElement & { value: string }) | null;
 
   if (showAxes) {
     showAxes.checked = displayStore.showAxes !== false;
