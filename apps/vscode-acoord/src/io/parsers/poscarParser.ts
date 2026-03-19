@@ -125,8 +125,9 @@ export class POSCARParser extends StructureParser {
       }
 
       let row = `${fx.toFixed(10)}  ${fy.toFixed(10)}  ${fz.toFixed(10)}`;
-      if (hasSelectiveDynamics && atom.selectiveDynamics) {
-        const flags = atom.selectiveDynamics.map(f => f ? 'T' : 'F').join('  ');
+      if (hasSelectiveDynamics) {
+        const sd = atom.selectiveDynamics ?? [true, true, true];
+        const flags = sd.map(f => f ? 'T' : 'F').join('  ');
         row += `  ${flags}`;
       }
       lines.push(row);

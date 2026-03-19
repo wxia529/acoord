@@ -344,6 +344,8 @@ export class AtomEditService {
     const editStructure = this.trajectoryManager.activeStructure;
 
     this.undoManager.push(editStructure);
+
+    // Set the target atoms
     for (const id of atomIds) {
       const atom = editStructure.getAtom(id);
       if (atom) {
@@ -352,6 +354,19 @@ export class AtomEditService {
         atom.selectiveDynamics = fixed ? [false, false, false] : [true, true, true];
       }
     }
+
+    // Ensure all atoms have selectiveDynamics set if any atom has it
+    // This handles files originally loaded without selective dynamics
+    const hasAnySelectiveDynamics = editStructure.atoms.some(a => a.selectiveDynamics !== undefined);
+    if (hasAnySelectiveDynamics) {
+      for (const atom of editStructure.atoms) {
+        if (atom.selectiveDynamics === undefined) {
+          atom.selectiveDynamics = [true, true, true];
+          atom.fixed = false;
+        }
+      }
+    }
+
     this.renderer.setStructure(editStructure);
     this.trajectoryManager.commitEdit();
     return true;

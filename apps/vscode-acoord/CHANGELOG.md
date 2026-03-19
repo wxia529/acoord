@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.3.10]
 
+### Added
+
+- **Fixed atoms feature**: Right-click on atoms to mark them as fixed (constrained during geometry optimization). Fixed atoms display a white 3D cross marker on their surface, visible from any angle with proper depth occlusion. The fixed state is synced with selective dynamics flags in VASP POSCAR files
+
 ### Fixed
 
 - New atoms added to VASP POSCAR files with selective dynamics now default to `[T T T]` (fully unconstrained) instead of having no selective dynamics flag
