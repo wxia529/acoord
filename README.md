@@ -1,6 +1,6 @@
 # ACoord
 
-**Version:** 0.3.8
+**Version:** 0.3.10
 **License:** MIT
 
 Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization and editing of atomic, molecular, and crystal structures. It supports 15 file formats and provides interactive 3D rendering via Three.js inside VS Code's Custom Editor API.
@@ -28,6 +28,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **Brush panel** for applying color schemes to selected atoms
 - **Interactive rotation tool** for selected atoms with axis selection and angle control
 - **Enhanced axis indicator** showing X/Y/Z orientation with real-time camera view updates
+- **Fixed atoms support**: Mark atoms as fixed (constrained) for geometry optimization; visualized with white 3D cross markers that respect depth occlusion
 
 ## Supported Formats
 
@@ -98,6 +99,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for 3D visualization a
 - **Change element**: use the Selected Atom panel and click Apply
 - **Rotate selection**: pick axis (X/Y/Z) and move the angle slider (0-360°)
 - **Copy atoms**: Ctrl+C to copy selection, Ctrl+V to paste with offset
+- **Fix/unfix atoms**: right-click and select "Fix atom" or "Unfix atom" to constrain atoms during geometry optimization (synced with selective dynamics in VASP POSCAR)
 
 ### Measurement
 

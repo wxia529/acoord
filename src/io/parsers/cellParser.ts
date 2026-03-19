@@ -581,11 +581,8 @@ export class CellParser extends StructureParser {
 
     for (const [species, atoms] of atomGroups) {
       atoms.forEach((atom, idx) => {
-        if (!atom.selectiveDynamics) {
-          return;
-        }
-
-        const [sx, sy, sz] = atom.selectiveDynamics;
+        const sd = atom.selectiveDynamics ?? [true, true, true];
+        const [sx, sy, sz] = sd;
 
         if (!sx) {
           constraints.push(`${constraintId}  ${species}  ${idx + 1}  1 0 0`);

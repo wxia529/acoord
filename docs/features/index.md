@@ -46,6 +46,14 @@ Customizable atom colors:
 - Custom color scheme creation
 - Import/export configurations
 
+### Fixed Atoms
+
+Constraint management for geometry optimization:
+
+- Mark atoms as fixed (constrained) or free
+- Visual indicator: white 3D cross marker on atom surface
+- Syncs with selective dynamics in VASP POSCAR files
+
 ## Additional Features
 
 ### Trajectory Support

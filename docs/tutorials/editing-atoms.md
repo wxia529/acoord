@@ -73,6 +73,24 @@ This tutorial covers how to edit atomic structures in ACoord.
 
 > **Note:** Custom colors are saved only in `.acoord` format
 
+### Fix/Unfix Atoms
+
+Fixed atoms are constrained during geometry optimization (e.g., in VASP calculations).
+
+1. Select the atom(s)
+2. Right-click → **Fix atom** or **Unfix atom**
+3. A white 3D cross marker appears on fixed atoms
+
+::: tip Visual Indicator
+The 3D cross marker is visible from any viewing angle and respects depth occlusion (hidden when behind other atoms).
+:::
+
+::: info VASP POSCAR Compatibility
+Fixed atoms are synced with selective dynamics flags:
+- Fixed atom → `[F F F]` (constrained in all directions)
+- Free atom → `[T T T]` (fully relaxed)
+:::
+
 ## Undo and Redo
 
 - **Undo:** Ctrl+Z (or Cmd+Z on macOS)
