@@ -1,0 +1,15 @@
+# Source
+src/
+test/
+
+# Build
+build.config.mjs
+
+# Config
+tsconfig.json
+.gitignore
+
+# Dev
+node_modules/
+*.log
+npm-debug.log*
