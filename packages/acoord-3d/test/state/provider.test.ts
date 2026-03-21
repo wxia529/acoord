@@ -21,7 +21,11 @@ describe('StoreProvider', () => {
   
   it('should use custom provider when set', () => {
     const customProvider = {
-      structure: { currentStructure: { atoms: [], bonds: [] } as any },
+      structure: { 
+        currentStructure: { atoms: [], bonds: [] } as any,
+        currentSelectedAtom: null,
+        currentSelectedBondKey: null,
+      },
       display: { backgroundColor: '#000' } as any,
       lighting: { lightingEnabled: false } as any,
     };
