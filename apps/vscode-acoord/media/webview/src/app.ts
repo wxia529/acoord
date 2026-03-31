@@ -11,6 +11,7 @@ import * as brushPanel from './brushPanel';
 import { init as initInteraction } from './interaction';
 import { initVscode as initInteractionConfigVscode, init as initInteractionConfig, updateColorSchemeSelector as updateColorSchemeSelectorFn } from './interactionConfig';
 import { initSettingsUtil } from './settingsUtil';
+import * as axisIndicator from './axisIndicator';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
 import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 import { showElementPickerDialog } from './components/elementPicker';
@@ -463,6 +464,7 @@ function start(): void {
   initInteractionConfigVscode(vscode);
   initInteractionConfig();
   initRenderer(canvas);
+  axisIndicator.init();
 
   setupUI();
   setupInteraction();
@@ -499,6 +501,9 @@ function handleRenderMessage(message: RenderMessage): void {
   if (message.displaySettings) {
     applyDisplaySettings(message.displaySettings);
   }
+
+  // Update axis indicator visibility
+  axisIndicator.setVisible(displayStore.showAxes !== false);
 
   appTrajectory.updateUI(
     message.data.trajectoryFrameIndex,
