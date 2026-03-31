@@ -285,7 +285,9 @@ export function activate(context: vscode.ExtensionContext) {
         return;
       }
       
-      const schemeIds = selected.map(s => s.description!);
+      const schemeIds = selected
+        .map(s => s.description)
+        .filter((desc): desc is string => desc !== undefined);
       const packageData = await colorSchemeManager.exportSchemes(schemeIds);
       
       const uri = await vscode.window.showSaveDialog({

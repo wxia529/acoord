@@ -119,7 +119,8 @@ export class UnitCellService {
     
     const count = editStructure.atoms.length;
     const geomCenter: [number, number, number] = [cx / count, cy / count, cz / count];
-    const vectors = editStructure.unitCell!.getLatticeVectors();
+    if (!editStructure.unitCell) {return false;}
+    const vectors = editStructure.unitCell.getLatticeVectors();
     const cellCenter: [number, number, number] = [
       0.5 * (vectors[0][0] + vectors[1][0] + vectors[2][0]),
       0.5 * (vectors[0][1] + vectors[1][1] + vectors[2][1]),

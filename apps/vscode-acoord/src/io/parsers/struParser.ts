@@ -89,11 +89,12 @@ export class STRUParser extends StructureParser {
         i++;
 
         const coordMode = coordType.toLowerCase();
-        const hasLattice = latticeVectors && latticeConstantBohr;
+        const hasLattice = latticeVectors && latticeConstantBohr !== null;
         let latticeVectorsAng: number[][] | null = null;
-        if (hasLattice && latticeVectors && latticeConstantBohr) {
+        if (hasLattice && latticeVectors && latticeConstantBohr !== null) {
+          const latticeConst = latticeConstantBohr;
           latticeVectorsAng = latticeVectors.map((vec) =>
-            vec.map((value) => value * latticeConstantBohr! * BOHR_TO_ANGSTROM)
+            vec.map((value) => value * latticeConst * BOHR_TO_ANGSTROM)
           );
           structure.isCrystal = true;
           structure.unitCell = UnitCell.fromVectors(latticeVectorsAng);

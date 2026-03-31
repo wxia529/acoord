@@ -49,12 +49,14 @@ export class CellParser extends StructureParser {
       throw new Error('CellParser: no atom positions found in file');
     }
 
-    if (blocks.has('species_mass')) {
-      this.parseSpeciesMass(blocks.get('species_mass')!, structure);
+    const speciesMassBlock = blocks.get('species_mass');
+    if (speciesMassBlock) {
+      this.parseSpeciesMass(speciesMassBlock, structure);
     }
 
-    if (blocks.has('ionic_constraints')) {
-      this.parseIonicConstraints(blocks.get('ionic_constraints')!, structure);
+    const ionicConstraintsBlock = blocks.get('ionic_constraints');
+    if (ionicConstraintsBlock) {
+      this.parseIonicConstraints(ionicConstraintsBlock, structure);
     }
 
     this.saveCellMetadata(blocks, keywords, structure);
@@ -250,7 +252,7 @@ export class CellParser extends StructureParser {
 
   private looksLikeCoordinateLine(line: string): boolean {
     const tokens = line.split(/\s+/);
-    if (tokens.length < 3) return false;
+    if (tokens.length < 3) {return false;}
     const num = parseFloat(tokens[0]);
     return !isNaN(num);
   }
@@ -263,10 +265,12 @@ export class CellParser extends StructureParser {
       throw new Error('CellParser: missing LATTICE_CART or LATTICE_ABC block');
     }
 
-    if (hasCart) {
-      this.parseLatticeCart(blocks.get('lattice_cart')!, structure);
-    } else {
-      this.parseLatticeAbc(blocks.get('lattice_abc')!, structure);
+    const latticeCartBlock = blocks.get('lattice_cart');
+    const latticeAbcBlock = blocks.get('lattice_abc');
+    if (hasCart && latticeCartBlock) {
+      this.parseLatticeCart(latticeCartBlock, structure);
+    } else if (latticeAbcBlock) {
+      this.parseLatticeAbc(latticeAbcBlock, structure);
     }
   }
 
@@ -351,10 +355,12 @@ export class CellParser extends StructureParser {
       throw new Error('CellParser: missing POSITIONS_ABS or POSITIONS_FRAC block');
     }
 
-    if (hasAbs) {
-      this.parsePositionsAbs(blocks.get('positions_abs')!, structure);
-    } else {
-      this.parsePositionsFrac(blocks.get('positions_frac')!, structure);
+    const positionsAbsBlock = blocks.get('positions_abs');
+    const positionsFracBlock = blocks.get('positions_frac');
+    if (hasAbs && positionsAbsBlock) {
+      this.parsePositionsAbs(positionsAbsBlock, structure);
+    } else if (positionsFracBlock) {
+      this.parsePositionsFrac(positionsFracBlock, structure);
     }
   }
 
@@ -565,10 +571,12 @@ export class CellParser extends StructureParser {
     const groups = new Map<string, Atom[]>();
 
     for (const atom of structure.atoms) {
-      if (!groups.has(atom.element)) {
-        groups.set(atom.element, []);
+      let group = groups.get(atom.element);
+      if (!group) {
+        group = [];
+        groups.set(atom.element, group);
       }
-      groups.get(atom.element)!.push(atom);
+      group.push(atom);
     }
 
     return groups;

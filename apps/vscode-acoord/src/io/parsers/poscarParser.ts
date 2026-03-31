@@ -97,15 +97,17 @@ export class POSCARParser extends StructureParser {
 
     const grouped = new Map<string, Atom[]>();
     for (const atom of structure.atoms) {
-      if (!grouped.has(atom.element)) {
-        grouped.set(atom.element, []);
+      let group = grouped.get(atom.element);
+      if (!group) {
+        group = [];
+        grouped.set(atom.element, group);
       }
-      grouped.get(atom.element)!.push(atom);
+      group.push(atom);
     }
     const elements = Array.from(grouped.keys());
-    const orderedAtoms = elements.flatMap((element) => grouped.get(element)!);
+    const orderedAtoms = elements.flatMap((element) => grouped.get(element) ?? []);
     lines.push(elements.join(' '));
-    lines.push(elements.map((element) => grouped.get(element)!.length).join(' '));
+    lines.push(elements.map((element) => grouped.get(element)?.length ?? 0).join(' '));
 
     const hasSelectiveDynamics = orderedAtoms.some((atom) => atom.selectiveDynamics);
     if (hasSelectiveDynamics) {

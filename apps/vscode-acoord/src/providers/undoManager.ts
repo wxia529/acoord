@@ -47,7 +47,8 @@ export class UndoManager {
         this.undoStack.length > 0 &&
         currentMemory + newMemory > maxMemoryBytes
       ) {
-        const removed = this.undoStack.shift()!;
+        const removed = this.undoStack.shift();
+        if (!removed) {break;}
         const removedMemory = this.estimateMemoryUsage(removed);
         currentMemory -= removedMemory;
       }

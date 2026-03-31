@@ -84,8 +84,9 @@ export class Structure {
       this.bonds.push([a, b]);
       
       if (this.isCrystal && this.unitCell) {
-        const atom1 = this.getAtom(a)!;
-        const atom2 = this.getAtom(b)!;
+        const atom1 = this.getAtom(a);
+        const atom2 = this.getAtom(b);
+        if (!atom1 || !atom2) {return;}
         const vectors = this.unitCell.getLatticeVectors();
         
         let minDistSq = Infinity;
@@ -198,7 +199,7 @@ export class Structure {
       .map(([id1, id2]) => {
         const atom1 = this.getAtom(id1);
         const atom2 = this.getAtom(id2);
-        if (!atom1 || !atom2) return null;
+        if (!atom1 || !atom2) {return null;}
         return {
           atomId1: id1,
           atomId2: id2,
@@ -239,7 +240,8 @@ export class Structure {
     const tolerance = Structure.BOND_TOLERANCE;
     let maxBondLength = 0;
     for (const atom of this.atoms) {
-      const data = atomData.get(atom.id)!;
+      const data = atomData.get(atom.id);
+      if (!data) {continue;}
       maxBondLength = Math.max(maxBondLength, data.radius * 2 * tolerance);
     }
     maxBondLength = Math.max(maxBondLength, Structure.MAX_COVALENT_RADIUS * 2);
@@ -248,7 +250,8 @@ export class Structure {
     const grid = this.buildSpatialHash(cellSize);
 
     for (const atom1 of this.atoms) {
-      const data1 = atomData.get(atom1.id)!;
+      const data1 = atomData.get(atom1.id);
+      if (!data1) {continue;}
       if (scheme.excludedAtomicNumbers.has(data1.atomicNumber)) {
         continue;
       }
@@ -259,7 +262,8 @@ export class Structure {
           continue;
         }
 
-        const data2 = atomData.get(atom2.id)!;
+        const data2 = atomData.get(atom2.id);
+        if (!data2) {continue;}
         if (scheme.excludedAtomicNumbers.has(data2.atomicNumber)) {
           continue;
         }
@@ -288,7 +292,7 @@ export class Structure {
     atomData: Map<string, { symbol: string; radius: number; atomicNumber: number }>,
     seen: Set<string>
   ): void {
-    if (!this.unitCell) return;
+    if (!this.unitCell) {return;}
 
     const tolerance = Structure.BOND_TOLERANCE;
     const vectors = this.unitCell.getLatticeVectors();
@@ -303,7 +307,8 @@ export class Structure {
     }
 
     for (const atom1 of this.atoms) {
-      const data1 = atomData.get(atom1.id)!;
+      const data1 = atomData.get(atom1.id);
+      if (!data1) {continue;}
       if (scheme.excludedAtomicNumbers.has(data1.atomicNumber)) {
         continue;
       }
@@ -314,7 +319,8 @@ export class Structure {
           continue;
         }
 
-        const data2 = atomData.get(atom2.id)!;
+        const data2 = atomData.get(atom2.id);
+        if (!data2) {continue;}
         if (scheme.excludedAtomicNumbers.has(data2.atomicNumber)) {
           continue;
         }
@@ -500,7 +506,7 @@ export class Structure {
     for (const [id1, id2] of this.bonds) {
       const atom1 = this.getAtom(id1);
       const atom2 = this.getAtom(id2);
-      if (!atom1 || !atom2) continue;
+      if (!atom1 || !atom2) {continue;}
 
       const bondKey = Structure.bondKey(id1, id2);
       const storedImage = this.periodicBondImages.get(bondKey);

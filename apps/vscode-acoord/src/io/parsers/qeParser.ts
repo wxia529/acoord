@@ -205,7 +205,7 @@ export class QEParser extends StructureParser {
         // Skip old species lines (element symbol followed by mass number)
         while (i < lines.length) {
           const checkLine = this.cleanLine(lines[i]);
-          if (!checkLine) break;
+          if (!checkLine) {break;}
           if (/^[A-Z][a-z]?\s+[\d.]/i.test(checkLine) || this.looksLikeNamelist(checkLine)) {
             i++;
           } else {
@@ -238,7 +238,7 @@ export class QEParser extends StructureParser {
         // Skip old atom positions
         while (i < lines.length) {
           const checkLine = this.cleanLine(lines[i]);
-          if (!checkLine) break;
+          if (!checkLine) {break;}
           if (/^[A-Z][a-z]?\s+[\d.-]/i.test(checkLine)) {
             i++;
           } else {
@@ -283,7 +283,7 @@ export class QEParser extends StructureParser {
   }
 
   private cleanLine(line: string): string {
-    if (!line) return '';
+    if (!line) {return '';}
     const withoutComment = line.split(/[!#]/)[0];
     return withoutComment.trim();
   }
@@ -333,23 +333,23 @@ export class QEParser extends StructureParser {
     const ionsBlock = this.extractNamelistBlock(lines, 'IONS');
     const cellBlock = this.extractNamelistBlock(lines, 'CELL');
     
-    if (controlBlock) structure.metadata.set('qeControlBlock', controlBlock);
-    if (systemBlock) structure.metadata.set('qeSystemBlock', systemBlock);
-    if (electronsBlock) structure.metadata.set('qeElectronsBlock', electronsBlock);
-    if (ionsBlock) structure.metadata.set('qeIonsBlock', ionsBlock);
-    if (cellBlock) structure.metadata.set('qeCellBlock', cellBlock);
+    if (controlBlock) {structure.metadata.set('qeControlBlock', controlBlock);}
+    if (systemBlock) {structure.metadata.set('qeSystemBlock', systemBlock);}
+    if (electronsBlock) {structure.metadata.set('qeElectronsBlock', electronsBlock);}
+    if (ionsBlock) {structure.metadata.set('qeIonsBlock', ionsBlock);}
+    if (cellBlock) {structure.metadata.set('qeCellBlock', cellBlock);}
     
     // Save ATOMIC_SPECIES block
     const speciesBlock = this.extractSpeciesBlock(lines);
-    if (speciesBlock) structure.metadata.set('qeSpeciesBlock', speciesBlock);
+    if (speciesBlock) {structure.metadata.set('qeSpeciesBlock', speciesBlock);}
     
     // Save CELL_PARAMETERS block with header
     const cellParamsBlock = this.extractCellParametersBlock(lines);
-    if (cellParamsBlock) structure.metadata.set('qeCellParametersBlock', cellParamsBlock);
+    if (cellParamsBlock) {structure.metadata.set('qeCellParametersBlock', cellParamsBlock);}
     
     // Save ATOMIC_POSITIONS header line
     const positionsHeader = this.extractPositionsHeader(lines);
-    if (positionsHeader) structure.metadata.set('qePositionsHeader', positionsHeader);
+    if (positionsHeader) {structure.metadata.set('qePositionsHeader', positionsHeader);}
 
     let cellVectors: number[][] | null = null;
     let atoms: ParsedAtom[] = [];
@@ -873,7 +873,7 @@ export class QEParser extends StructureParser {
         break;
       }
     }
-    if (startIndex < 0) return null;
+    if (startIndex < 0) {return null;}
 
     const blockLines: string[] = [];
     for (let i = startIndex + 1; i < lines.length; i++) {
@@ -898,11 +898,11 @@ export class QEParser extends StructureParser {
         break;
       }
     }
-    if (startIndex < 0) return speciesMap;
+    if (startIndex < 0) {return speciesMap;}
 
     for (let i = startIndex + 1; i < lines.length; i++) {
       const trimmed = lines[i].trim();
-      if (!trimmed) break;
+      if (!trimmed) {break;}
       const match = trimmed.match(/^([A-Z][a-z]?)\s+/i);
       if (match) {
         speciesMap.set(match[1], lines[i]);
@@ -921,12 +921,12 @@ export class QEParser extends StructureParser {
         break;
       }
     }
-    if (startIndex < 0) return null;
+    if (startIndex < 0) {return null;}
 
     const blockLines: string[] = [];
     for (let i = startIndex + 1; i < lines.length; i++) {
       const trimmed = lines[i].trim();
-      if (!trimmed) break;
+      if (!trimmed) {break;}
       if (/^[A-Z][a-z]?/i.test(trimmed)) {
         blockLines.push(lines[i]);
       } else {
@@ -944,12 +944,12 @@ export class QEParser extends StructureParser {
         break;
       }
     }
-    if (startIndex < 0) return null;
+    if (startIndex < 0) {return null;}
 
     const blockLines: string[] = [lines[startIndex]];
     for (let i = startIndex + 1; i < lines.length && blockLines.length < 4; i++) {
       const trimmed = lines[i].trim();
-      if (!trimmed) continue;
+      if (!trimmed) {continue;}
       if (/^[+-]?\d/.test(trimmed)) {
         blockLines.push(lines[i]);
       } else {

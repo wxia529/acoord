@@ -82,7 +82,9 @@ suite('Extension Test Suite', () => {
 		assert.strictEqual(structure.atoms[0].element, 'Fe');
 		assert.ok(structure.isCrystal);
 		assert.ok(structure.unitCell instanceof UnitCell);
-		assert.ok(Math.abs(structure.unitCell!.a - 2.866) < 1e-3);
+		if (structure.unitCell) {
+			assert.ok(Math.abs(structure.unitCell.a - 2.866) < 1e-3);
+		}
 	});
 
 	test('Structure clone is independent of original', () => {

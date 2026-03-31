@@ -98,7 +98,10 @@ export class XDATCARParser extends StructureParser {
         groupedIndices.set(element, []);
         elementOrder.push(element);
       }
-      groupedIndices.get(element)!.push(i);
+      const group = groupedIndices.get(element);
+      if (group) {
+        group.push(i);
+      }
     }
 
     const lines: string[] = [];
@@ -109,7 +112,9 @@ export class XDATCARParser extends StructureParser {
       lines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
     }
     lines.push(elementOrder.join(' '));
-    lines.push(elementOrder.map((element) => groupedIndices.get(element)!.length).join(' '));
+    lines.push(
+      elementOrder.map((element) => groupedIndices.get(element)?.length ?? 0).join(' ')
+    );
     lines.push('Direct');
 
     for (let frameIndex = 0; frameIndex < structures.length; frameIndex++) {
@@ -120,7 +125,9 @@ export class XDATCARParser extends StructureParser {
       lines.push(`Direct configuration=${(frameIndex + 1).toString().padStart(6, ' ')}`);
       const frameCell = frame.unitCell || first.unitCell || null;
       for (const element of elementOrder) {
-        for (const atomIndex of groupedIndices.get(element)!) {
+        const atomIndices = groupedIndices.get(element);
+        if (!atomIndices) {continue;}
+        for (const atomIndex of atomIndices) {
           const atom = frame.atoms[atomIndex];
           if (atom.element !== element) {
             throw new Error('XDATCAR export requires consistent atom ordering across frames');
