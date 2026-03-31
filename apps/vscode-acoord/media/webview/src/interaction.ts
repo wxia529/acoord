@@ -72,7 +72,7 @@ let elementInputTimeout: ReturnType<typeof setTimeout> | null = null;
 
 function getSelectedCentroid(): Vector3 | null {
   const ids = selectionStore.selectedAtomIds;
-  if (!ids || ids.length === 0) return null;
+  if (!ids || ids.length === 0) { return null; }
   
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const id of ids) {
@@ -84,7 +84,7 @@ function getSelectedCentroid(): Vector3 | null {
       count++;
     }
   }
-  if (count === 0) return null;
+  if (count === 0) { return null; }
   return new Vector3(cx / count, cy / count, cz / count);
 }
 
@@ -146,7 +146,7 @@ function setTool(tool: ToolType, canvas: HTMLCanvasElement, handlers: Interactio
 
 function setupLeftToolbar(canvas: HTMLCanvasElement, handlers: InteractionHandlers): void {
   const toolbar = document.getElementById('left-toolbar');
-  if (!toolbar) return;
+  if (!toolbar) { return; }
   
   toolbar.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
@@ -194,17 +194,17 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   
   const handleRightDragRotation = (totalDx: number, totalDy: number): void => {
     const base = interactionStore.rightDragRotationBase;
-    if (!base || base.length === 0) return;
+    if (!base || base.length === 0) { return; }
     
     const pivot = interactionStore.rightDragRotationPivot;
-    if (!pivot) return;
+    if (!pivot) { return; }
     
     const camera = renderer.getCamera();
-    if (!camera) return;
+    if (!camera) { return; }
     
     // Ignore small movements to avoid zero-vector issues
     const totalDragDist = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
-    if (totalDragDist < 1) return;
+    if (totalDragDist < 1) { return; }
     
     const totalAngle = totalDragDist * ROTATION_SENSITIVITY;
     
@@ -223,11 +223,11 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     }
   };
 
-  const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): void => {
+const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): void => {
     const raycaster = renderer.getRaycaster();
     const mouse = renderer.getMouse();
     const camera = renderer.getCamera();
-    if (!raycaster || !mouse || !camera) return;
+    if (!raycaster || !mouse || !camera) { return; }
     
     const rect = canvas.getBoundingClientRect();
     mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
@@ -235,13 +235,13 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     raycaster.setFromCamera(mouse, camera);
     
     const hit = raycaster.ray.intersectPlane(renderer.getDragPlane(), _intersection);
-    if (!hit) return;
+    if (!hit) { return; }
     
     const ids = selectionStore.selectedAtomIds;
-    if (ids.length === 0) return;
+    if (ids.length === 0) { return; }
     
     const firstMesh = renderer.getAtomMeshes().get(ids[0]);
-    if (!firstMesh) return;
+    if (!firstMesh) { return; }
     
     const last = interactionStore.lastDragWorld instanceof Vector3 
       ? interactionStore.lastDragWorld 
@@ -456,7 +456,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     
     if (interactionStore.rightDragType !== 'none' && (event.buttons & 2)) {
       const start = interactionStore.rightDragStart;
-      if (!start) return;
+      if (!start) { return; }
       
       const dx = event.clientX - start.x;
       const dy = event.clientY - start.y;

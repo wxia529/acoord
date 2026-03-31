@@ -113,10 +113,10 @@ const uiCallbacks = {
 };
 
 function rerenderCurrentStructure(): void {
-  if (!structureStore.currentStructure) return;
+  if (!structureStore.currentStructure) { return; }
   renderer.renderStructure(structureStore.currentStructure, {
     updateCounts,
-    updateAtomList: (atoms, _selectedIds, selectedId) =>
+    updateAtomList: (atoms: Atom[], _selectedIds: string[], selectedId: string | null) =>
       updateAtomList(atoms, selectionStore.selectedAtomIds, selectedId, vscode, uiCallbacks),
   });
 }
@@ -206,11 +206,11 @@ function setupUI(): void {
     toolbarBoxMode.value = interactionStore.boxSelectionMode;
   }
 
-  if (btnReset) btnReset.addEventListener('click', () => renderer.fitCamera());
-  if (btnUndo) btnUndo.addEventListener('click', () => vscode.postMessage({ command: 'undo' }));
-  if (btnRedo) btnRedo.addEventListener('click', () => vscode.postMessage({ command: 'redo' }));
-  if (btnSave) btnSave.addEventListener('click', () => vscode.postMessage({ command: 'saveStructure' }));
-  if (btnSaveAs) btnSaveAs.addEventListener('click', () => vscode.postMessage({ command: 'saveStructureAs' }));
+  if (btnReset) { btnReset.addEventListener('click', () => renderer.fitCamera()); }
+  if (btnUndo) { btnUndo.addEventListener('click', () => vscode.postMessage({ command: 'undo' })); }
+  if (btnRedo) { btnRedo.addEventListener('click', () => vscode.postMessage({ command: 'redo' })); }
+  if (btnSave) { btnSave.addEventListener('click', () => vscode.postMessage({ command: 'saveStructure' })); }
+  if (btnSaveAs) { btnSaveAs.addEventListener('click', () => vscode.postMessage({ command: 'saveStructureAs' })); }
 
   if (btnExportImage) {
     btnExportImage.addEventListener('click', () => {
@@ -242,7 +242,7 @@ function setupUI(): void {
     setError,
     rerenderCurrentStructure,
     updateCounts,
-    updateAtomList: (atoms, _selectedIds, selectedId) =>
+    updateAtomList: (atoms: Atom[], _selectedIds: string[], selectedId: string | null) =>
       updateAtomList(atoms, selectionStore.selectedAtomIds, selectedId, vscode, uiCallbacks),
     clampAtomSize,
     getBaseAtomId,
@@ -281,13 +281,13 @@ function setupInteraction(): void {
   const canvas = document.getElementById('canvas') as HTMLCanvasElement;
 
   const updatePositionInputs = (atom: Atom | null) => {
-    if (!atom) return;
+    if (!atom) { return; }
     const selX = cachedGetElementById<HTMLInputElement>('sel-x');
     const selY = cachedGetElementById<HTMLInputElement>('sel-y');
     const selZ = cachedGetElementById<HTMLInputElement>('sel-z');
-    if (selX) selX.value = atom.position[0].toFixed(4);
-    if (selY) selY.value = atom.position[1].toFixed(4);
-    if (selZ) selZ.value = atom.position[2].toFixed(4);
+    if (selX) { selX.value = atom.position[0].toFixed(4); }
+    if (selY) { selY.value = atom.position[1].toFixed(4); }
+    if (selZ) { selZ.value = atom.position[2].toFixed(4); }
   };
 
   initInteraction(canvas, {
@@ -307,16 +307,16 @@ function setupInteraction(): void {
       const modelZ = intersection.z * invScale;
 
       updateAtomPosition(atomId, modelX, modelY, modelZ, () => {
-        if (structureStore.currentSelectedAtom?.id === atomId) updateStatusBar();
+        if (structureStore.currentSelectedAtom?.id === atomId) { updateStatusBar(); }
       });
 
       if (structureStore.currentSelectedAtom?.id === atomId) {
         const selX = cachedGetElementById<HTMLInputElement>('sel-x');
         const selY = cachedGetElementById<HTMLInputElement>('sel-y');
         const selZ = cachedGetElementById<HTMLInputElement>('sel-z');
-        if (selX) selX.value = modelX.toFixed(4);
-        if (selY) selY.value = modelY.toFixed(4);
-        if (selZ) selZ.value = modelZ.toFixed(4);
+        if (selX) { selX.value = modelX.toFixed(4); }
+        if (selY) { selY.value = modelY.toFixed(4); }
+        if (selZ) { selZ.value = modelZ.toFixed(4); }
       }
       updateMeasurementDisplay();
       vscode.postMessage({ command: 'moveAtom', atomId, x: modelX, y: modelY, z: modelZ, preview: true });
@@ -364,13 +364,13 @@ function setupInteraction(): void {
     },
 
     onSelectAll: () => {
-      if (!structureStore.currentStructure) return;
+      if (!structureStore.currentStructure) { return; }
       const allIds = structureStore.currentStructure.atoms.map((a) => a.id);
       selectHandlers.applySelection(allIds, 'replace');
     },
 
     onInvertSelection: () => {
-      if (!structureStore.currentStructure) return;
+      if (!structureStore.currentStructure) { return; }
       const allIds = new Set(structureStore.currentStructure.atoms.map((a) => a.id));
       const currentIds = new Set(selectionStore.selectedAtomIds);
       const inverted = [...allIds].filter((id) => !currentIds.has(id));
@@ -394,7 +394,7 @@ function setupInteraction(): void {
     onSave: () => vscode.postMessage({ command: 'saveStructure' }),
     onSaveAs: () => vscode.postMessage({ command: 'saveStructureAs' }),
     onExportImage: () => {
-      if (!renderer.exportHighResolutionImage) return;
+      if (!renderer.exportHighResolutionImage) { return; }
       const result = renderer.exportHighResolutionImage({ scale: 4 });
       if (result?.dataUrl) {
         vscode.postMessage({
@@ -428,7 +428,7 @@ function setupInteraction(): void {
     },
 
     onSetBondLength: (bondKeys: string[], length: number) => {
-      if (bondKeys.length === 0) return;
+      if (bondKeys.length === 0) { return; }
       const bondKey = bondKeys[0];
       const [atomId1, atomId2] = bondKey.split('-');
       if (atomId1 && atomId2) {
@@ -475,7 +475,7 @@ function start(): void {
 
   document.addEventListener('selectionchange', () => {
     syncStatusSelectionLock();
-    if (!isStatusSelectionLocked()) updateStatusBar(true);
+    if (!isStatusSelectionLocked()) { updateStatusBar(true); }
   });
 }
 
@@ -523,7 +523,7 @@ function handleRenderMessage(message: RenderMessage): void {
     message.data,
     {
       updateCounts,
-      updateAtomList: (atoms, _selectedIds, selectedId) =>
+      updateAtomList: (atoms: Atom[], _selectedIds: string[], selectedId: string | null) =>
         updateAtomList(atoms, selectionStore.selectedAtomIds, selectedId, vscode, uiCallbacks),
     },
     { fitCamera: interactionStore.shouldFitCamera }

@@ -19,23 +19,23 @@ export const pickerState: LightPickerState = {
 };
 
 function getLightObject(prefix: string): { intensity: number; color: string; x: number; y: number; z: number } | null {
-  if (prefix === 'key') return lightingStore.keyLight;
-  if (prefix === 'fill') return lightingStore.fillLight;
-  if (prefix === 'rim') return lightingStore.rimLight;
+  if (prefix === 'key') { return lightingStore.keyLight; }
+  if (prefix === 'fill') { return lightingStore.fillLight; }
+  if (prefix === 'rim') { return lightingStore.rimLight; }
   return null;
 }
 
 function getLightLabel(prefix: string): string {
-  if (prefix === 'key') return 'Key';
-  if (prefix === 'fill') return 'Fill';
-  if (prefix === 'rim') return 'Rim';
+  if (prefix === 'key') { return 'Key'; }
+  if (prefix === 'fill') { return 'Fill'; }
+  if (prefix === 'rim') { return 'Rim'; }
   return '';
 }
 
 function updateLightPickerButtons(canvas: HTMLCanvasElement | null): void {
   for (const prefix of ['key', 'fill', 'rim']) {
     const button = document.getElementById(`btn-pick-${prefix}-light`) as (HTMLElement & { textContent: string }) | null;
-    if (!button) continue;
+    if (!button) { continue; }
     const isActive = pickerState.activeLightPicker === prefix;
     button.classList.toggle('active', isActive);
     button.setAttribute('aria-pressed', isActive ? 'true' : 'false');
@@ -59,11 +59,11 @@ function setActiveLightPicker(prefix: string | null, canvas: HTMLCanvasElement, 
 }
 
 export function applyFromEvent(event: PointerEvent, canvas: HTMLCanvasElement): void {
-  if (!pickerState.activeLightPicker) return;
+  if (!pickerState.activeLightPicker) { return; }
   const lightObj = getLightObject(pickerState.activeLightPicker);
-  if (!lightObj) return;
+  if (!lightObj) { return; }
   const rect = canvas.getBoundingClientRect();
-  if (!rect.width || !rect.height) return;
+  if (!rect.width || !rect.height) { return; }
   const ndcX = ((event.clientX - rect.left) / rect.width) * 2 - 1;
   const ndcY = -((event.clientY - rect.top) / rect.height) * 2 + 1;
   const xNorm = Math.max(-0.98, Math.min(0.98, ndcX));
@@ -101,9 +101,9 @@ function setupLightSliders(prefix: string): void {
   if (intensitySlider) {
     intensitySlider.addEventListener('input', () => {
       const lightObj = getLightObject(prefix);
-      if (!lightObj) return;
+      if (!lightObj) { return; }
       lightObj.intensity = parseFloat(intensitySlider.value);
-      if (intensityValue) intensityValue.textContent = lightObj.intensity.toFixed(1);
+      if (intensityValue) { intensityValue.textContent = lightObj.intensity.toFixed(1); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -111,9 +111,9 @@ function setupLightSliders(prefix: string): void {
   if (xSlider) {
     xSlider.addEventListener('input', () => {
       const lightObj = getLightObject(prefix);
-      if (!lightObj) return;
+      if (!lightObj) { return; }
       lightObj.x = parseInt(xSlider.value);
-      if (xValue) xValue.textContent = String(lightObj.x);
+      if (xValue) { xValue.textContent = String(lightObj.x); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -121,9 +121,9 @@ function setupLightSliders(prefix: string): void {
   if (ySlider) {
     ySlider.addEventListener('input', () => {
       const lightObj = getLightObject(prefix);
-      if (!lightObj) return;
+      if (!lightObj) { return; }
       lightObj.y = parseInt(ySlider.value);
-      if (yValue) yValue.textContent = String(lightObj.y);
+      if (yValue) { yValue.textContent = String(lightObj.y); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -131,9 +131,9 @@ function setupLightSliders(prefix: string): void {
   if (zSlider) {
     zSlider.addEventListener('input', () => {
       const lightObj = getLightObject(prefix);
-      if (!lightObj) return;
+      if (!lightObj) { return; }
       lightObj.z = parseInt(zSlider.value);
-      if (zValue) zValue.textContent = String(lightObj.z);
+      if (zValue) { zValue.textContent = String(lightObj.z); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -141,7 +141,7 @@ function setupLightSliders(prefix: string): void {
   if (colorPicker) {
     colorPicker.addEventListener('input', () => {
       const lightObj = getLightObject(prefix);
-      if (!lightObj) return;
+      if (!lightObj) { return; }
       lightObj.color = colorPicker.value;
       renderer.updateLighting();
       updateSettings();
@@ -160,15 +160,15 @@ function updateLightSliderUI(prefix: string, lightObj: { intensity: number; colo
   const zValue = document.getElementById(`${prefix}-z-value`);
   const colorPicker = document.getElementById(`${prefix}-color-picker`) as HTMLInputElement | null;
 
-  if (intensitySlider) intensitySlider.value = String(lightObj.intensity);
-  if (intensityValue) intensityValue.textContent = lightObj.intensity.toFixed(1);
-  if (xSlider) xSlider.value = String(lightObj.x);
-  if (xValue) xValue.textContent = String(lightObj.x);
-  if (ySlider) ySlider.value = String(lightObj.y);
-  if (yValue) yValue.textContent = String(lightObj.y);
-  if (zSlider) zSlider.value = String(lightObj.z);
-  if (zValue) zValue.textContent = String(lightObj.z);
-  if (colorPicker) colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff');
+  if (intensitySlider) { intensitySlider.value = String(lightObj.intensity); }
+  if (intensityValue) { intensityValue.textContent = lightObj.intensity.toFixed(1); }
+  if (xSlider) { xSlider.value = String(lightObj.x); }
+  if (xValue) { xValue.textContent = String(lightObj.x); }
+  if (ySlider) { ySlider.value = String(lightObj.y); }
+  if (yValue) { yValue.textContent = String(lightObj.y); }
+  if (zSlider) { zSlider.value = String(lightObj.z); }
+  if (zValue) { zValue.textContent = String(lightObj.z); }
+  if (colorPicker) { colorPicker.value = lightObj.color || (prefix === 'key' ? '#CCCCCC' : '#ffffff'); }
 }
 
 // vscode-checkbox is a custom element with a 'checked' property
@@ -195,7 +195,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
   if (ambientSlider) {
     ambientSlider.addEventListener('input', () => {
       lightingStore.ambientIntensity = parseFloat(ambientSlider.value);
-      if (ambientValue) ambientValue.textContent = lightingStore.ambientIntensity.toFixed(1);
+      if (ambientValue) { ambientValue.textContent = lightingStore.ambientIntensity.toFixed(1); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -206,10 +206,10 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
       : 50;
     displayStore.shininess = initialShininess;
     shininessSlider.value = String(initialShininess);
-    if (shininessValue) shininessValue.textContent = String(Math.round(initialShininess));
+    if (shininessValue) { shininessValue.textContent = String(Math.round(initialShininess)); }
     shininessSlider.addEventListener('input', () => {
       displayStore.shininess = Math.max(0, Math.min(200, Number(shininessSlider.value) || 50));
-      if (shininessValue) shininessValue.textContent = String(Math.round(displayStore.shininess));
+      if (shininessValue) { shininessValue.textContent = String(Math.round(displayStore.shininess)); }
       debouncedUpdateLighting();
       updateSettings();
     });
@@ -232,7 +232,7 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
 
   for (const prefix of ['key', 'fill', 'rim']) {
     const button = document.getElementById(`btn-pick-${prefix}-light`) as VscodeButton | null;
-    if (!button) continue;
+    if (!button) { continue; }
     button.addEventListener('click', () => {
       setActiveLightPicker(
         pickerState.activeLightPicker === prefix ? null : prefix,
@@ -254,12 +254,12 @@ export function init(canvas: HTMLCanvasElement, onSetStatus: (msg: string) => vo
       displayStore.shininess = 50;
       lightingStore.lightingEnabled = true;
 
-      if (lightingEnabled) lightingEnabled.checked = true;
-      if (ambientSlider) ambientSlider.value = '0.5';
-      if (ambientValue) ambientValue.textContent = '0.5';
-      if (ambientColorPicker) ambientColorPicker.value = '#ffffff';
-      if (shininessSlider) shininessSlider.value = '50';
-      if (shininessValue) shininessValue.textContent = '50';
+      if (lightingEnabled) { lightingEnabled.checked = true; }
+      if (ambientSlider) { ambientSlider.value = '0.5'; }
+      if (ambientValue) { ambientValue.textContent = '0.5'; }
+      if (ambientColorPicker) { ambientColorPicker.value = '#ffffff'; }
+      if (shininessSlider) { shininessSlider.value = '50'; }
+      if (shininessValue) { shininessValue.textContent = '50'; }
 
       updateLightSliderUI('key', { intensity: 0.7, x: 0, y: 0, z: 10, color: '#CCCCCC' });
       updateLightSliderUI('fill', { intensity: 0, x: -10, y: -5, z: 5, color: '#ffffff' });

@@ -12,7 +12,6 @@ import type {
   WireUnitCell,
   WireLightConfig,
   WireDisplaySettings,
-  WireConfigEntry,
   WireRenderData,
 } from '../../../src/shared/protocol';
 
@@ -24,18 +23,12 @@ export type UnitCellParams = WireUnitCellParams;
 export type UnitCell = WireUnitCell;
 export type LightConfig = WireLightConfig;
 export type DisplaySettings = WireDisplaySettings;
-export type ConfigEntry = WireConfigEntry;
 
 /**
  * `Structure` is the data shape stored by the webview after receiving a
  * render message.  It is now identical to `WireRenderData`.
  */
 export type Structure = WireRenderData;
-
-export interface AvailableConfigs {
-  presets: ConfigEntry[];
-  user: ConfigEntry[];
-}
 
 export interface VsCodeApi {
   postMessage(message: unknown): void;

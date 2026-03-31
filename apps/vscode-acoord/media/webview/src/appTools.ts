@@ -97,9 +97,9 @@ export function setup(callbacks: AppToolsContext): void {
     callbacks.resetRotationBase?.();
   };
 
-  if (rotX) rotX.addEventListener('click', () => { setAxis('x'); });
-  if (rotY) rotY.addEventListener('click', () => { setAxis('y'); });
-  if (rotZ) rotZ.addEventListener('click', () => { setAxis('z'); });
+  if (rotX) { rotX.addEventListener('click', () => { setAxis('x'); }); }
+  if (rotY) { rotY.addEventListener('click', () => { setAxis('y'); }); }
+  if (rotZ) { rotZ.addEventListener('click', () => { setAxis('z'); }); }
   setAxis(interactionStore.rotationAxis || 'z');
 
   if (rotSlider) {
@@ -110,7 +110,7 @@ export function setup(callbacks: AppToolsContext): void {
     rotSlider.addEventListener('input', (event: Event) => {
       const value = parseFloat((event.target as HTMLInputElement).value);
       if (!Number.isFinite(value)) { return; }
-      if (rotInput) rotInput.value = value.toFixed(0);
+      if (rotInput) { rotInput.value = value.toFixed(0); }
       debouncedApplyRotationPreview(value);
     });
 
@@ -128,7 +128,7 @@ export function setup(callbacks: AppToolsContext): void {
       if (!Number.isFinite(value)) { return; }
       value = Math.max(0, Math.min(360, value));
       rotInput.value = value.toFixed(0);
-      if (rotSlider) rotSlider.value = value.toFixed(0);
+      if (rotSlider) { rotSlider.value = value.toFixed(0); }
       applyRotation(value, false);
       callbacks.resetRotationBase?.();
     });

@@ -69,7 +69,7 @@ function handleDocumentClick(event: Event): void {
 }
 
 function renderDropdown(): void {
-  if (!_dropdownEl) return;
+  if (!_dropdownEl) { return; }
   
   const selectedId = colorSchemeStore.currentSchemeId || '';
   const presets = colorSchemeStore.availableSchemes.presets || [];
@@ -108,7 +108,7 @@ function renderDropdown(): void {
       if (id) {
         colorSchemeHandler.loadScheme(id);
         _dropdownVisible = false;
-        _dropdownEl!.style.display = 'none';
+        if (_dropdownEl) { _dropdownEl.style.display = 'none'; }
       }
     });
   });

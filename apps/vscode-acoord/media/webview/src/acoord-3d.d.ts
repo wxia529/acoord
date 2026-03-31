@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 declare module 'acoord-3d' {
   export interface RendererApi {
     init(canvas: HTMLCanvasElement): void;

@@ -13,7 +13,7 @@ let _atomIndex: Map<string, Atom> = new Map();
 export function rebuildAtomIndex(): void {
   _atomIndex = new Map();
   const atoms = structureStore.currentStructure?.atoms;
-  if (!atoms) return;
+  if (!atoms) { return; }
   for (const atom of atoms) {
     _atomIndex.set(atom.id, atom);
   }
@@ -26,7 +26,7 @@ export function invert3x3(
   const d = m[1][0], e = m[1][1], f = m[1][2];
   const g = m[2][0], h = m[2][1], i = m[2][2];
   const det = a * (e * i - f * h) - b * (d * i - f * g) + c * (d * h - e * g);
-  if (Math.abs(det) < 1e-12) return null;
+  if (Math.abs(det) < 1e-12) { return null; }
   const invDet = 1 / det;
   return [
     [(e * i - f * h) * invDet, (c * h - b * i) * invDet, (b * f - c * e) * invDet],
@@ -45,16 +45,16 @@ export function getFractionalCoords(
   cart: [number, number, number],
   cell: UnitCellParams | null | undefined
 ): [number, number, number] | null {
-  if (!cell) return null;
+  if (!cell) { return null; }
   const a = Number(cell.a);
   const b = Number(cell.b);
   const c = Number(cell.c);
   const alpha = Number(cell.alpha) * Math.PI / 180;
   const beta = Number(cell.beta) * Math.PI / 180;
   const gamma = Number(cell.gamma) * Math.PI / 180;
-  if (![a, b, c, alpha, beta, gamma].every((value) => Number.isFinite(value))) return null;
+  if (![a, b, c, alpha, beta, gamma].every((value) => Number.isFinite(value))) { return null; }
   const sinGamma = Math.sin(gamma);
-  if (Math.abs(sinGamma) < 1e-8) return null;
+  if (Math.abs(sinGamma) < 1e-8) { return null; }
 
   // Use the cached inverse when the cell is unchanged.
   const cacheKey = `${a},${b},${c},${alpha},${beta},${gamma}`;
@@ -71,7 +71,7 @@ export function getFractionalCoords(
     const cx = c * cosBeta;
     const cy = c * (cosAlpha - cosBeta * cosGamma) / sinGamma;
     const czSquared = c * c - cx * cx - cy * cy;
-    if (czSquared <= 0) return null;
+    if (czSquared <= 0) { return null; }
     const cz = Math.sqrt(czSquared);
 
     const matrix: [[number, number, number], [number, number, number], [number, number, number]] = [
@@ -80,7 +80,7 @@ export function getFractionalCoords(
       [az, bz, cz],
     ];
     inverse = invert3x3(matrix);
-    if (!inverse) return null;
+    if (!inverse) { return null; }
     _fracCacheKey = cacheKey;
     _fracCacheInverse = inverse;
   }
@@ -143,18 +143,18 @@ export function updateMeasurements(): void {
   const lengthEl = getElementById<HTMLElement>('bond-length');
   const selected = selectionStore.selectedAtomIds;
   if (selected.length < 2) {
-    if (lengthEl) lengthEl.textContent = '--';
+    if (lengthEl) { lengthEl.textContent = '--'; }
     return;
   }
   const atomA = getAtomById(selected[0]);
   const atomB = getAtomById(selected[1]);
   if (!atomA || !atomB) {
-    if (lengthEl) lengthEl.textContent = '--';
+    if (lengthEl) { lengthEl.textContent = '--'; }
     return;
   }
   const dx = atomB.position[0] - atomA.position[0];
   const dy = atomB.position[1] - atomA.position[1];
   const dz = atomB.position[2] - atomA.position[2];
   const length = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  if (lengthEl) lengthEl.textContent = length.toFixed(4);
+  if (lengthEl) { lengthEl.textContent = length.toFixed(4); }
 }

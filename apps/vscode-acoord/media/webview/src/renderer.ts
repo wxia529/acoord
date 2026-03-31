@@ -6,6 +6,7 @@
 import { createRenderer, type RendererApi, type StoreProvider } from 'acoord-3d';
 import { structureStore, displayStore, lightingStore } from './state';
 import * as axisIndicator from './axisIndicator';
+import type * as THREE from 'three';
 
 // Create renderer instance with webview's state providers
 const provider: StoreProvider = {
@@ -27,7 +28,7 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererApi {
     providers: provider,
     onError: (msg: string) => console.error('[acoord-3d]', msg),
     onStatus: (msg: string) => console.log('[acoord-3d]', msg),
-    onCameraChange: (quaternion: any) => {
+    onCameraChange: (quaternion: THREE.Quaternion) => {
       console.log('[renderer] onCameraChange called');
       axisIndicator.update(quaternion);
     },
@@ -42,7 +43,7 @@ export const renderer: RendererApi = new Proxy({} as RendererApi, {
     if (!_renderer) {
       throw new Error('Renderer not initialized. Call initRenderer() first.');
     }
-    return (_renderer as any)[prop];
+    return (_renderer as RendererApi)[prop as keyof RendererApi];
   },
 });
 

@@ -14,7 +14,7 @@ export function resetRotationBase(): void {
 }
 
 export function captureRotationBase(): { id: string; pos: [number, number, number] }[] | null {
-  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) { return null; }
   rotationBaseIds = [...selectionStore.selectedAtomIds];
   rotationBase = rotationBaseIds.map((id) => {
     const atom = getAtomById(id);
@@ -66,17 +66,17 @@ export function rotateAroundAxis(
 }
 
 export function getSelectedCentroid(): [number, number, number] | null {
-  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) { return null; }
   const ids = selectionStore.selectedAtomIds;
-  if (!ids || ids.length === 0) return null;
+  if (!ids || ids.length === 0) { return null; }
   let cx = 0, cy = 0, cz = 0, count = 0;
   for (const id of ids) {
     const atom = getAtomById(id);
-    if (!atom) continue;
+    if (!atom) { continue; }
     cx += atom.position[0]; cy += atom.position[1]; cz += atom.position[2];
     count++;
   }
-  if (count === 0) return null;
+  if (count === 0) { return null; }
   return [cx / count, cy / count, cz / count];
 }
 
@@ -88,7 +88,7 @@ export function updateAtomPosition(
   onUpdate?: () => void
 ): void {
   const atom = getAtomById(atomId);
-  if (!atom) return;
+  if (!atom) { return; }
   atom.position[0] = x;
   atom.position[1] = y;
   atom.position[2] = z;
@@ -99,11 +99,11 @@ export function updateAtomPosition(
 
 export function applyBondAngle(targetDeg: number): void {
   const ids = selectionStore.selectedAtomIds;
-  if (!ids || ids.length < 3) return;
+  if (!ids || ids.length < 3) { return; }
   const atomA = getAtomById(ids[0]);
   const atomB = getAtomById(ids[1]);
   const atomC = getAtomById(ids[2]);
-  if (!atomA || !atomB || !atomC) return;
+  if (!atomA || !atomB || !atomC) { return; }
 
   const ba: [number, number, number] = [
     atomA.position[0] - atomB.position[0],
@@ -117,7 +117,7 @@ export function applyBondAngle(targetDeg: number): void {
   ];
   const lenBA = Math.sqrt(ba[0] * ba[0] + ba[1] * ba[1] + ba[2] * ba[2]);
   const lenBC = Math.sqrt(bc[0] * bc[0] + bc[1] * bc[1] + bc[2] * bc[2]);
-  if (lenBA < 1e-6 || lenBC < 1e-6) return;
+  if (lenBA < 1e-6 || lenBC < 1e-6) { return; }
   const dot = ba[0] * bc[0] + ba[1] * bc[1] + ba[2] * bc[2];
   const current = Math.acos(Math.max(-1, Math.min(1, dot / (lenBA * lenBC))));
   const target = (targetDeg * Math.PI) / 180;
@@ -129,7 +129,7 @@ export function applyBondAngle(targetDeg: number): void {
     ba[0] * bc[1] - ba[1] * bc[0],
   ];
   const axisLen = Math.sqrt(axis[0] * axis[0] + axis[1] * axis[1] + axis[2] * axis[2]);
-  if (axisLen < 1e-6) return;
+  if (axisLen < 1e-6) { return; }
   const axisUnit: [number, number, number] = [axis[0] / axisLen, axis[1] / axisLen, axis[2] / axisLen];
   const rotated = rotateVectorAroundAxis(bc, axisUnit, delta);
 
@@ -143,13 +143,13 @@ export function applyBondAngle(targetDeg: number): void {
 }
 
 export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCodeApi): void {
-  if (!selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length === 0) return;
+  if (!selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length === 0) { return; }
   const pivot = getSelectedCentroid();
-  if (!pivot) return;
+  if (!pivot) { return; }
   if (!rotationBase || rotationBaseIds.join(',') !== selectionStore.selectedAtomIds.join(',')) {
     captureRotationBase();
   }
-  if (!rotationBase) return;
+  if (!rotationBase) { return; }
 
   if (preview && !interactionStore.rotationInProgress) {
     interactionStore.rotationInProgress = true;
@@ -160,7 +160,7 @@ export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCode
   const updated: { id: string; x: number; y: number; z: number }[] = [];
 
   for (const entry of rotationBase) {
-    if (!entry) continue;
+    if (!entry) { continue; }
     const rotated = rotateAroundAxis(entry.pos, pivot, interactionStore.rotationAxis, angleRad);
     updateAtomPosition(entry.id, rotated[0], rotated[1], rotated[2]);
     updated.push({ id: entry.id, x: rotated[0], y: rotated[1], z: rotated[2] });
@@ -198,11 +198,11 @@ export function applyRotation(angleDeg: number, preview: boolean, vscode: VsCode
 }
 
 export function getAdsorptionReference(): { anchor: Atom; reference: Atom; distance: number } | null {
-  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) return null;
-  if (!adsorptionStore.adsorptionReferenceId || adsorptionStore.adsorptionAdsorbateIds.length === 0) return null;
+  if (!structureStore.currentStructure || !structureStore.currentStructure.atoms) { return null; }
+  if (!adsorptionStore.adsorptionReferenceId || adsorptionStore.adsorptionAdsorbateIds.length === 0) { return null; }
   const atoms = structureStore.currentStructure.atoms;
   const referenceAtom = atoms.find((atom) => atom.id === adsorptionStore.adsorptionReferenceId);
-  if (!referenceAtom) return null;
+  if (!referenceAtom) { return null; }
   let anchor: Atom | null = null;
   let nearestDist = Infinity;
   for (const atom of atoms) {
@@ -219,12 +219,12 @@ export function getAdsorptionReference(): { anchor: Atom; reference: Atom; dista
 
 export function applyAdsorptionDistance(target: number, preview: boolean, vscode: VsCodeApi): void {
   const ref = getAdsorptionReference();
-  if (!ref) return;
+  if (!ref) { return; }
   const dx = ref.anchor.position[0] - ref.reference.position[0];
   const dy = ref.anchor.position[1] - ref.reference.position[1];
   const dz = ref.anchor.position[2] - ref.reference.position[2];
   const current = Math.sqrt(dx * dx + dy * dy + dz * dz);
-  if (current < 1e-6) return;
+  if (current < 1e-6) { return; }
   const delta = target - current;
   const nx = dx / current;
   const ny = dy / current;

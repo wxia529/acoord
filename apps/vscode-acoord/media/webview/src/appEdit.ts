@@ -32,10 +32,10 @@ export function setup(callbacks: AppEditContext): void {
         const pxInput = document.getElementById('pos-x') as HTMLInputElement | null;
         const pyInput = document.getElementById('pos-y') as HTMLInputElement | null;
         const pzInput = document.getElementById('pos-z') as HTMLInputElement | null;
-        if (elInput) elInput.value = '';
-        if (pxInput) pxInput.value = '';
-        if (pyInput) pyInput.value = '';
-        if (pzInput) pzInput.value = '';
+        if (elInput) { elInput.value = ''; }
+        if (pxInput) { pxInput.value = ''; }
+        if (pyInput) { pyInput.value = ''; }
+        if (pzInput) { pzInput.value = ''; }
       }
     });
   }
@@ -68,11 +68,11 @@ export function setup(callbacks: AppEditContext): void {
   const selY = document.getElementById('sel-y') as HTMLInputElement | null;
   const selZ = document.getElementById('sel-z') as HTMLInputElement | null;
 
-  if (btnApplyAtom) btnApplyAtom.addEventListener('click', applySelectedAtomChanges);
-  if (selElement) selElement.addEventListener('change', applySelectedAtomChanges);
-  if (selX) selX.addEventListener('change', applySelectedAtomChanges);
-  if (selY) selY.addEventListener('change', applySelectedAtomChanges);
-  if (selZ) selZ.addEventListener('change', applySelectedAtomChanges);
+  if (btnApplyAtom) { btnApplyAtom.addEventListener('click', applySelectedAtomChanges); }
+  if (selElement) { selElement.addEventListener('change', applySelectedAtomChanges); }
+  if (selX) { selX.addEventListener('change', applySelectedAtomChanges); }
+  if (selY) { selY.addEventListener('change', applySelectedAtomChanges); }
+  if (selZ) { selZ.addEventListener('change', applySelectedAtomChanges); }
 
   // ── Atom Color ─────────────────────────────────────────────────────────────
 
@@ -83,8 +83,8 @@ export function setup(callbacks: AppEditContext): void {
   const syncColorInputs = (rawValue: string): string | null => {
     const normalized = normalizeHexColor(rawValue);
     if (!normalized) { return null; }
-    if (atomColorPicker) atomColorPicker.value = normalized;
-    if (atomColorText) atomColorText.value = normalized;
+    if (atomColorPicker) { atomColorPicker.value = normalized; }
+    if (atomColorText) { atomColorText.value = normalized; }
     return normalized;
   };
 
@@ -120,9 +120,9 @@ export function setup(callbacks: AppEditContext): void {
   const syncAllColorInputs = (rawValue: string): string | null => {
     const normalized = normalizeHexColor(rawValue);
     if (!normalized) { return null; }
-    if (atomColorPicker) atomColorPicker.value = normalized;
-    if (atomColorText) atomColorText.value = normalized;
-    if (toolbarColorPicker) toolbarColorPicker.value = normalized;
+    if (atomColorPicker) { atomColorPicker.value = normalized; }
+    if (atomColorText) { atomColorText.value = normalized; }
+    if (toolbarColorPicker) { toolbarColorPicker.value = normalized; }
     return normalized;
   };
 

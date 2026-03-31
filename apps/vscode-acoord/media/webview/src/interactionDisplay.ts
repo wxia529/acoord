@@ -5,7 +5,7 @@ import { debounce } from './utils/performance';
 
 // Debounced rerender to prevent excessive rendering during slider input (16ms = 60fps)
 const debouncedRerenderStructure = debounce((): void => {
-  if (!structureStore.currentStructure) return;
+  if (!structureStore.currentStructure) { return; }
   renderer.renderStructure(structureStore.currentStructure);
 }, 16);
 
@@ -72,11 +72,11 @@ export function init(): void {
   if (latticeThicknessSlider) {
     const initialThickness = Number.isFinite(displayStore.unitCellThickness) ? displayStore.unitCellThickness : 1;
     latticeThicknessSlider.value = String(initialThickness);
-    if (latticeThicknessValue) latticeThicknessValue.textContent = initialThickness.toFixed(1);
+    if (latticeThicknessValue) { latticeThicknessValue.textContent = initialThickness.toFixed(1); }
     latticeThicknessSlider.addEventListener('input', () => {
       const nextThickness = Math.max(0.5, Math.min(6, parseFloat(latticeThicknessSlider.value) || 1));
       displayStore.unitCellThickness = nextThickness;
-      if (latticeThicknessValue) latticeThicknessValue.textContent = nextThickness.toFixed(1);
+      if (latticeThicknessValue) { latticeThicknessValue.textContent = nextThickness.toFixed(1); }
       debouncedRerenderStructure();
       updateSettings();
     });

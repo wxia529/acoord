@@ -23,8 +23,7 @@ type AppLatticeContext = VscodeContext & ErrorContext & RendererContext & AtomSi
 
 // vscode-checkbox is a custom element with a 'checked' property
 type VscodeCheckbox = HTMLElement & { checked: boolean };
-// vscode-button is a custom element
-type VscodeButton = HTMLElement;
+type VscodeButton = HTMLElement & { disabled: boolean };
 
 let _cb: AppLatticeContext | null = null;
 
@@ -49,24 +48,24 @@ export function updateLatticeUI(
   const superZ = getElementById<HTMLInputElement>('supercell-z');
 
   if (unitCellParams) {
-    if (aInput) aInput.value = Number(unitCellParams.a).toFixed(4);
-    if (bInput) bInput.value = Number(unitCellParams.b).toFixed(4);
-    if (cInput) cInput.value = Number(unitCellParams.c).toFixed(4);
-    if (alphaInput) alphaInput.value = Number(unitCellParams.alpha).toFixed(2);
-    if (betaInput) betaInput.value = Number(unitCellParams.beta).toFixed(2);
-    if (gammaInput) gammaInput.value = Number(unitCellParams.gamma).toFixed(2);
+    if (aInput) { aInput.value = Number(unitCellParams.a).toFixed(4); }
+    if (bInput) { bInput.value = Number(unitCellParams.b).toFixed(4); }
+    if (cInput) { cInput.value = Number(unitCellParams.c).toFixed(4); }
+    if (alphaInput) { alphaInput.value = Number(unitCellParams.alpha).toFixed(2); }
+    if (betaInput) { betaInput.value = Number(unitCellParams.beta).toFixed(2); }
+    if (gammaInput) { gammaInput.value = Number(unitCellParams.gamma).toFixed(2); }
   } else if (!displayStore.unitCellEditing) {
-    if (aInput) aInput.value = '';
-    if (bInput) bInput.value = '';
-    if (cInput) cInput.value = '';
-    if (alphaInput) alphaInput.value = '';
-    if (betaInput) betaInput.value = '';
-    if (gammaInput) gammaInput.value = '';
+    if (aInput) { aInput.value = ''; }
+    if (bInput) { bInput.value = ''; }
+    if (cInput) { cInput.value = ''; }
+    if (alphaInput) { alphaInput.value = ''; }
+    if (betaInput) { betaInput.value = ''; }
+    if (gammaInput) { gammaInput.value = ''; }
   }
 
-  if (scaleToggle) scaleToggle.checked = !!displayStore.scaleAtomsWithLattice;
-  if (removeBtn) removeBtn.disabled = !hasUnitCell;
-  if (centerBtn) centerBtn.disabled = !hasUnitCell;
+  if (scaleToggle) { scaleToggle.checked = !!displayStore.scaleAtomsWithLattice; }
+  if (removeBtn) { removeBtn.disabled = !hasUnitCell; }
+  if (centerBtn) { centerBtn.disabled = !hasUnitCell; }
 
   const sc = Array.isArray(supercell) ? supercell : [1, 1, 1];
   const nx = Math.max(1, Math.floor(sc[0] || 1));
@@ -188,7 +187,7 @@ export function setup(callbacks: AppLatticeContext): void {
     bondSizeSlider.addEventListener('input', (event: Event) => {
       displayStore.bondThicknessScale = parseFloat((event.target as HTMLInputElement).value);
       const bondSizeValue = getElementById<HTMLElement>('bond-size-value');
-      if (bondSizeValue) bondSizeValue.textContent = displayStore.bondThicknessScale.toFixed(1);
+      if (bondSizeValue) { bondSizeValue.textContent = displayStore.bondThicknessScale.toFixed(1); }
       updateSettings();
       if (structureStore.currentStructure) {
         debouncedRenderStructure();
@@ -205,7 +204,7 @@ export function setup(callbacks: AppLatticeContext): void {
   if (atomSizeSelectedSlider) {
     atomSizeSelectedSlider.addEventListener('input', (event: Event) => {
       const value = parseFloat((event.target as HTMLInputElement).value);
-      if (atomSizeSelectedValue) atomSizeSelectedValue.textContent = value.toFixed(2);
+      if (atomSizeSelectedValue) { atomSizeSelectedValue.textContent = value.toFixed(2); }
 
       if (selectionStore.selectedAtomIds.length > 0 && vscode) {
         vscode.postMessage({
