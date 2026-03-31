@@ -2,7 +2,7 @@
 // Domain-specific stores for acoord-3d
 // =============================================================================
 
-import type { Structure, LightConfig, DisplaySettings, Atom } from '../types/wire.js';
+import type { Structure, LightConfig, Atom } from '../types/wire.js';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Structure Store

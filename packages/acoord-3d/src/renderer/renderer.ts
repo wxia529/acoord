@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls.js';
 import { getDisplayStore, getLightingStore } from '../state/provider.js';
-import type { Atom, Bond, Structure, UiHooks, UnitCellEdge } from '../types/wire.js';
+import type { Atom, Structure, UiHooks, UnitCellEdge } from '../types/wire.js';
 import { debounce } from '../utils/performance.js';
 import type { RendererHandlers } from './types.js';
 

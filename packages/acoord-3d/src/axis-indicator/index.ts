@@ -11,7 +11,7 @@ export function init(): void {
   // Stub initialization
 }
 
-export function update(quaternion: THREE.Quaternion): void {
+export function update(_quaternion: THREE.Quaternion): void {
   // Stub update
 }
 
