@@ -1,8 +1,11 @@
 # ACoord
 
+> **Note**: This extension is part of the [acoord monorepo](../../README.md). For development setup, see the monorepo root.
+
 **Version:** 0.3.10  
 **License:** MIT  
-**Repository:** https://github.com/wxia529/vscode-acoord
+**Repository:** https://github.com/wxia529/acoord  
+**Marketplace:** https://marketplace.visualstudio.com/items?itemName=wxia529.acoord
 
 Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization and editing of atomic, molecular, and crystal structures**. It combines the convenience of a code editor with powerful molecular visualization, enabling you to view, edit, and convert structure files without leaving VS Code.
 
@@ -92,15 +95,32 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 3. Search for "ACoord"
 4. Click Install
 
-### From Source
+### From Source (Monorepo)
 
 ```bash
-git clone https://github.com/wxia529/vscode-acoord.git
-cd vscode-acoord
+# Clone the monorepo
+git clone https://github.com/wxia529/acoord.git
+cd acoord
+
+# Install dependencies (from root)
 npm install
-npm run compile
+
+# Build all projects
+npm run build
+
+# Launch from VS Code
 # Press F5 to launch Extension Development Host
 ```
+
+### Development
+
+```bash
+# From monorepo root
+npm run watch          # Watch mode for all projects
+npx nx run vscode-acoord:test:unit  # Run unit tests
+```
+
+See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed architecture and contribution guidelines.
 
 ---
 

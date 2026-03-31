@@ -1,8 +1,11 @@
 # acoord-3d
 
-Atomic structure 3D rendering engine powered by Three.js.
+> **Note**: This library is part of the [acoord monorepo](../../README.md). For development, use `npx nx run acoord-3d:build` or `npm run watch` from the monorepo root.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![npm](https://img.shields.io/npm/v/acoord-3d.svg)](https://www.npmjs.com/package/acoord-3d)
+
+Atomic structure 3D rendering engine powered by Three.js.
 
 ## Table of Contents
 
@@ -86,7 +89,6 @@ renderer.renderStructure({
     },
   ],
   bonds: [],
-  // renderAtoms/renderBonds default to atoms/bonds
   unitCell: null,
   unitCellParams: null,
   supercell: [1, 1, 1],
