@@ -1,0 +1,6 @@
+{
+  "import": ["tsx/esm"],
+  "file": ["test/setup.ts"],
+  "timeout": 5000,
+  "spec": "test/**/*.test.ts"
+}

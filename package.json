@@ -1,0 +1,24 @@
+{
+  "name": "acoord-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "description": "ACoord Atomic Structure Toolkit Monorepo",
+  "workspaces": [
+    "packages/*",
+    "apps/*"
+  ],
+  "scripts": {
+    "build": "nx run-many --target=build --all",
+    "build:acoord-3d": "nx run acoord-3d:build",
+    "build:vscode-acoord": "nx run vscode-acoord:build",
+    "test": "nx run-many --target=test --all",
+    "test:acoord-3d": "nx run acoord-3d:test",
+    "test:vscode-acoord": "nx run vscode-acoord:test",
+    "watch": "nx run-many --target=watch --all",
+    "lint": "nx run-many --target=lint --all",
+    "dev": "nx run vscode-acoord:watch"
+  },
+  "devDependencies": {
+    "nx": "^20.0.0"
+  }
+}

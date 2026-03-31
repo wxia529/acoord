@@ -1,0 +1,30 @@
+{
+  "name": "acoord-3d",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/acoord-3d/src",
+  "projectType": "library",
+  "targets": {
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "build"
+      },
+      "outputs": ["{projectRoot}/dist"],
+      "cache": true
+    },
+    "watch": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "watch"
+      }
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "test"
+      },
+      "dependsOn": ["build"]
+    }
+  },
+  "tags": ["scope:lib", "type:lib"]
+}

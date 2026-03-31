@@ -1,0 +1,15 @@
+# Nx
+.nx/cache
+.nx/workspace-data
+dist/nx
+
+# Dependencies
+node_modules
+
+# Build outputs
+dist
+out
+
+# Logs
+*.log
+npm-debug.log*

@@ -1,0 +1,49 @@
+{
+  "name": "vscode-acoord",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "apps/vscode-acoord/src",
+  "projectType": "application",
+  "targets": {
+    "build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "compile"
+      },
+      "outputs": ["{projectRoot}/out", "{projectRoot}/media/webview/dist"],
+      "cache": true,
+      "dependsOn": ["^build"]
+    },
+    "watch": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "watch"
+      }
+    },
+    "test": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "test:unit"
+      },
+      "dependsOn": ["build"]
+    },
+    "lint": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "lint"
+      }
+    },
+    "docs:dev": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "docs:dev"
+      }
+    },
+    "docs:build": {
+      "executor": "nx:run-script",
+      "options": {
+        "script": "docs:build"
+      }
+    }
+  },
+  "tags": ["scope:app", "type:app"]
+}
