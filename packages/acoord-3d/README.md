@@ -729,4 +729,4 @@ if (result) {
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+MIT License - see [LICENSE](../../LICENSE) file for details.
