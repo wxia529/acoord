@@ -202,13 +202,13 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     const camera = renderer.getCamera();
     if (!camera) return;
     
-    // 忽略微小移动，避免零向量问题
+    // Ignore small movements to avoid zero-vector issues
     const totalDragDist = Math.sqrt(totalDx * totalDx + totalDy * totalDy);
     if (totalDragDist < 1) return;
     
     const totalAngle = totalDragDist * ROTATION_SENSITIVITY;
     
-    // 使用总的鼠标移动方向计算旋转轴
+    // Calculate rotation axis using total mouse movement direction
     const axisDir = new Vector3(totalDy, totalDx, 0).normalize();
     const cameraMatrix = new Matrix4().extractRotation(camera.matrixWorld);
     axisDir.applyMatrix4(cameraMatrix);

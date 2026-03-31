@@ -5,7 +5,7 @@ import type { Structure, Atom, LightConfig, DisplaySettings } from './types';
 // =============================================================================
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Structure Store - 结构数据
+// Structure Store - Structure data
 // ─────────────────────────────────────────────────────────────────────────────
 export interface StructureState {
   currentStructure: Structure | null;
@@ -20,7 +20,7 @@ export const structureStore: StructureState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Selection Store - 选择状态
+// Selection Store - Selection state
 // ─────────────────────────────────────────────────────────────────────────────
 export interface SelectionState {
   selectedAtomIds: string[];
@@ -33,7 +33,7 @@ export const selectionStore: SelectionState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Display Store - 显示设置
+// Display Store - Display settings
 // ─────────────────────────────────────────────────────────────────────────────
 export interface DisplayState {
   showAxes: boolean;
@@ -181,7 +181,7 @@ export function applyDisplaySettings(settings: DisplaySettings): void {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Lighting Store - 光照设置
+// Lighting Store - Lighting settings
 // ─────────────────────────────────────────────────────────────────────────────
 export interface LightingState {
   lightingEnabled: boolean;
@@ -202,7 +202,7 @@ export const lightingStore: LightingState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Interaction Store - 交互状态
+// Interaction Store - Interaction state
 // ─────────────────────────────────────────────────────────────────────────────
 export type BoxSelectionMode = 'atoms' | 'bonds' | 'both';
 
@@ -253,7 +253,7 @@ export const interactionStore: InteractionState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Trajectory Store - 轨迹状态
+// Trajectory Store - Trajectory state
 // ─────────────────────────────────────────────────────────────────────────────
 export interface TrajectoryState {
   trajectoryFrameIndex: number;
@@ -270,7 +270,7 @@ export const trajectoryStore: TrajectoryState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Adsorption Store - 吸附状态
+// Adsorption Store - Adsorption state
 // ─────────────────────────────────────────────────────────────────────────────
 export interface AdsorptionState {
   adsorptionReferenceId: string | null;
@@ -283,7 +283,7 @@ export const adsorptionStore: AdsorptionState = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Color Scheme Store - 颜色方案管理
+// Color Scheme Store - Color scheme management
 // ─────────────────────────────────────────────────────────────────────────────
 export interface ColorSchemeEntry {
   id: string;
