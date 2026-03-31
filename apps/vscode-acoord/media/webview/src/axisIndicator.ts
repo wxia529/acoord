@@ -27,8 +27,13 @@ const ORIGIN_OFFSET = 40;
 const AXIS_LENGTH = 28;
 
 export function init(): void {
+  console.log('[axisIndicator] init() called');
   const canvasWrap = document.getElementById('canvas-wrap');
-  if (!canvasWrap) return;
+  console.log('[axisIndicator] canvas-wrap:', canvasWrap);
+  if (!canvasWrap) {
+    console.error('[axisIndicator] canvas-wrap not found!');
+    return;
+  }
 
   if (state.container) {
     state.container.remove();
@@ -36,6 +41,7 @@ export function init(): void {
 
   const container = document.createElement('div');
   container.id = 'axis-indicator';
+  console.log('[axisIndicator] container created:', container);
 
   const axesContainer = document.createElement('div');
   axesContainer.className = 'axis-axes-container';
@@ -87,16 +93,25 @@ function createLabelElement(text: string, color: string): HTMLElement {
 }
 
 export function update(quaternion: THREE.Quaternion): void {
-  if (!state.visible || !state.axisX || !state.axisY || !state.axisZ) return;
-  if (!state.labelX || !state.labelY || !state.labelZ) return;
+  if (!state.visible) {
+    return;
+  }
+  if (!state.axisX || !state.axisY || !state.axisZ) {
+    return;
+  }
+  if (!state.labelX || !state.labelY || !state.labelZ) {
+    return;
+  }
+
+  const invQ = quaternion.clone().invert();
 
   const dirX = new THREE.Vector3(1, 0, 0);
   const dirY = new THREE.Vector3(0, 1, 0);
   const dirZ = new THREE.Vector3(0, 0, 1);
 
-  dirX.applyQuaternion(quaternion);
-  dirY.applyQuaternion(quaternion);
-  dirZ.applyQuaternion(quaternion);
+  dirX.applyQuaternion(invQ);
+  dirY.applyQuaternion(invQ);
+  dirZ.applyQuaternion(invQ);
 
   updateAxisTransform(state.axisX, state.labelX, dirX);
   updateAxisTransform(state.axisY, state.labelY, dirY);

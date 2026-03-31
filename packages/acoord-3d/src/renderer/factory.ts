@@ -46,7 +46,7 @@ export function createRenderer(options: CreateRendererOptions) {
   
   // Setup camera change callback
   if (options.onCameraChange) {
-    renderer.setOnCameraMove(() => {
+    renderer.addOnCameraMove(() => {
       const camera = renderer.getCamera();
       options.onCameraChange!(camera.quaternion);
     });

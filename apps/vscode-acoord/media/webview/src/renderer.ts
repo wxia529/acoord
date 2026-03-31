@@ -5,6 +5,7 @@
 
 import { createRenderer, type RendererApi, type StoreProvider } from 'acoord-3d';
 import { structureStore, displayStore, lightingStore } from './state';
+import * as axisIndicator from './axisIndicator';
 
 // Create renderer instance with webview's state providers
 const provider: StoreProvider = {
@@ -26,8 +27,9 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererApi {
     providers: provider,
     onError: (msg: string) => console.error('[acoord-3d]', msg),
     onStatus: (msg: string) => console.log('[acoord-3d]', msg),
-    onCameraChange: (_quaternion: any) => {
-      // axisIndicator update is handled in app.ts
+    onCameraChange: (quaternion: any) => {
+      console.log('[renderer] onCameraChange called');
+      axisIndicator.update(quaternion);
     },
   });
   

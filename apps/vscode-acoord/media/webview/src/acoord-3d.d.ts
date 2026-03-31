@@ -13,7 +13,7 @@ declare module 'acoord-3d' {
     getBondMeshes(): any[];
     getDragPlane(): any;
     setControlsEnabled(enabled: boolean): void;
-    setOnCameraMove(callback: (() => void) | null): void;
+    addOnCameraMove(callback: () => void): void;
     updateLighting(): void;
     updateDisplaySettings(): void;
     exportHighResolutionImage(options?: { scale?: number }): { dataUrl: string; width: number; height: number } | null;

@@ -25,7 +25,7 @@ export interface RendererApi {
   getBondMeshes(): THREE.Mesh[];
   getDragPlane(): THREE.Plane;
   setControlsEnabled(enabled: boolean): void;
-  setOnCameraMove(callback: (() => void) | null): void;
+  addOnCameraMove(callback: () => void): void;
   updateLighting(): void;
   updateDisplaySettings(): void;
   exportHighResolutionImage(options?: { scale?: number }): { dataUrl: string; width: number; height: number } | null;

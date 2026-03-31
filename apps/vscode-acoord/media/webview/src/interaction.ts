@@ -184,7 +184,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   
   setupLeftToolbar(canvas, handlers);
   
-  renderer.setOnCameraMove(() => {
+  renderer.addOnCameraMove(() => {
     if (interactionStore.rightDragType === 'camera') {
       interactionStore.rightDragMoved = true;
     }

@@ -3,7 +3,6 @@ import { TrackballControls } from 'three/examples/jsm/controls/TrackballControls
 import { getDisplayStore, getLightingStore } from '../state/provider.js';
 import type { Atom, Bond, Structure, UiHooks, UnitCellEdge } from '../types/wire.js';
 import { debounce } from '../utils/performance.js';
-import * as axisIndicator from '../axis-indicator/index.js';
 import type { RendererHandlers } from './types.js';
 
 const MOUSE = THREE.MOUSE;
@@ -25,7 +24,7 @@ interface RendererState {
   camera: THREE.PerspectiveCamera | THREE.OrthographicCamera | null;
   renderer: THREE.WebGLRenderer | null;
   controls: TrackballControls | { update: () => void; enabled?: boolean; target?: THREE.Vector3; dispose?: () => void } | null;
-  onCameraMove: (() => void) | null;
+  onCameraMoveCallbacks: (() => void)[];
   /** Invisible per-atom meshes used only for raycasting and drag interaction. */
   atomMeshes: Map<string, THREE.Mesh>;
   /** Instanced meshes that visually render atoms (one per radius group). */
@@ -99,7 +98,7 @@ const rendererState: RendererState = {
   camera: null,
   renderer: null,
   controls: null,
-  onCameraMove: null,
+  onCameraMoveCallbacks: [],
   atomMeshes: new Map(),
   atomInstancedMeshes: [],
   atomInstanceIndex: new Map(),
@@ -219,8 +218,8 @@ function applyControls(camera: THREE.Camera): void {
   };
   controls.addEventListener('change', () => {
     markDirty();
-    if (rendererState.onCameraMove) {
-      rendererState.onCameraMove();
+    for (const cb of rendererState.onCameraMoveCallbacks) {
+      cb();
     }
   });
   rendererState.controls = controls;
@@ -296,8 +295,6 @@ export class StructureRenderer {
 
     updateLightsForCamera();
 
-    axisIndicator.init();
-
     applyControls(camera);
 
     camera.lookAt(0, 0, 0);
@@ -366,8 +363,8 @@ export class StructureRenderer {
     setControlsEnabled(enabled);
   }
 
-  setOnCameraMove(callback: (() => void) | null): void {
-    setOnCameraMove(callback);
+  addOnCameraMove(callback: () => void): void {
+    addOnCameraMove(callback);
   }
 
   updateLighting(): void {
@@ -403,8 +400,8 @@ function animate(): void {
   rendererState.animationFrameId = requestAnimationFrame(animate);
   if (!rendererState.renderer || !rendererState.controls) return;
   rendererState.controls.update();
-  if (rendererState.camera) {
-    axisIndicator.update(rendererState.camera.quaternion);
+  for (const cb of rendererState.onCameraMoveCallbacks) {
+    cb();
   }
   if (!rendererState.needsRender) return;
   rendererState.needsRender = false;
@@ -1133,8 +1130,8 @@ function setControlsEnabled(enabled: boolean): void {
   }
 }
 
-function setOnCameraMove(callback: (() => void) | null): void {
-  rendererState.onCameraMove = callback;
+function addOnCameraMove(callback: () => void): void {
+  rendererState.onCameraMoveCallbacks.push(callback);
 }
 
 function getScale(): number { return rendererState.lastScale || 1; }
@@ -1174,7 +1171,6 @@ function updateLighting(): void {
  * (see interactionDisplay.ts rerenderStructure).
  */
 function updateDisplaySettings(): void {
-  axisIndicator.setVisible(getDisplayStore().showAxes !== false);
   if (rendererState.scene && getDisplayStore().backgroundColor) {
     rendererState.scene.background = new THREE.Color(getDisplayStore().backgroundColor);
   }
@@ -1441,8 +1437,6 @@ function dispose(): void {
     rendererState.fixedAtomMarkerGroup = null;
   }
   rendererState.fixedAtomMeshes.clear();
-
-  axisIndicator.dispose();
 
   const ctrl = rendererState.controls as TrackballControls | null;
   if (ctrl && ctrl.dispose) {
