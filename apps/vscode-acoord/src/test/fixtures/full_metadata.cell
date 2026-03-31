@@ -1,0 +1,25 @@
+kpoint_mp_grid 2 2 2
+snap_to_symmetry true
+fix_com false
+
+%block species_pot
+C19MK2
+O_OTF
+%endblock species_pot
+
+%block lattice_cart ang
+  5.43  0.0   0.0
+  0.0   5.43  0.0
+  0.0   0.0   5.43
+%endblock lattice_cart
+
+%block positions_frac
+Si  0.0  0.0  0.0
+Si  0.25 0.25 0.25
+%endblock positions_frac
+
+%block ionic_constraints
+1  Si  1  1 0 0
+2  Si  1  0 1 0
+3  Si  1  0 0 1
+%endblock ionic_constraints

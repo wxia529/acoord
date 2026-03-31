@@ -1,0 +1,269 @@
+{
+  "name": "acoord",
+  "displayName": "ACoord",
+  "description": "Atomic Coordinate Toolkit",
+  "publisher": "wxia529",
+  "version": "0.3.10",
+  "license": "MIT",
+  "type": "module",
+  "icon": "media/acoord-icon.png",
+  "keywords": [
+    "chemistry",
+    "materials",
+    "crystal",
+    "molecule",
+    "structure",
+    "visualization",
+    "cif",
+    "xyz",
+    "vasp",
+    "poscar",
+    "xdatcar",
+    "outcar",
+    "castep",
+    "cell"
+  ],
+  "homepage": "https://github.com/wxia529/vscode-acoord",
+  "bugs": {
+    "url": "https://github.com/wxia529/vscode-acoord/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/wxia529/vscode-acoord"
+  },
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCustomEditor:acoord.structureEditor",
+    "onCommand:acoord.openStructureEditor",
+    "onCommand:acoord.createNewMolecule",
+    "onCommand:acoord.createNewCrystal",
+    "onLanguage:cif",
+    "onLanguage:xyz"
+  ],
+  "contributes": {
+    "customEditors": [
+      {
+        "viewType": "acoord.structureEditor",
+        "displayName": "ACoord Structure Editor",
+        "priority": "option",
+        "selector": [
+          {
+            "filenamePattern": "*.cif"
+          },
+          {
+            "filenamePattern": "*.xyz"
+          },
+          {
+            "filenamePattern": "*.poscar"
+          },
+          {
+            "filenamePattern": "*.vasp"
+          },
+          {
+            "filenamePattern": "*POSCAR*"
+          },
+          {
+            "filenamePattern": "*CONTCAR*"
+          },
+          {
+            "filenamePattern": "*XDATCAR*"
+          },
+          {
+            "filenamePattern": "*OUTCAR*"
+          },
+          {
+            "filenamePattern": "*STRU*"
+          },
+          {
+            "filenamePattern": "*CONTCAR"
+          },
+          {
+            "filenamePattern": "*.xdatcar"
+          },
+          {
+            "filenamePattern": "*XDATCAR"
+          },
+          {
+            "filenamePattern": "*.outcar"
+          },
+          {
+            "filenamePattern": "*OUTCAR"
+          },
+          {
+            "filenamePattern": "*.pdb"
+          },
+          {
+            "filenamePattern": "*.gjf"
+          },
+          {
+            "filenamePattern": "*.com"
+          },
+          {
+            "filenamePattern": "*.inp"
+          },
+          {
+            "filenamePattern": "*.in"
+          },
+          {
+            "filenamePattern": "*.pwi"
+          },
+          {
+            "filenamePattern": "*.out"
+          },
+          {
+            "filenamePattern": "*.pwo"
+          },
+          {
+            "filenamePattern": "*.log"
+          },
+          {
+            "filenamePattern": "*.stru"
+          },
+          {
+            "filenamePattern": "*.cell"
+          },
+          {
+            "filenamePattern": "*.castep"
+          },
+          {
+            "filenamePattern": "*.fdf"
+          }
+        ]
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "acoord.openStructureEditor",
+          "when": "resourceExtname =~ /\\.(cif|xyz|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep|fdf)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
+          "group": "navigation"
+        }
+      ]
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "acoordExplorer",
+          "name": "ACoord Explorer",
+          "when": "acoord.structureOpen",
+          "icon": "media/preview-light.svg"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "ACoord",
+      "properties": {
+        "acoord.undoMaxDepth": {
+          "type": "integer",
+          "default": 100,
+          "minimum": 1,
+          "maximum": 1000,
+          "description": "Maximum number of undo steps stored per editor session."
+        }
+      }
+    },
+    "commands": [
+      {
+        "command": "acoord.createNewMolecule",
+        "title": "ACoord: Create New Molecule",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.createNewCrystal",
+        "title": "ACoord: Create New Crystal",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.openStructureEditor",
+        "title": "ACoord: Open Structure Editor",
+        "icon": {
+          "light": "media/preview-light.svg",
+          "dark": "media/preview-dark.svg"
+        },
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.exportStructure",
+        "title": "ACoord: Export Structure",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.addAtom",
+        "title": "ACoord: Add Atom",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.deleteAtom",
+        "title": "ACoord: Delete Selected Atom",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.selectDisplayConfig",
+        "title": "ACoord: Select Display Configuration",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.saveDisplayConfig",
+        "title": "ACoord: Save Current Display Settings",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.exportDisplayConfigs",
+        "title": "ACoord: Export Display Configurations",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.importDisplayConfigs",
+        "title": "ACoord: Import Display Configurations",
+        "category": "ACoord"
+      },
+      {
+        "command": "acoord.deleteDisplayConfig",
+        "title": "ACoord: Delete Display Configuration",
+        "category": "ACoord"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./ && node build/webview.mjs",
+    "watch": "concurrently \"tsc -watch -p ./\" \"node build/webview.mjs --watch\"",
+    "watch:tsc": "tsc -watch -p ./",
+    "watch:webview": "node build/webview.mjs --watch",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "test:unit": "mocha",
+    "test:validate": "mocha",
+    "docs:dev": "vitepress dev docs",
+    "docs:build": "vitepress build docs",
+    "docs:preview": "vitepress preview docs"
+  },
+  "dependencies": {
+    "@vscode/webview-ui-toolkit": "^1.4.0",
+    "acoord-3d": "^0.1.0",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@types/chai": "^5.0.1",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "22.x",
+    "@types/three": "^0.183.1",
+    "@types/vscode": "^1.90.0",
+    "@vscode/test-cli": "^0.0.12",
+    "@vscode/test-electron": "^2.5.2",
+    "chai": "^5.1.2",
+    "concurrently": "^9.2.1",
+    "esbuild": "^0.27.3",
+    "eslint": "^9.39.2",
+    "mocha": "^10.8.2",
+    "ts-node": "^10.9.2",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.54.0",
+    "vitepress": "^1.6.4"
+  }
+}

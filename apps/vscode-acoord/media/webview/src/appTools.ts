@@ -1,0 +1,167 @@
+/**
+ * Tools tab module.
+ *
+ * Wires: Bond Tools panel (create/delete/recalculate),
+ *        Rotate Selection panel (axis buttons, slider, input),
+ *        Adjust Distance panel (slider, input).
+ *
+ * setup(callbacks) must be called once during app initialisation.
+ */
+import { selectionStore, interactionStore } from './state';
+import { debounce } from './utils/performance';
+import type { VscodeContext, SelectionContext, TransformContext } from './types';
+
+/** Combined context for appTools module */
+type AppToolsContext = VscodeContext & SelectionContext & TransformContext;
+
+// vscode-dropdown is a custom element with a 'value' property
+type VscodeDropdown = HTMLElement & { value: string };
+
+export function setup(callbacks: AppToolsContext): void {
+  const {
+    vscode,
+    applyRotation,
+    applyAdsorptionDistance,
+    getSelectedBondKeys,
+    setSelectedBondSelection,
+    updateAdsorptionUI,
+  } = callbacks;
+
+  // ── Bond Tools ─────────────────────────────────────────────────────────────
+
+  const btnCreateBond = document.getElementById('btn-create-bond') as HTMLElement | null;
+  const btnDeleteBond = document.getElementById('btn-delete-bond') as HTMLElement | null;
+  const btnCalculateBonds = document.getElementById('btn-calculate-bonds') as HTMLElement | null;
+  const btnCalculateBondsPanel = document.getElementById('btn-calculate-bonds-panel') as HTMLElement | null;
+  const btnClearBonds = document.getElementById('btn-clear-bonds') as HTMLElement | null;
+  const bondSchemeSelect = document.getElementById('bond-scheme-select') as VscodeDropdown | null;
+
+  if (btnCreateBond) {
+    btnCreateBond.addEventListener('click', () => {
+      if (!selectionStore.selectedAtomIds || selectionStore.selectedAtomIds.length < 2) { return; }
+      vscode.postMessage({ command: 'createBond', atomIds: selectionStore.selectedAtomIds.slice(-2) });
+    });
+  }
+
+  if (btnDeleteBond) {
+    btnDeleteBond.addEventListener('click', () => {
+      const selectedBondKeys = getSelectedBondKeys();
+      if (selectedBondKeys.length > 0) {
+        vscode.postMessage({ command: 'deleteBond', bondKeys: selectedBondKeys });
+        return;
+      }
+      if (selectionStore.selectedAtomIds && selectionStore.selectedAtomIds.length >= 2) {
+        vscode.postMessage({ command: 'deleteBond', atomIds: selectionStore.selectedAtomIds.slice(-2) });
+      }
+    });
+  }
+
+  if (btnCalculateBonds) {
+    btnCalculateBonds.addEventListener('click', () => {
+      vscode.postMessage({ command: 'calculateBonds' });
+    });
+  }
+
+  if (btnCalculateBondsPanel) {
+    btnCalculateBondsPanel.addEventListener('click', () => {
+      vscode.postMessage({ command: 'calculateBonds' });
+    });
+  }
+
+  if (btnClearBonds) {
+    btnClearBonds.addEventListener('click', () => {
+      vscode.postMessage({ command: 'clearBonds' });
+    });
+  }
+
+  if (bondSchemeSelect) {
+    bondSchemeSelect.addEventListener('change', () => {
+      vscode.postMessage({ command: 'setBondScheme', scheme: bondSchemeSelect.value });
+    });
+  }
+
+  // ── Rotate Selection ───────────────────────────────────────────────────────
+
+  const rotX = document.getElementById('btn-rot-x') as HTMLButtonElement | null;
+  const rotY = document.getElementById('btn-rot-y') as HTMLButtonElement | null;
+  const rotZ = document.getElementById('btn-rot-z') as HTMLButtonElement | null;
+  const rotSlider = document.getElementById('rotation-slider') as HTMLInputElement | null;
+  const rotInput = document.getElementById('rotation-input') as HTMLInputElement | null;
+
+  const setAxis = (axis: string) => {
+    interactionStore.rotationAxis = axis;
+    rotX?.classList.toggle('selected', axis === 'x');
+    rotY?.classList.toggle('selected', axis === 'y');
+    rotZ?.classList.toggle('selected', axis === 'z');
+    // Reset rotation base so applyRotation starts fresh on next use
+    callbacks.resetRotationBase?.();
+  };
+
+  if (rotX) rotX.addEventListener('click', () => { setAxis('x'); });
+  if (rotY) rotY.addEventListener('click', () => { setAxis('y'); });
+  if (rotZ) rotZ.addEventListener('click', () => { setAxis('z'); });
+  setAxis(interactionStore.rotationAxis || 'z');
+
+  if (rotSlider) {
+    const debouncedApplyRotationPreview = debounce((value: number) => {
+      applyRotation(value, true);
+    }, 16);
+
+    rotSlider.addEventListener('input', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      if (rotInput) rotInput.value = value.toFixed(0);
+      debouncedApplyRotationPreview(value);
+    });
+
+    rotSlider.addEventListener('change', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      applyRotation(value, false);
+      callbacks.resetRotationBase?.();
+    });
+  }
+
+  if (rotInput) {
+    rotInput.addEventListener('change', (event: Event) => {
+      let value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      value = Math.max(0, Math.min(360, value));
+      rotInput.value = value.toFixed(0);
+      if (rotSlider) rotSlider.value = value.toFixed(0);
+      applyRotation(value, false);
+      callbacks.resetRotationBase?.();
+    });
+  }
+
+  // ── Adjust Distance ────────────────────────────────────────────────────────
+
+  const adsorptionSlider = document.getElementById('adsorption-slider') as HTMLInputElement | null;
+  const adsorptionInput = document.getElementById('adsorption-input') as HTMLInputElement | null;
+
+  if (adsorptionSlider) {
+    const debouncedApplyAdsorptionPreview = debounce((value: number) => {
+      applyAdsorptionDistance(value, true);
+    }, 16);
+
+    adsorptionSlider.addEventListener('input', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      debouncedApplyAdsorptionPreview(value);
+    });
+
+    adsorptionSlider.addEventListener('change', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      applyAdsorptionDistance(value, false);
+    });
+  }
+
+  if (adsorptionInput) {
+    adsorptionInput.addEventListener('change', (event: Event) => {
+      const value = parseFloat((event.target as HTMLInputElement).value);
+      if (!Number.isFinite(value)) { return; }
+      applyAdsorptionDistance(value, false);
+    });
+  }
+}

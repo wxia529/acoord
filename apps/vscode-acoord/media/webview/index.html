@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="{{csp}}" />
+  <title>ACoord - Structure Editor</title>
+  <link rel="stylesheet" href="{{stylesUri}}" />
+</head>
+<body>
+  <div id="toolbar">
+    <div class="toolbar-group">
+      <vscode-dropdown id="toolbar-add-atom" title="Add atom">
+        <vscode-option value="">Add Atom...</vscode-option>
+        <vscode-option value="C">Carbon (C)</vscode-option>
+        <vscode-option value="H">Hydrogen (H)</vscode-option>
+        <vscode-option value="O">Oxygen (O)</vscode-option>
+        <vscode-option value="N">Nitrogen (N)</vscode-option>
+        <vscode-option value="S">Sulfur (S)</vscode-option>
+        <vscode-option value="P">Phosphorus (P)</vscode-option>
+        <vscode-option value="F">Fluorine (F)</vscode-option>
+        <vscode-option value="Cl">Chlorine (Cl)</vscode-option>
+        <vscode-option value="Br">Bromine (Br)</vscode-option>
+        <vscode-option value="more">More elements...</vscode-option>
+      </vscode-dropdown>
+      <vscode-button id="toolbar-delete" appearance="secondary" title="Delete selected (Delete)">Delete</vscode-button>
+    </div>
+    <div class="toolbar-separator"></div>
+    <div class="toolbar-group">
+      <label>Box:</label>
+      <vscode-dropdown id="toolbar-box-mode" title="Box selection mode">
+        <vscode-option value="atoms">Atoms Only</vscode-option>
+        <vscode-option value="bonds">Bonds Only</vscode-option>
+        <vscode-option value="both">Atoms and Bonds</vscode-option>
+      </vscode-dropdown>
+    </div>
+    <div class="toolbar-separator"></div>
+    <div class="toolbar-group">
+      <button id="btn-toolbar-view-a" class="axis-button" type="button" title="View along a-axis (+X)">a</button>
+      <button id="btn-toolbar-view-b" class="axis-button" type="button" title="View along b-axis (+Y)">b</button>
+      <button id="btn-toolbar-view-c" class="axis-button" type="button" title="View along c-axis (+Z)">c</button>
+    </div>
+    <div class="toolbar-spacer"></div>
+    <div class="toolbar-group toolbar-right">
+      <vscode-button id="btn-calculate-bonds" appearance="secondary" title="Calculate Bonds">Calculate Bonds</vscode-button>
+      <vscode-button id="btn-reset" appearance="secondary" title="Reset View">Reset</vscode-button>
+      <vscode-button id="btn-undo" appearance="icon" title="Undo (Ctrl+Z)">↶</vscode-button>
+      <vscode-button id="btn-redo" appearance="icon" title="Redo (Ctrl+Y)">↷</vscode-button>
+      <vscode-button id="btn-save" appearance="secondary" title="Save (Ctrl+S)">Save</vscode-button>
+      <vscode-button id="btn-save-as" appearance="secondary" title="Save As (Ctrl+Shift+S)">Save As</vscode-button>
+      <vscode-button id="btn-export-image" appearance="secondary" title="Export PNG">Export</vscode-button>
+    </div>
+  </div>
+  <div id="error-banner"></div>
+  <div id="status-banner"></div>
+
+  <div id="container">
+    <div id="left-toolbar">
+      <button class="tool-btn active" data-tool="select" title="Select (V)">V</button>
+      <button class="tool-btn" data-tool="add" title="Add Atom (A)">A</button>
+      <button class="tool-btn" data-tool="delete" title="Delete (D)">D</button>
+      <div class="toolbar-spacer-vertical"></div>
+      <div id="brush-panel">
+        <div class="brush-scheme-wrapper">
+          <div id="brush-scheme-name" class="brush-scheme-name" title="Click to change color scheme">...</div>
+          <div id="brush-scheme-dropdown" class="brush-scheme-dropdown" style="display:none;"></div>
+        </div>
+        <button id="brush-apply-selected" class="brush-btn" title="Apply color scheme to selected atoms">
+          Apply (<span id="brush-selected-count">0</span>)
+        </button>
+      </div>
+      <div id="color-palette-panel">
+        <input type="color" id="toolbar-color-picker" value="#C0C0C0" title="Custom color (apply to selected atoms)" />
+      </div>
+    </div>
+    <div id="canvas-wrap">
+      <canvas id="canvas"></canvas>
+      <div id="selection-box"></div>
+    </div>
+    <div id="sidebar">
+      <div class="collapsible-panel" data-panel="properties">
+        <div class="panel-header">
+          <span class="panel-title">Properties</span>
+          <span class="panel-toggle">▼</span>
+        </div>
+        <div class="panel-content" id="panel-properties">
+          <div id="properties-no-selection" class="properties-message">
+            Click an atom or bond to see properties
+          </div>
+          <div id="properties-single-atom" style="display:none;">
+            <div class="input-group">
+              <label>Element</label>
+              <input type="text" id="sel-element" placeholder="Select an atom" maxlength="3" />
+            </div>
+            <div class="input-group">
+              <label>X (A)</label>
+              <input type="number" id="sel-x" step="0.01" />
+            </div>
+            <div class="input-group">
+              <label>Y (A)</label>
+              <input type="number" id="sel-y" step="0.01" />
+            </div>
+            <div class="input-group">
+              <label>Z (A)</label>
+              <input type="number" id="sel-z" step="0.01" />
+            </div>
+            <vscode-button id="btn-apply-atom" appearance="primary">Apply</vscode-button>
+          </div>
+          <div id="properties-multi-atom" style="display:none;">
+            <div class="properties-message">
+              <div>Selected: <span id="multi-atom-count">0</span> atoms</div>
+              <div id="multi-atom-breakdown"></div>
+            </div>
+          </div>
+          <div id="properties-single-bond" style="display:none;">
+            <div class="properties-message">
+              <div>Bond: <span id="bond-selected">--</span></div>
+              <div>Length: <span id="bond-length">--</span> A</div>
+            </div>
+            <div class="input-group">
+              <label>Set bond length (A)</label>
+              <input type="number" id="bond-length-input" step="0.01" />
+            </div>
+            <vscode-button id="btn-apply-bond" appearance="primary">Apply Bond Length</vscode-button>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Quick Add</div>
+            <div class="input-group">
+              <label>Element</label>
+              <input type="text" id="element-input" placeholder="e.g., C, N, O" maxlength="3" />
+            </div>
+            <div class="input-group">
+              <label>X (A)</label>
+              <input type="number" id="pos-x" placeholder="0.0" step="0.1" />
+            </div>
+            <div class="input-group">
+              <label>Y (A)</label>
+              <input type="number" id="pos-y" placeholder="0.0" step="0.1" />
+            </div>
+            <div class="input-group">
+              <label>Z (A)</label>
+              <input type="number" id="pos-z" placeholder="0.0" step="0.1" />
+            </div>
+            <vscode-button id="btn-add-atom-form" appearance="primary">Add</vscode-button>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="atom-list">
+        <div class="panel-header">
+          <span class="panel-title">Atom List</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-atom-list">
+          <div class="atom-list" id="atom-list"></div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="bonds">
+        <div class="panel-header">
+          <span class="panel-title">Bonds</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-bonds">
+          <div class="input-group">
+            <label>Bond Scheme</label>
+            <vscode-dropdown id="bond-scheme-select">
+              <vscode-option value="all">All Bonds</vscode-option>
+              <vscode-option value="no-sf-shell">No s/f-Shell Bonds</vscode-option>
+            </vscode-dropdown>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:8px;">
+            <vscode-button id="btn-calculate-bonds-panel" appearance="secondary">Calculate Bonds</vscode-button>
+            <vscode-button id="btn-clear-bonds" appearance="secondary">Clear All</vscode-button>
+          </div>
+          <div class="panel-section" style="margin-top:12px;">
+            <div class="panel-section-title">Manual Bonds</div>
+            <div style="display:flex;gap:6px;">
+              <vscode-button id="btn-create-bond" appearance="secondary">Create</vscode-button>
+              <vscode-button id="btn-delete-bond" appearance="secondary">Delete</vscode-button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="lattice">
+        <div class="panel-header">
+          <span class="panel-title">Lattice</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-lattice">
+          <div class="input-group">
+            <label>a (A)</label>
+            <input type="number" id="lattice-a" step="0.01" min="0" />
+          </div>
+          <div class="input-group">
+            <label>b (A)</label>
+            <input type="number" id="lattice-b" step="0.01" min="0" />
+          </div>
+          <div class="input-group">
+            <label>c (A)</label>
+            <input type="number" id="lattice-c" step="0.01" min="0" />
+          </div>
+          <div class="input-group">
+            <label>alpha (deg)</label>
+            <input type="number" id="lattice-alpha" step="0.1" min="0" max="180" />
+          </div>
+          <div class="input-group">
+            <label>beta (deg)</label>
+            <input type="number" id="lattice-beta" step="0.1" min="0" max="180" />
+          </div>
+          <div class="input-group">
+            <label>gamma (deg)</label>
+            <input type="number" id="lattice-gamma" step="0.1" min="0" max="180" />
+          </div>
+          <div class="input-group">
+            <vscode-checkbox id="lattice-scale">Scale atoms with lattice</vscode-checkbox>
+          </div>
+          <div class="input-group" style="display:flex;gap:6px;flex-direction:row;">
+            <vscode-button id="btn-lattice-apply" appearance="primary">Apply Lattice</vscode-button>
+            <vscode-button id="btn-lattice-remove" appearance="secondary">Remove Lattice</vscode-button>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Supercell</div>
+            <div class="input-group">
+              <label>Supercell (Nx, Ny, Nz)</label>
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                <input type="number" id="supercell-x" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
+                <input type="number" id="supercell-y" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
+                <input type="number" id="supercell-z" step="1" min="1" value="1" style="flex:1;min-width:60px;" />
+              </div>
+            </div>
+            <vscode-button id="btn-supercell-apply" appearance="primary">Apply Supercell</vscode-button>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Center at Cell</div>
+            <vscode-button id="btn-center-cell" appearance="secondary">Center At Cell</vscode-button>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="display">
+        <div class="panel-header">
+          <span class="panel-title">View</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-display">
+          <div class="input-group">
+            <label>Projection</label>
+            <vscode-dropdown id="proj-select">
+              <vscode-option value="perspective">Perspective</vscode-option>
+              <vscode-option value="orthographic">Orthographic</vscode-option>
+            </vscode-dropdown>
+          </div>
+          <div class="input-group">
+            <label>Axis Views</label>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;">
+              <button id="btn-view-a" class="axis-button" type="button" title="View along a-axis (+X)">a</button>
+              <button id="btn-view-b" class="axis-button" type="button" title="View along b-axis (+Y)">b</button>
+              <button id="btn-view-c" class="axis-button" type="button" title="View along c-axis (+Z)">c</button>
+              <button id="btn-view-na" class="axis-button" type="button" title="View along -a-axis (-X)">-a</button>
+              <button id="btn-view-nb" class="axis-button" type="button" title="View along -b-axis (-Y)">-b</button>
+              <button id="btn-view-nc" class="axis-button" type="button" title="View along -c-axis (-Z)">-c</button>
+            </div>
+          </div>
+          <div class="input-group">
+            <label>Rotation</label>
+            <div class="rotation-grid">
+              <button id="btn-rot-roll-ccw"   class="rot-btn" type="button" title="Roll counter-clockwise">↺</button>
+              <button id="btn-rot-tilt-up"    class="rot-btn" type="button" title="Tilt up">↑</button>
+              <button id="btn-rot-roll-cw"    class="rot-btn" type="button" title="Roll clockwise">↻</button>
+              <button id="btn-rot-left"       class="rot-btn" type="button" title="Rotate left">←</button>
+              <span class="rot-center"></span>
+              <button id="btn-rot-right"      class="rot-btn" type="button" title="Rotate right">→</button>
+              <span class="rot-empty"></span>
+              <button id="btn-rot-tilt-down"  class="rot-btn" type="button" title="Tilt down">↓</button>
+              <span class="rot-empty"></span>
+            </div>
+            <div class="input-group rotation-angle-row">
+              <label>Angle:</label>
+              <input type="number" id="rot-angle" value="45" min="1" max="180" step="1" style="width:60px;" />
+              <span>°</span>
+            </div>
+          </div>
+          <div class="input-group">
+            <vscode-checkbox id="show-axes" checked>Show coordinate axes</vscode-checkbox>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="colors">
+        <div class="panel-header">
+          <span class="panel-title">Colors</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-colors">
+          <div class="input-group">
+            <label>Color Scheme</label>
+            <div class="config-selector-row" style="display:flex;gap:6px;align-items:center;">
+              <vscode-dropdown id="color-scheme-select" style="flex:1;">
+                <vscode-option value="">Loading...</vscode-option>
+              </vscode-dropdown>
+              <vscode-button id="btn-refresh-schemes" appearance="icon" title="Refresh list">↻</vscode-button>
+            </div>
+          </div>
+          <div class="input-group" style="display:flex;gap:6px;flex-wrap:wrap;">
+            <vscode-button id="btn-save-scheme" appearance="secondary">Save As...</vscode-button>
+            <vscode-button id="btn-export-scheme" appearance="secondary">Export</vscode-button>
+            <vscode-button id="btn-import-scheme" appearance="secondary">Import</vscode-button>
+            <vscode-button id="btn-delete-scheme" appearance="secondary">Delete</vscode-button>
+          </div>
+          <div id="color-scheme-info" style="font-size:11px;color:#888;margin-top:6px;"></div>
+          <div class="panel-section">
+            <div class="panel-section-title">Atom Color</div>
+            <div class="input-group">
+              <label>Color</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="atom-color-picker" value="#C0C0C0" style="width:40px;height:32px;border:none;cursor:pointer;" />
+                <input type="text" id="atom-color-text" value="#C0C0C0" maxlength="7" style="flex:1;" placeholder="#RRGGBB" />
+              </div>
+            </div>
+            <vscode-button id="btn-apply-atom-color" appearance="primary">Apply to Selected</vscode-button>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Unit Cell Color</div>
+            <div class="input-group">
+              <label>Color</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="lattice-color-picker" value="#FF6600" style="width:40px;height:32px;border:none;cursor:pointer;" />
+                <input type="text" id="lattice-color-text" value="#FF6600" maxlength="7" style="flex:1;" placeholder="#FF6600" />
+              </div>
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Background</div>
+            <div class="input-group">
+              <label>Color</label>
+              <div style="display:flex;gap:8px;align-items:center;">
+                <input type="color" id="bg-color-picker" value="#0d1015" style="width:40px;height:32px;border:none;cursor:pointer;" />
+                <input type="text" id="bg-color-text" value="#0d1015" maxlength="7" style="flex:1;" placeholder="#0d1015" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="size-style">
+        <div class="panel-header">
+          <span class="panel-title">Size & Style</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-size-style">
+          <div class="input-group">
+            <label>Atoms radius: <span id="atom-size-selected-value">--</span> Å</label>
+            <input type="range" id="atom-size-selected-slider" min="0.1" max="2.0" step="0.01" value="0.3" />
+            <vscode-button id="btn-atom-size-reset-selected" appearance="secondary">Reset to element default</vscode-button>
+            <vscode-button id="btn-atom-size-covalent" appearance="secondary">Set to covalent radius</vscode-button>
+          </div>
+          <div class="input-group">
+            <label>Bond thickness: <span id="bond-size-value">1.0</span>x</label>
+            <input type="range" id="bond-size-slider" min="0.3" max="5" step="0.1" value="1" />
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Unit Cell Style</div>
+            <div class="input-group">
+              <label>Thickness: <span id="lattice-thickness-value">1.0</span></label>
+              <input type="range" id="lattice-thickness-slider" min="0.5" max="6" step="0.1" value="1" />
+            </div>
+            <div class="input-group">
+              <label>Line Style</label>
+              <vscode-dropdown id="lattice-line-style">
+                <vscode-option value="solid">Solid</vscode-option>
+                <vscode-option value="dashed">Dashed</vscode-option>
+              </vscode-dropdown>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="lighting">
+        <div class="panel-header">
+          <span class="panel-title">Lighting</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-lighting">
+          <div class="input-group">
+            <vscode-checkbox id="lighting-enabled" checked>Enable custom lighting</vscode-checkbox>
+          </div>
+          <div class="input-group">
+            <label>Ambient Intensity: <span id="ambient-value">0.5</span></label>
+            <input type="range" id="ambient-slider" min="0" max="2" step="0.1" value="0.5" />
+          </div>
+          <div class="input-group">
+            <label>Ambient Color</label>
+            <input type="color" id="ambient-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
+          </div>
+          <div class="input-group">
+            <label>Surface Shininess: <span id="shininess-value">50</span></label>
+            <input type="range" id="shininess-slider" min="0" max="200" step="1" value="50" />
+          </div>
+          <div class="light-sub-panel">
+            <div class="light-sub-title">Key Light</div>
+            <div class="input-group">
+              <label>Intensity: <span id="key-intensity-value">0.7</span></label>
+              <input type="range" id="key-intensity-slider" min="0" max="3" step="0.1" value="0.7" />
+            </div>
+            <div class="input-group">
+              <label>Color</label>
+              <input type="color" id="key-color-picker" value="#CCCCCC" style="width:40px;height:32px;border:none;cursor:pointer;" />
+            </div>
+            <div class="input-group">
+              <label>X: <span id="key-x-value">0</span></label>
+              <input type="range" id="key-x-slider" min="-50" max="50" step="1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Y: <span id="key-y-value">0</span></label>
+              <input type="range" id="key-y-slider" min="-50" max="50" step="1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Z: <span id="key-z-value">10</span></label>
+              <input type="range" id="key-z-slider" min="-50" max="50" step="1" value="10" />
+            </div>
+            <vscode-button id="btn-pick-key-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
+          </div>
+          <div class="light-sub-panel">
+            <div class="light-sub-title">Fill Light</div>
+            <div class="input-group">
+              <label>Intensity: <span id="fill-intensity-value">0</span></label>
+              <input type="range" id="fill-intensity-slider" min="0" max="3" step="0.1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Color</label>
+              <input type="color" id="fill-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
+            </div>
+            <div class="input-group">
+              <label>X: <span id="fill-x-value">-10</span></label>
+              <input type="range" id="fill-x-slider" min="-50" max="50" step="1" value="-10" />
+            </div>
+            <div class="input-group">
+              <label>Y: <span id="fill-y-value">-5</span></label>
+              <input type="range" id="fill-y-slider" min="-50" max="50" step="1" value="-5" />
+            </div>
+            <div class="input-group">
+              <label>Z: <span id="fill-z-value">5</span></label>
+              <input type="range" id="fill-z-slider" min="-50" max="50" step="1" value="5" />
+            </div>
+            <vscode-button id="btn-pick-fill-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
+          </div>
+          <div class="light-sub-panel">
+            <div class="light-sub-title">Rim Light</div>
+            <div class="input-group">
+              <label>Intensity: <span id="rim-intensity-value">0</span></label>
+              <input type="range" id="rim-intensity-slider" min="0" max="3" step="0.1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Color</label>
+              <input type="color" id="rim-color-picker" value="#ffffff" style="width:40px;height:32px;border:none;cursor:pointer;" />
+            </div>
+            <div class="input-group">
+              <label>X: <span id="rim-x-value">0</span></label>
+              <input type="range" id="rim-x-slider" min="-50" max="50" step="1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Y: <span id="rim-y-value">5</span></label>
+              <input type="range" id="rim-y-slider" min="-50" max="50" step="1" value="5" />
+            </div>
+            <div class="input-group">
+              <label>Z: <span id="rim-z-value">-10</span></label>
+              <input type="range" id="rim-z-slider" min="-50" max="50" step="1" value="-10" />
+            </div>
+            <vscode-button id="btn-pick-rim-light" class="light-pick-button" appearance="secondary">Pick in Canvas</vscode-button>
+          </div>
+          <div class="light-pick-hint">Tip: Click a Pick button, then drag in canvas to set light direction (Esc to exit).</div>
+          <vscode-button id="btn-reset-lighting" appearance="secondary">Reset Lighting</vscode-button>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="trajectory">
+        <div class="panel-header">
+          <span class="panel-title">Trajectory</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-trajectory">
+          <div class="input-group trajectory-row">
+            <vscode-button id="btn-first-frame" appearance="icon" title="First frame">|&lt;</vscode-button>
+            <vscode-button id="btn-prev-frame" appearance="icon" title="Previous frame">&lt;</vscode-button>
+            <input type="number" id="traj-frame-input" min="1" step="1" value="1" />
+            <vscode-button id="btn-next-frame" appearance="icon" title="Next frame">&gt;</vscode-button>
+            <vscode-button id="btn-last-frame" appearance="icon" title="Last frame">&gt;|</vscode-button>
+          </div>
+          <div class="input-group trajectory-row">
+            <vscode-button id="btn-play-trajectory" appearance="primary">Play</vscode-button>
+          </div>
+          <div class="input-group trajectory-row">
+            <label for="traj-speed-slider">Speed</label>
+            <input type="range" id="traj-speed-slider" min="1" max="30" step="1" value="8" />
+            <span id="traj-speed-value">8 fps</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="tools">
+        <div class="panel-header">
+          <span class="panel-title">Tools</span>
+          <span class="panel-toggle">▶</span>
+        </div>
+        <div class="panel-content collapsed" id="panel-tools">
+          <div class="panel-section">
+            <div class="panel-section-title">Rotate Selection</div>
+            <div class="input-group">
+              <label>Axis</label>
+              <div style="display:flex;gap:6px;">
+                <button id="btn-rot-x" class="axis-button" type="button">X</button>
+                <button id="btn-rot-y" class="axis-button" type="button">Y</button>
+                <button id="btn-rot-z" class="axis-button" type="button">Z</button>
+              </div>
+            </div>
+            <div class="input-group">
+              <label>Angle (deg)</label>
+              <input type="range" id="rotation-slider" min="0" max="360" step="1" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Set angle (deg)</label>
+              <input type="number" id="rotation-input" step="1" min="0" max="360" value="0" />
+            </div>
+          </div>
+          <div class="panel-section">
+            <div class="panel-section-title">Adjust Distance</div>
+            <div id="adsorption-info">
+              <div>Reference: <span id="adsorption-ref">--</span></div>
+              <div>Distance: <span id="adsorption-distance">--</span> A</div>
+            </div>
+            <div class="input-group">
+              <label>Adjust distance (A)</label>
+              <input type="range" id="adsorption-slider" min="0" max="10" step="0.001" value="0" />
+            </div>
+            <div class="input-group">
+              <label>Set distance (A)</label>
+              <input type="number" id="adsorption-input" step="0.01" />
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="status-bar">
+    <span id="status-mode">Select mode</span>
+    <span id="status-atoms">Atoms: 0</span>
+    <span id="status-bonds">Bonds: 0</span>
+    <span id="status-selection">Selected: 0</span>
+    <span id="status-measurement">--</span>
+    <span id="status-hint">Move: Shift+Alt+drag | Add: type element</span>
+    <span id="status-frame">Frame 1/1</span>
+  </div>
+
+  <script src="{{webviewUri}}"></script>
+</body>
+</html>

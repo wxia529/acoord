@@ -1,0 +1,7 @@
+{
+  "timeout": 5000,
+  "spec": "src/test/unit/**/*.test.mts",
+  "import": "tsx",
+  "watch-files": ["src/test/unit/**/*.test.mts", "src/**/*.ts"],
+  "exclude": ["node_modules", "out"]
+}

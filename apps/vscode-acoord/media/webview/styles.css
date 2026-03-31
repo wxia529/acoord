@@ -1,0 +1,975 @@
+:root {
+  /* VS Code theme variables as primary source */
+  --acoord-bg: var(--vscode-editor-background, #1e1e1e);
+  --acoord-bg-2: var(--vscode-sideBar-background, #252526);
+  --acoord-panel: var(--vscode-panel-background, #252526);
+  --acoord-panel-2: var(--vscode-editor-inactiveSelectionBackground, #37373d);
+  --acoord-border: var(--vscode-panel-border, #3c3c3c);
+  --acoord-text: var(--vscode-foreground, #cccccc);
+  --acoord-muted: var(--vscode-descriptionForeground, #858585);
+
+  /* VS Code brand colors */
+  --vscode-brand: #0078d4;
+  --vscode-brand-hover: #1c8ae6;
+  --vscode-brand-light: rgba(0, 120, 212, 0.2);
+
+  /* VS Code input/button colors */
+  --vscode-input-bg: var(--vscode-input-background, #3c3c3c);
+  --vscode-input-fg: var(--vscode-input-foreground, #cccccc);
+  --vscode-input-border: var(--vscode-input-border, #3c3c3c);
+  --vscode-focus-border: var(--vscode-focusBorder, #0078d4);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--vscode-font-family, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  background: var(--acoord-bg);
+  color: var(--acoord-text);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#toolbar {
+  background: var(--acoord-panel);
+  padding: 6px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--acoord-border);
+}
+
+.toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.toolbar-group label {
+  font-size: 11px;
+  color: var(--acoord-muted);
+}
+
+.toolbar-group select {
+  background: #11161c;
+  color: var(--acoord-text);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.toolbar-group select:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder, #0078d4);
+}
+
+.toolbar-separator {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.toolbar-spacer {
+  flex: 1;
+}
+
+.toolbar-right {
+  margin-left: auto;
+}
+
+button {
+  background: var(--vscode-button-secondaryBackground, #3c3c3c);
+  color: var(--vscode-button-secondaryForeground, var(--acoord-text));
+  border: 1px solid transparent;
+  padding: 4px 12px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: background 0.15s ease;
+}
+
+button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+/* VS Code Webview UI Toolkit button styles */
+vscode-button {
+  --border-radius: 2px;
+  --foreground: var(--acoord-text);
+  font-size: 12px;
+}
+
+vscode-button[appearance="primary"] {
+  --background: var(--vscode-brand, #0078d4);
+}
+
+vscode-button[appearance="primary"]:hover {
+  --background: var(--vscode-brand-hover, #1c8ae6);
+}
+
+vscode-button[appearance="secondary"] {
+  --background: var(--vscode-button-secondaryBackground, #3c3c3c);
+}
+
+vscode-button[appearance="secondary"]:hover {
+  --background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+vscode-button[appearance="icon"] {
+  --background: transparent;
+  min-width: 28px;
+  padding: 4px 8px;
+}
+
+vscode-button[appearance="icon"]:hover {
+  --background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+}
+
+/* VS Code Webview UI Toolkit dropdown styles */
+vscode-dropdown {
+  --background: var(--vscode-input-bg);
+  --foreground: var(--vscode-input-fg);
+  --border: var(--vscode-input-border);
+  font-size: 11px;
+}
+
+vscode-option {
+  --background: var(--acoord-panel);
+  --foreground: var(--acoord-text);
+}
+
+/* VS Code Webview UI Toolkit checkbox styles */
+vscode-checkbox {
+  --foreground: var(--acoord-text);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+vscode-checkbox::part(control) {
+  --checkbox-background: var(--vscode-input-bg);
+  --checkbox-border: var(--vscode-input-border);
+}
+
+.axis-button {
+  background: var(--vscode-button-secondaryBackground, #3c3c3c);
+  color: var(--vscode-button-secondaryForeground, var(--acoord-text));
+  border: 1px solid transparent;
+  padding: 4px 10px;
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 11px;
+  min-width: 28px;
+  transition: background 0.15s ease;
+}
+
+.axis-button:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+.axis-button.selected {
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.2));
+  border-color: var(--vscode-brand, #0078d4);
+}
+
+.toggle-button.selected {
+  border-color: var(--vscode-brand, #0078d4);
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.2));
+}
+
+#container {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+  background: var(--acoord-bg-2);
+  position: relative;
+}
+
+#left-toolbar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 4px;
+  background: var(--acoord-panel);
+  border-right: 1px solid var(--acoord-border);
+}
+
+.tool-btn {
+  width: 32px;
+  height: 32px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--vscode-foreground, var(--acoord-muted));
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: background 0.15s ease;
+}
+
+.tool-btn:hover {
+  background: var(--vscode-toolbar-hoverBackground, rgba(255, 255, 255, 0.1));
+  color: var(--vscode-foreground, var(--acoord-text));
+}
+
+.tool-btn.active {
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.2));
+  color: var(--vscode-foreground, var(--acoord-text));
+  border-color: var(--vscode-brand, #0078d4);
+}
+
+.toolbar-spacer-vertical {
+  flex: 1;
+}
+
+#brush-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--acoord-border);
+  margin-top: 4px;
+}
+
+.brush-scheme-wrapper {
+  position: relative;
+}
+
+.brush-scheme-name {
+  text-align: center;
+  font-size: 10px;
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 600;
+  padding: 4px 0;
+  cursor: pointer;
+  border-radius: 4px;
+  background: var(--acoord-panel-2);
+  border: 1px solid var(--acoord-border);
+  transition: border-color 0.15s ease;
+}
+
+.brush-scheme-name:hover {
+  border-color: var(--vscode-focusBorder, #0078d4);
+}
+
+.brush-scheme-name::after {
+  content: ' ▾';
+  font-size: 8px;
+  opacity: 0.6;
+}
+
+.brush-scheme-dropdown {
+  position: absolute;
+  left: 100%;
+  top: 0;
+  margin-left: 4px;
+  min-width: 120px;
+  background: var(--acoord-panel);
+  border: 1px solid var(--acoord-border);
+  border-radius: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  z-index: 1000;
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.brush-scheme-dropdown-item {
+  padding: 6px 10px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--acoord-text);
+  border-bottom: 1px solid var(--acoord-border);
+}
+
+.brush-scheme-dropdown-item:last-child {
+  border-bottom: none;
+}
+
+.brush-scheme-dropdown-item:hover {
+  background: var(--acoord-panel-2);
+}
+
+.brush-scheme-dropdown-item.active {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 600;
+}
+
+.brush-scheme-dropdown-group {
+  padding: 4px 10px 2px;
+  font-size: 9px;
+  color: var(--acoord-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.brush-scheme-info {
+  text-align: center;
+  font-size: 10px;
+  color: var(--acoord-muted);
+  padding: 2px 0;
+}
+
+.brush-btn {
+  width: 32px;
+  padding: 4px 0;
+  font-size: 9px;
+  border-radius: 4px;
+  text-align: center;
+  line-height: 1.2;
+  background: var(--vscode-button-secondaryBackground, #3c3c3c);
+  color: var(--vscode-button-secondaryForeground, var(--acoord-text));
+  border: 1px solid transparent;
+}
+
+.brush-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+.brush-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+#color-palette-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--acoord-border);
+  margin-top: 4px;
+}
+
+#toolbar-color-picker {
+  width: 32px;
+  height: 32px;
+  border: 1px solid var(--acoord-border);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+#toolbar-color-picker:hover {
+  border-color: var(--vscode-focusBorder, #0078d4);
+}
+
+#canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+  flex: 1;
+  background: var(--acoord-bg);
+  outline: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+#selection-box {
+  position: absolute;
+  border: 1px dashed var(--vscode-focusBorder, #0078d4);
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.15));
+  pointer-events: none;
+  display: none;
+  z-index: 2;
+}
+
+#error-banner,
+#status-banner {
+  display: none;
+  padding: 6px 12px;
+  font-size: 11px;
+}
+
+#error-banner {
+  background: #6b1b1b;
+  color: #ffffff;
+}
+
+#status-banner {
+  background: #1f4f2a;
+  color: #ffffff;
+}
+
+.toolbar-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 6px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 999px;
+}
+
+.toolbar-field label {
+  font-size: 11px;
+  color: var(--acoord-muted);
+}
+
+.toolbar-field select {
+  background: #11161c;
+  color: var(--acoord-text);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 11px;
+}
+
+#traj-speed-slider {
+  width: 120px;
+}
+
+#traj-speed-value {
+  min-width: 42px;
+  text-align: right;
+  font-size: 11px;
+  color: var(--acoord-muted);
+}
+
+#sidebar {
+  width: 260px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 50%),
+    var(--acoord-panel);
+  border-left: 1px solid var(--acoord-border);
+  padding: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: inset 8px 0 16px rgba(0, 0, 0, 0.25);
+}
+
+.collapsible-panel {
+  border-bottom: 1px solid var(--acoord-border);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 12px;
+  cursor: pointer;
+  background: var(--acoord-panel);
+  transition: background 0.15s ease;
+  user-select: none;
+}
+
+.panel-header:hover {
+  background: var(--vscode-list-hoverBackground, rgba(255, 255, 255, 0.05));
+}
+
+.panel-header .panel-title {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--acoord-muted);
+  margin: 0;
+  padding: 0;
+  border: none;
+}
+
+.panel-toggle {
+  font-size: 10px;
+  color: var(--acoord-muted);
+  transition: transform 0.2s ease;
+}
+
+.panel-content {
+  padding: 12px;
+  background: var(--acoord-bg-2);
+  border-top: 1px solid rgba(255, 255, 255, 0.02);
+}
+
+.panel-content.collapsed {
+  display: none;
+}
+
+.panel-section {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.panel-section-title {
+  font-weight: 600;
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--vscode-textLink-foreground, #3794ff);
+  margin-bottom: 8px;
+}
+
+.properties-message {
+  font-size: 11px;
+  color: var(--acoord-muted);
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  line-height: 1.5;
+  margin-bottom: 8px;
+}
+
+#structure-info {
+  font-size: 11px;
+  color: var(--acoord-muted);
+  padding: 8px;
+  background-color: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  line-height: 1.5;
+}
+
+#status-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 6px 12px;
+  font-size: 11px;
+  color: var(--acoord-muted);
+  background: rgba(10, 12, 16, 0.9);
+  border-top: 1px solid var(--acoord-border);
+  min-height: 26px;
+  letter-spacing: 0.02em;
+  user-select: text;
+}
+
+#status-mode {
+  color: var(--vscode-textLink-foreground, #3794ff);
+  font-weight: 600;
+}
+
+#status-atoms,
+#status-bonds {
+  color: var(--acoord-text);
+}
+
+#status-selection {
+  color: var(--acoord-text);
+}
+
+#status-hint {
+  margin-left: auto;
+  color: rgba(157, 167, 179, 0.7);
+}
+
+#status-frame {
+  font-size: 11px;
+  color: var(--acoord-muted);
+}
+
+.panel {
+  margin-bottom: 12px;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+}
+
+.panel-title {
+  font-weight: 700;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: var(--acoord-muted);
+  margin-bottom: 8px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.input-group {
+  margin-bottom: 8px;
+  display: flex;
+  gap: 5px;
+  flex-direction: column;
+}
+
+.input-group label {
+  font-size: 11px;
+  color: var(--vscode-descriptionForeground, var(--acoord-muted));
+}
+
+.inline-slider-value {
+  cursor: text;
+  border-bottom: 1px dashed var(--vscode-descriptionForeground, rgba(157, 167, 179, 0.55));
+}
+
+.inline-slider-editor {
+  width: 64px;
+  padding: 0 4px;
+  font-size: 11px;
+  color: var(--vscode-input-foreground, var(--acoord-text));
+  background: var(--vscode-input-background, #3c3c3c);
+  border: 1px solid var(--vscode-focusBorder, #0078d4);
+  border-radius: 4px;
+}
+
+.input-group input[type="text"],
+.input-group input[type="number"] {
+  padding: 6px 8px;
+  background-color: var(--vscode-input-background, #3c3c3c);
+  color: var(--vscode-input-foreground, var(--acoord-text));
+  border: 1px solid var(--vscode-input-border, #3c3c3c);
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+.input-group input[type="text"]:focus,
+.input-group input[type="number"]:focus {
+  outline: none;
+  border-color: var(--vscode-focusBorder, #0078d4);
+}
+
+.input-group select {
+  padding: 6px 8px;
+  background-color: var(--vscode-input-background, #0e1116);
+  color: var(--vscode-input-foreground, var(--acoord-text));
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.08));
+  border-radius: 8px;
+  font-size: 12px;
+}
+
+.trajectory-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+#traj-frame-input {
+  width: 72px;
+  text-align: center;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.atom-list {
+  font-size: 11px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.atom-item {
+  padding: 6px 8px;
+  margin: 4px 0;
+  background-color: rgba(255, 255, 255, 0.04);
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  border: 1px solid transparent;
+}
+
+.atom-item.selected {
+  background-color: var(--vscode-list-activeSelectionBackground, rgba(0, 120, 212, 0.2));
+  color: var(--acoord-text);
+  border-color: var(--vscode-focusBorder, #0078d4);
+}
+
+.atom-item.size-override {
+  border-color: var(--vscode-textLink-foreground, #3794ff);
+  box-shadow: inset 0 0 0 1px rgba(55, 148, 255, 0.25);
+}
+
+#info {
+  font-size: 11px;
+  color: var(--acoord-muted);
+  padding: 8px;
+  background-color: #0f1318;
+  border-radius: 10px;
+  line-height: 1.5;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.light-sub-panel {
+  margin: 10px 0 10px 8px;
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.light-sub-title {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--vscode-textLink-foreground, #3794ff);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.light-pick-button {
+  width: 100%;
+  border-radius: 4px;
+}
+
+.light-pick-button.active {
+  border-color: var(--vscode-focusBorder, #0078d4);
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.2));
+}
+
+.light-pick-hint {
+  margin: 4px 0 8px;
+  font-size: 10px;
+  color: var(--vscode-descriptionForeground, var(--acoord-muted));
+  line-height: 1.35;
+}
+
+.atom-size-element-toggle {
+  border-radius: 8px;
+  padding: 6px 8px;
+  text-align: left;
+}
+
+.atom-size-element-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.atom-size-element-row {
+  padding: 6px 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+}
+
+.atom-size-element-row.size-override {
+  border-color: var(--vscode-textLink-foreground, #3794ff);
+  background: var(--vscode-brand-light, rgba(0, 120, 212, 0.1));
+}
+
+.atom-size-element-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--acoord-text);
+  margin-bottom: 4px;
+}
+
+.atom-size-element-reset {
+  min-width: 30px;
+  padding: 2px 8px;
+}
+
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  background: var(--vscode-scrollbarSlider-background, rgba(255, 255, 255, 0.1));
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  background: var(--vscode-brand, #0078d4);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  background: var(--vscode-brand-hover, #1c8ae6);
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  background: var(--vscode-brand, #0078d4);
+  border-radius: 50%;
+  cursor: pointer;
+  border: 1px solid transparent;
+}
+
+input[type="range"]::-moz-range-thumb:hover {
+  background: var(--vscode-brand-hover, #1c8ae6);
+}
+
+input[type="color"] {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+}
+
+input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 0;
+  border-radius: 6px;
+}
+
+input[type="color"]::-webkit-color-swatch {
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.2));
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+input[type="color"]::-moz-color-swatch {
+  border: 1px solid var(--vscode-input-border, rgba(255, 255, 255, 0.2));
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* ── Rotation panel ──────────────────────────────────────────────────────── */
+
+.rotation-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 32px);
+  grid-template-rows: repeat(3, 32px);
+  gap: 4px;
+  justify-content: center;
+  align-items: center;
+}
+
+.rot-btn {
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  background: var(--vscode-button-secondaryBackground, #3c3c3c);
+  color: var(--vscode-button-secondaryForeground, var(--acoord-text));
+  border: 1px solid transparent;
+}
+
+.rot-btn:hover {
+  background: var(--vscode-button-secondaryHoverBackground, #505050);
+}
+
+.rot-center,
+.rot-empty {
+  display: block;
+  width: 32px;
+  height: 32px;
+}
+
+.rotation-angle-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rotation-angle-row label {
+  margin: 0;
+  white-space: nowrap;
+}
+
+.rotation-angle-row input[type="number"] {
+  text-align: right;
+}
+
+#axis-indicator {
+  position: absolute;
+  left: 16px;
+  bottom: 16px;
+  width: 90px;
+  height: 90px;
+  pointer-events: none;
+  z-index: 10;
+  background: linear-gradient(145deg, rgba(20, 24, 30, 0.85), rgba(10, 12, 18, 0.92));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  box-shadow: 
+    0 4px 16px rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  backdrop-filter: blur(8px);
+}
+
+.axis-axes-container {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.axis-line {
+  position: absolute;
+  left: 40px;
+  top: 44px;
+  height: 3px;
+  width: 28px;
+  border-radius: 2px;
+  transform-origin: 0% 50%;
+  transition: width 0.08s ease-out, opacity 0.15s ease;
+}
+
+.axis-line::before {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: -3px;
+  width: 0;
+  height: 0;
+  border-left: 6px solid var(--axis-color, #fff);
+  border-top: 4.5px solid transparent;
+  border-bottom: 4.5px solid transparent;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.4));
+}
+
+.axis-x {
+  background: linear-gradient(90deg, 
+    rgba(180, 50, 50, 0.3) 0%, 
+    rgba(255, 68, 68, 0.95) 100%);
+  box-shadow: 0 1px 3px rgba(255, 68, 68, 0.3);
+}
+
+.axis-y {
+  background: linear-gradient(90deg, 
+    rgba(50, 180, 50, 0.3) 0%, 
+    rgba(68, 255, 68, 0.95) 100%);
+  box-shadow: 0 1px 3px rgba(68, 255, 68, 0.3);
+}
+
+.axis-z {
+  background: linear-gradient(90deg, 
+    rgba(50, 100, 200, 0.3) 0%, 
+    rgba(68, 136, 255, 0.95) 100%);
+  box-shadow: 0 1px 3px rgba(68, 136, 255, 0.3);
+}
+
+.axis-label {
+  position: absolute;
+  font-family: 'Segoe UI', 'SF Pro Display', -apple-system, sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-shadow: 
+    0 1px 2px rgba(0, 0, 0, 0.8),
+    0 0 8px rgba(255, 255, 255, 0.15);
+  transition: opacity 0.15s ease;
+}
+
+#axis-indicator::after {
+  content: '';
+  position: absolute;
+  left: 36px;
+  top: 40px;
+  width: 8px;
+  height: 8px;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(200, 200, 200, 0.6));
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
