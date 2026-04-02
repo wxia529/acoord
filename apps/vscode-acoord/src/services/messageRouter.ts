@@ -95,6 +95,12 @@ export class MessageRouter {
       const nextIndex = Math.max(0, Math.min(this.trajectoryManager.frameCount - 1, Math.floor(requestedIndex)));
       this.trajectoryManager.setActiveIndex(nextIndex);
       const nextStructure = this.trajectoryManager.activeStructure;
+      
+      const activeScheme = this.trajectoryManager.activeBondScheme;
+      if (activeScheme && !nextStructure.hasCalculatedBonds) {
+        nextStructure.calculateBonds(activeScheme);
+      }
+      
       this.renderer.setStructure(nextStructure);
       this.renderer.setShowUnitCell(!!nextStructure.unitCell);
       this.renderer.setTrajectoryFrameInfo(nextIndex, this.trajectoryManager.frameCount);

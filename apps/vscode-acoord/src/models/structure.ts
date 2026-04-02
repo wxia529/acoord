@@ -15,6 +15,7 @@ export class Structure {
   isCrystal: boolean = false;
   supercell: [number, number, number] = [1, 1, 1];
   metadata: Map<string, unknown> = new Map();
+  hasCalculatedBonds: boolean = false;
 
   constructor(name: string = 'Untitled', isCrystal: boolean = false) {
     this.id = `struct_${crypto.randomUUID()}`;
@@ -133,6 +134,7 @@ export class Structure {
   clearBonds(): void {
     this.bonds = [];
     this.periodicBondImages.clear();
+    this.hasCalculatedBonds = false;
   }
 
   /**
@@ -213,6 +215,7 @@ export class Structure {
     const scheme = BOND_SCHEMES[schemeId ?? DEFAULT_BOND_SCHEME];
     this.bonds = [];
     this.periodicBondImages.clear();
+    this.hasCalculatedBonds = true;
     
     const seen = new Set<string>();
 
@@ -471,6 +474,7 @@ export class Structure {
     }
     cloned.supercell = [...this.supercell];
     cloned.metadata = new Map(this.metadata);
+    cloned.hasCalculatedBonds = this.hasCalculatedBonds;
     return cloned;
   }
 

@@ -82,7 +82,11 @@ export class BondService {
     const editStructure = this.trajectoryManager.activeStructure;
     
     this.undoManager.push(editStructure);
-    editStructure.calculateBonds(schemeId ?? DEFAULT_BOND_SCHEME);
+    
+    const finalSchemeId = schemeId ?? DEFAULT_BOND_SCHEME;
+    this.trajectoryManager.activeBondScheme = finalSchemeId;
+    
+    editStructure.calculateBonds(finalSchemeId);
     this.renderer.setStructure(editStructure);
     this.selectionService.deselectBond();
     this.trajectoryManager.commitEdit();
@@ -95,7 +99,13 @@ export class BondService {
     const editStructure = this.trajectoryManager.activeStructure;
     
     this.undoManager.push(editStructure);
-    editStructure.clearBonds();
+    
+    this.trajectoryManager.activeBondScheme = null;
+    
+    for (const frame of this.trajectoryManager.frames) {
+      frame.clearBonds();
+    }
+    
     this.renderer.setStructure(editStructure);
     this.selectionService.deselectBond();
     this.trajectoryManager.commitEdit();

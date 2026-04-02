@@ -536,4 +536,27 @@ describe('Structure', () => {
       expect(bonds[0].distance).to.be.closeTo(0.8, 0.01);
     });
   });
+
+  describe('hasCalculatedBonds flag', () => {
+    it('is initially false', () => {
+      const s = new Structure('test');
+      expect(s.hasCalculatedBonds).to.be.false;
+    });
+
+    it('becomes true after calculateBonds', () => {
+      const s = new Structure('test');
+      s.addAtom(new Atom('C', 0, 0, 0));
+      s.addAtom(new Atom('O', 1.2, 0, 0));
+      s.calculateBonds('all');
+      expect(s.hasCalculatedBonds).to.be.true;
+    });
+
+    it('becomes false after clearBonds', () => {
+      const s = new Structure('test');
+      s.addAtom(new Atom('C', 0, 0, 0));
+      s.calculateBonds('all');
+      s.clearBonds();
+      expect(s.hasCalculatedBonds).to.be.false;
+    });
+  });
 });

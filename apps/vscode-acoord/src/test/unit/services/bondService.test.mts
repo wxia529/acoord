@@ -107,6 +107,13 @@ describe('BondService', () => {
       svc.calculateBonds('all');
       expect(tm.activeStructure.bonds.length).to.be.greaterThan(0);
     });
+
+    it('sets activeBondScheme on trajectory manager', () => {
+      const s = makeH2O();
+      const { svc, tm } = makeServices(s);
+      svc.calculateBonds('no-sf-shell');
+      expect(tm.activeBondScheme).to.equal('no-sf-shell');
+    });
   });
 
   describe('clearBonds', () => {
@@ -118,6 +125,22 @@ describe('BondService', () => {
       expect(tm.activeStructure.bonds.length).to.be.greaterThan(0);
       svc.clearBonds();
       expect(tm.activeStructure.bonds).to.have.lengthOf(0);
+    });
+
+    it('clears activeBondScheme and clears bonds on all frames', () => {
+      const frame1 = new Structure('1');
+      const frame2 = new Structure('2');
+      const { svc, tm } = makeServices(frame1);
+      tm.set([frame1, frame2], 0);
+      frame1.hasCalculatedBonds = true;
+      frame2.hasCalculatedBonds = true;
+      tm.activeBondScheme = 'all';
+
+      svc.clearBonds();
+
+      expect(tm.activeBondScheme).to.be.null;
+      expect(frame1.hasCalculatedBonds).to.be.false;
+      expect(frame2.hasCalculatedBonds).to.be.false;
     });
   });
 

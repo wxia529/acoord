@@ -25,11 +25,10 @@ export class DocumentService {
     traj: TrajectoryManager
   ): Promise<void> {
     const formatOptions = [
-      { id: 'cif', label: 'CIF (.cif)' },
       { id: 'xyz', label: 'XYZ (.xyz)' },
+      { id: 'cif', label: 'CIF (.cif)' },
       { id: 'xdatcar', label: 'XDATCAR (.xdatcar)' },
-      { id: 'poscar', label: 'POSCAR' },
-      { id: 'vasp', label: 'VASP (.vasp)' },
+      { id: 'poscar', label: 'VASP POSCAR / .vasp' },
       { id: 'cell', label: 'CASTEP cell (.cell)' },
       { id: 'pdb', label: 'PDB (.pdb)' },
       { id: 'gjf', label: 'Gaussian input (.gjf)' },

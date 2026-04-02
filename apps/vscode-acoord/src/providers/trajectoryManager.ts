@@ -1,10 +1,12 @@
 import { Structure } from '../models/structure.js';
+import { BondSchemeId } from '../shared/protocol.js';
 
 export class TrajectoryManager {
   private _frames: Structure[] = [];
   private _activeIndex = 0;
   private _isEditing = false;
   private _editSnapshot: Structure | null = null;
+  private _activeBondScheme: BondSchemeId | null = null;
 
   constructor(frames: Structure[] = [], activeIndex = 0) {
     this.set(frames, activeIndex);
@@ -15,6 +17,7 @@ export class TrajectoryManager {
     this._activeIndex = Math.max(0, Math.min(this._frames.length - 1, Math.floor(activeIndex)));
     this._isEditing = false;
     this._editSnapshot = null;
+    this._activeBondScheme = null;
   }
 
   setActiveIndex(index: number): void {
@@ -47,6 +50,14 @@ export class TrajectoryManager {
 
   get isEditing(): boolean {
     return this._isEditing;
+  }
+
+  get activeBondScheme(): BondSchemeId | null {
+    return this._activeBondScheme;
+  }
+
+  set activeBondScheme(schemeId: BondSchemeId | null) {
+    this._activeBondScheme = schemeId;
   }
 
   beginEdit(): Structure {
