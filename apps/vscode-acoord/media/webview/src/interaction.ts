@@ -1,6 +1,7 @@
 import { selectionStore, interactionStore, structureStore, type ToolType } from './state';
 import { renderer } from './renderer';
 import { Vector3, Plane, Matrix4, Quaternion } from 'three';
+import { parseElement } from './utils/element';
 import * as interactionLighting from './interactionLighting';
 import { init as initDisplay } from './interactionDisplay';
 import { init as initConfig } from './interactionConfig';
@@ -58,6 +59,7 @@ export interface InteractionHandlers {
   onSetAtomRadius?: (atomIds: string[], radius: number) => void;
   onSetAtomFixed?: (atomIds: string[], fixed: boolean) => void;
   onChangeElement?: (atomIds: string[], element: string) => void;
+  onSelectByElement?: (element: string) => void;
   onCreateBond?: (atomIds: string[]) => void;
   onSetBondLength?: (bondKeys: string[], length: number) => void;
   onDeleteAtoms?: (atomIds: string[]) => void;
@@ -184,11 +186,9 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   
   setupLeftToolbar(canvas, handlers);
   
-  renderer.addOnCameraMove(() => {
-    if (interactionStore.rightDragType === 'camera') {
-      interactionStore.rightDragMoved = true;
-    }
-  });
+  // NOTE: We no longer use addOnCameraMove to set rightDragMoved = true here
+  // because it fires too easily on right-click, breaking the context menu.
+  // Instead, we use the movement threshold in pointermove.
 
   let lastRotationQuaternion: Quaternion | null = null;
   
@@ -223,7 +223,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     }
   };
 
-const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): void => {
+  const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): void => {
     const raycaster = renderer.getRaycaster();
     const mouse = renderer.getMouse();
     const camera = renderer.getCamera();
@@ -450,10 +450,6 @@ const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): vo
       return;
     }
     
-    if (interactionStore.rightDragType === 'camera') {
-      return;
-    }
-    
     if (interactionStore.rightDragType !== 'none' && (event.buttons & 2)) {
       const start = interactionStore.rightDragStart;
       if (!start) { return; }
@@ -470,6 +466,10 @@ const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): vo
             handlers.onBeginDrag(selectionStore.selectedAtomIds[0]);
           }
         }
+      }
+
+      if (interactionStore.rightDragType === 'camera') {
+        return;
       }
       
       if (interactionStore.rightDragMoved) {
@@ -621,6 +621,25 @@ const handleRightDragMove = (event: PointerEvent, canvas: HTMLCanvasElement): vo
           onRedo: handlers.onRedo,
           onSelectAll: handlers.onSelectAll,
           onClearSelection: handlers.onClearSelection,
+          onSelectByElement: (element: string) => {
+            if (handlers.onSelectByElement) {
+              handlers.onSelectByElement(element);
+            } else {
+              const atoms = structureStore.currentStructure?.atoms || [];
+              const idsToSelect = atoms
+                .filter(a => {
+                  const sym = parseElement(a.element) || a.element;
+                  return sym === element;
+                })
+                .map(a => a.id);
+              
+              if (idsToSelect.length > 0) {
+                if (handlers.onSetStatus) {
+                  handlers.onSetStatus(`Selected ${idsToSelect.length} ${element} atoms`);
+                }
+              }
+            }
+          },
           onSave: handlers.onSave,
           onSaveAs: handlers.onSaveAs,
           onExportImage: handlers.onExportImage,

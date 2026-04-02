@@ -2,6 +2,7 @@ import { selectionStore, interactionStore, structureStore } from '../state';
 import { renderer } from '../renderer';
 import { Vector3, Plane } from 'three';
 import { showElementPickerDialog } from './elementPicker';
+import { parseElement } from '../utils/element';
 
 export interface ContextMenuHandler {
   label?: string;
@@ -205,6 +206,7 @@ export interface ContextMenuHandlers {
   onDeleteAtom?: (atomIds: string[]) => void;
   onDeleteBond?: (bondKeys: string[]) => void;
   onChangeElement?: (atomIds: string[], element: string) => void;
+  onSelectByElement?: (element: string) => void;
   onCopy?: (atomIds: string[]) => void;
   onPaste?: () => void;
   onSetAtomColor?: (atomIds: string[], color: string) => void;
@@ -595,51 +597,75 @@ export function createAtomContextMenu(
     },
   });
 
-  return [
-    {
-      label: 'Delete atom' + (atomIds.length > 1 ? 's' : ''),
-      action: () => handlers.onDeleteAtom?.(atomIds),
-    },
-    {
-      label: 'Change element',
-      submenu: changeElementSubmenu,
-    },
-    { divider: true },
-    {
-      label: 'Copy',
-      action: () => handlers.onCopy?.(atomIds),
-    },
-    {
-      label: 'Paste',
-      action: () => handlers.onPaste?.(),
-    },
-    { divider: true },
-    {
-      label: 'Set color...',
-      action: () => {
-        showColorPickerDialog(atomIds, (color) => {
-          handlers.onSetAtomColor?.(atomIds, color);
-        });
+  const atoms = structureStore.currentStructure?.atoms || [];
+  const firstAtom = atomIds.length > 0 ? atoms.find((a: any) => a.id === atomIds[0]) : null;
+  const atomElement = firstAtom ? (parseElement(firstAtom.element) || firstAtom.element) : null;
+
+  try {
+    return [
+      {
+        label: 'Delete atom' + (atomIds.length > 1 ? 's' : ''),
+        action: () => handlers.onDeleteAtom?.(atomIds),
       },
-    },
-    {
-      label: 'Set radius...',
-      action: () => {
-        showRadiusInputDialog(atomIds, (radius) => {
-          handlers.onSetAtomRadius?.(atomIds, radius);
-        });
+      {
+        label: 'Change element',
+        submenu: changeElementSubmenu,
       },
-    },
-    { divider: true },
-    {
-      label: 'Fix atom' + (atomIds.length > 1 ? 's' : ''),
-      action: () => handlers.onSetAtomFixed?.(atomIds, true),
-    },
-    {
-      label: 'Unfix atom' + (atomIds.length > 1 ? 's' : ''),
-      action: () => handlers.onSetAtomFixed?.(atomIds, false),
-    },
-  ];
+      { divider: true },
+      ...(atomElement ? [{
+        label: `Select all ${atomElement} atoms`,
+        action: () => handlers.onSelectByElement?.(atomElement),
+      }] : []),
+      {
+        label: 'Select by Element...',
+        action: () => {
+          showElementPickerDialog((element) => {
+            if (element) {
+              handlers.onSelectByElement?.(element);
+            }
+          });
+        },
+      },
+      { divider: true },
+      {
+        label: 'Copy',
+        action: () => handlers.onCopy?.(atomIds),
+      },
+      {
+        label: 'Paste',
+        action: () => handlers.onPaste?.(),
+      },
+      { divider: true },
+      {
+        label: 'Set color...',
+        action: () => {
+          showColorPickerDialog(atomIds, (color) => {
+            handlers.onSetAtomColor?.(atomIds, color);
+          });
+        },
+      },
+      {
+        label: 'Set radius...',
+        action: () => {
+          showRadiusInputDialog(atomIds, (radius) => {
+            handlers.onSetAtomRadius?.(atomIds, radius);
+          });
+        },
+      },
+      { divider: true },
+      {
+        label: 'Fix atom' + (atomIds.length > 1 ? 's' : ''),
+        action: () => handlers.onSetAtomFixed?.(atomIds, true),
+      },
+      {
+        label: 'Unfix atom' + (atomIds.length > 1 ? 's' : ''),
+        action: () => handlers.onSetAtomFixed?.(atomIds, false),
+      },
+    ];
+  } catch (err) {
+    console.error('Error creating context menu:', err);
+    return [{ label: 'Error creating menu', disabled: true }];
+  }
 }
 
 export function createBondContextMenu(
@@ -706,53 +732,68 @@ export function createEmptySpaceContextMenu(
     },
   });
 
-  return [
-    {
-      label: 'Add atom',
-      submenu: addAtomSubmenu,
-    },
-    { divider: true },
-    {
-      label: 'Calculate Bonds',
-      action: () => handlers.onCalculateBonds?.(),
-    },
-    {
-      label: 'Clear All Bonds',
-      action: () => handlers.onClearBonds?.(),
-    },
-    { divider: true },
-    {
-      label: 'Undo',
-      action: () => handlers.onUndo?.(),
-    },
-    {
-      label: 'Redo',
-      action: () => handlers.onRedo?.(),
-    },
-    { divider: true },
-    {
-      label: 'Select all',
-      action: () => handlers.onSelectAll?.(),
-    },
-    {
-      label: 'Clear selection',
-      action: () => handlers.onClearSelection?.(),
-      disabled: selectionStore.selectedAtomIds.length === 0 && selectionStore.selectedBondKeys.length === 0,
-    },
-    { divider: true },
-    {
-      label: 'Save',
-      action: () => handlers.onSave?.(),
-    },
-    {
-      label: 'Save As...',
-      action: () => handlers.onSaveAs?.(),
-    },
-    {
-      label: 'Export image',
-      action: () => handlers.onExportImage?.(),
-    },
-  ];
+  try {
+    return [
+      {
+        label: 'Add atom',
+        submenu: addAtomSubmenu,
+      },
+      { divider: true },
+      {
+        label: 'Calculate Bonds',
+        action: () => handlers.onCalculateBonds?.(),
+      },
+      {
+        label: 'Clear All Bonds',
+        action: () => handlers.onClearBonds?.(),
+      },
+      { divider: true },
+      {
+        label: 'Select all',
+        action: () => handlers.onSelectAll?.(),
+      },
+      {
+        label: 'Select by Element...',
+        action: () => {
+          showElementPickerDialog((element) => {
+            if (element) {
+              handlers.onSelectByElement?.(element);
+            }
+          });
+        },
+      },
+      {
+        label: 'Clear selection',
+        action: () => handlers.onClearSelection?.(),
+        disabled: (selectionStore.selectedAtomIds?.length || 0) === 0 && (selectionStore.selectedBondKeys?.length || 0) === 0,
+      },
+      { divider: true },
+      {
+        label: 'Undo',
+        action: () => handlers.onUndo?.(),
+      },
+      {
+        label: 'Redo',
+        action: () => handlers.onRedo?.(),
+      },
+      { divider: true },
+      {
+        label: 'Save',
+        action: () => handlers.onSave?.(),
+      },
+      {
+        label: 'Save as...',
+        action: () => handlers.onSaveAs?.(),
+      },
+      {
+        label: 'Export image',
+        action: () => handlers.onExportImage?.(),
+      },
+    ];
+  } catch (err) {
+    console.error('Error creating empty space context menu:', err);
+    return [{ label: 'Error creating menu', disabled: true }];
+  }
 }
 
 export function setupContextMenu(

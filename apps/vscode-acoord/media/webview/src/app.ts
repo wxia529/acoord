@@ -15,6 +15,7 @@ import * as axisIndicator from './axisIndicator';
 import type { Atom, Structure, VsCodeApi, AppCallbacks } from './types';
 import type { ExtensionToWebviewMessage, RenderMessage } from '../../../src/shared/protocol';
 import { showElementPickerDialog } from './components/elementPicker';
+import { parseElement } from './utils/element';
 
 // Initialize VS Code Design System with needed components
 provideVSCodeDesignSystem().register(
@@ -367,6 +368,23 @@ function setupInteraction(): void {
       if (!structureStore.currentStructure) { return; }
       const allIds = structureStore.currentStructure.atoms.map((a) => a.id);
       selectHandlers.applySelection(allIds, 'replace');
+    },
+
+    onSelectByElement: (element) => {
+      if (!structureStore.currentStructure) { return; }
+      const idsToSelect = structureStore.currentStructure.atoms
+        .filter(a => {
+          const sym = (parseElement(a.element) || a.element);
+          return sym === element;
+        })
+        .map(a => a.id);
+      
+      if (idsToSelect.length > 0) {
+        selectHandlers.applySelection(idsToSelect, 'replace');
+        setStatus(`Selected ${idsToSelect.length} ${element} atoms`);
+      } else {
+        setStatus(`No ${element} atoms found`);
+      }
     },
 
     onInvertSelection: () => {
