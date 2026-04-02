@@ -285,7 +285,9 @@ export class MessageRouter {
     });
 
     this.registerTyped('calculateBonds', (message) => {
-      this.bondService.calculateBonds(message.scheme);
+      const settings = this.displayConfigService.getSessionDisplaySettings();
+      const scheme = message.scheme ?? settings?.bondScheme;
+      this.bondService.calculateBonds(scheme);
       return true;
     });
 
