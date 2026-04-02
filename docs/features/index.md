@@ -113,4 +113,4 @@ Constraint management for geometry optimization:
 
 - Check individual feature pages for details
 - Read [tutorials](/tutorials/) for step-by-step guides
-- Report issues on [GitHub](https://github.com/wxia529/vscode-acoord/issues)
+- Report issues on [GitHub](https://github.com/wxia529/acoord/issues)

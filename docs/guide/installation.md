@@ -30,7 +30,7 @@ If you want to install a specific version or test pre-release builds:
 ### Steps
 
 1. Download the `.vsix` file from:
-   - [GitHub Releases](https://github.com/wxia529/vscode-acoord/releases)
+   - [GitHub Releases](https://github.com/wxia529/acoord/releases)
    - Or build from source (see below)
 2. In VS Code, open the **Extensions** panel
 3. Click the `...` (More Actions) button
@@ -52,7 +52,7 @@ For development or latest features:
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/wxia529/vscode-acoord.git
+git clone https://github.com/wxia529/acoord.git
 cd vscode-acoord
 
 # 2. Install dependencies

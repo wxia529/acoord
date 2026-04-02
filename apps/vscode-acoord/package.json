@@ -3,7 +3,7 @@
   "displayName": "ACoord",
   "description": "Atomic Coordinate Toolkit",
   "publisher": "wxia529",
-  "version": "0.3.10",
+  "version": "0.3.11",
   "license": "MIT",
   "type": "module",
   "icon": "media/acoord-icon.png",
@@ -23,13 +23,13 @@
     "castep",
     "cell"
   ],
-  "homepage": "https://github.com/wxia529/vscode-acoord",
+  "homepage": "https://github.com/wxia529/acoord",
   "bugs": {
-    "url": "https://github.com/wxia529/vscode-acoord/issues"
+    "url": "https://github.com/wxia529/acoord/issues"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/wxia529/vscode-acoord"
+    "url": "https://github.com/wxia529/acoord"
   },
   "engines": {
     "vscode": "^1.90.0"

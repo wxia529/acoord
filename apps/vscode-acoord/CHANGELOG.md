@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.11]
+
+### Changed
+
+- **Monorepo Migration**: Migrated the entire project to a monorepo structure. Both the VS Code extension (`vscode-acoord`) and the 3D rendering engine (`acoord-3d`) are now unified under `https://github.com/wxia529/acoord`
+- **Consolidated Export Formats**: Merged the "VASP" and "POSCAR" options in the "Save As" menu into a single "VASP POSCAR / .vasp" entry to simplify the user interface
+
+### Added
+
+- **Lazy Trajectory Bonds**: Implemented just-in-time bond calculation for molecular dynamics trajectories. Bonds are now calculated only when a frame is viewed for the first time and then cached, preventing UI freezes when loading or playing back large trajectories (1000+ frames)
+
+### Fixed
+
+- **Context Menu Accessibility**: Fixed a bug where the right-click context menu would fail to open because subtle mouse micro-movements were incorrectly detected as camera drags
+
 ## [0.3.10]
 
 ### Added

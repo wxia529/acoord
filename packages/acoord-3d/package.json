@@ -1,6 +1,6 @@
 {
   "name": "acoord-3d",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Atomic structure 3D rendering engine powered by Three.js",
   "type": "module",
   "main": "./dist/index.js",
@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/wxia529/acoord-3d"
+    "url": "https://github.com/wxia529/acoord"
   },
   "peerDependencies": {
     "three": "^0.183.2"

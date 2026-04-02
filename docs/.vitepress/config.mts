@@ -62,7 +62,7 @@ export default defineConfig({
 
     // 社交链接
     socialLinks: [
-      { icon: 'github', link: 'https://github.com/wxia529/vscode-acoord' },
+      { icon: 'github', link: 'https://github.com/wxia529/acoord' },
     ],
 
     // 页脚

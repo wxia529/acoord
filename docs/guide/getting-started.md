@@ -18,7 +18,7 @@ This guide will help you get up and running with ACoord in just a few minutes.
 
 ### From VSIX File
 
-1. Download the `.vsix` file from the [GitHub Releases](https://github.com/wxia529/vscode-acoord/releases)
+1. Download the `.vsix` file from the [GitHub Releases](https://github.com/wxia529/acoord/releases)
 2. In VS Code, click the `...` menu in the Extensions panel
 3. Select **Install from VSIX...**
 4. Choose the downloaded `.vsix` file

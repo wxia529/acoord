@@ -12,7 +12,7 @@ hero:
       link: /guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/wxia529/vscode-acoord
+      link: https://github.com/wxia529/acoord
 
 features:
   - title: '15+ File Formats'

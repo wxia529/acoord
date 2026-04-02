@@ -55,4 +55,4 @@ Learn how to:
 ## Need Help?
 
 - Check the [Features](/features/) reference for detailed information
-- Report issues on [GitHub](https://github.com/wxia529/vscode-acoord/issues)
+- Report issues on [GitHub](https://github.com/wxia529/acoord/issues)
