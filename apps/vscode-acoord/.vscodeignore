@@ -1,13 +1,40 @@
+# Source files
+src/**
+media/webview/src/**
+
+# Build configs
 .vscode/**
 .vscode-test/**
-src/**
-node_modules/**
+build/**
+tsconfig.json
+**/tsconfig.json
+eslint.config.mjs
+project.json
+
+# Test files
+**/*.test.ts
+**/*.test.mts
+**/*.spec.ts
+.mocharc.json
+.vscode-test.mjs
+
+# CI/CD
+.github/**
+
+# Sourcemaps and type declarations
+**/*.map
+**/*.d.ts
+
+# Git
 .gitignore
+.git/**
+
+# Docs (keep README.md and CHANGELOG.md for marketplace)
+AGENTS.md
+DEVELOPMENT.md
+CURRENT_ISSUES.md
+
+# Misc
 .yarnrc
 vsc-extension-quickstart.md
-**/tsconfig.json
-**/eslint.config.mjs
-**/*.map
-**/*.ts
-**/.vscode-test.*
 **/*.vsix

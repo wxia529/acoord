@@ -43,6 +43,14 @@
       "options": {
         "script": "docs:build"
       }
+    },
+    "package": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "npx vsce package --no-dependencies",
+        "cwd": "{projectRoot}"
+      },
+      "dependsOn": ["build"]
     }
   },
   "tags": ["scope:app", "type:app"]

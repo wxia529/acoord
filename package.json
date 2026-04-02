@@ -16,7 +16,8 @@
     "test:vscode-acoord": "nx run vscode-acoord:test",
     "watch": "nx run-many --target=watch --all",
     "lint": "nx run-many --target=lint --all",
-    "dev": "nx run vscode-acoord:watch"
+    "dev": "nx run vscode-acoord:watch",
+    "package": "nx run vscode-acoord:package"
   },
   "devDependencies": {
     "nx": "^20.0.0"
