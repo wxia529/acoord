@@ -42,7 +42,7 @@
     "typescript": "^5.9.3"
   },
   "scripts": {
-    "build": "node build.config.mjs",
+    "build": "node build.config.mjs && tsc --emitDeclarationOnly",
     "watch": "node build.config.mjs --watch",
     "test": "mocha"
   },

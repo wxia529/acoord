@@ -17,7 +17,11 @@
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
     "resolveJsonModule": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+      "acoord-3d": ["packages/acoord-3d/src/index.ts"]
+    }
   },
   "exclude": ["node_modules", "dist", "out", "**/node_modules/**", "**/dist/**", "**/out/**"]
 }

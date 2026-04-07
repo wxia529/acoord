@@ -7,8 +7,12 @@
     "strict": true,
     "noEmit": true,
     "skipLibCheck": true,
+    "baseUrl": ".",
+    "paths": {
+      "acoord-3d": ["../../../../packages/acoord-3d/src/index.ts"]
+    },
     "typeRoots": ["../../../node_modules/@types"]
   },
-  "include": ["./**/*.ts", "../../../src/shared/**/*.ts", "./acoord-3d.d.ts"],
+  "include": ["./**/*.ts", "../../../src/shared/**/*.ts"],
   "exclude": ["../node_modules"]
 }
