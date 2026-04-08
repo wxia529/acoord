@@ -40,7 +40,7 @@ describe('BondService', () => {
       const bonds = tm.activeStructure.bonds;
       expect(bonds).to.have.length.greaterThan(0);
       const bondKey = Structure.bondKey(o.id, h1.id);
-      expect(bonds.some((b) => Structure.bondKey(b[0], b[1]) === bondKey)).to.be.true;
+      expect(bonds.some((b) => Structure.bondKey(b.atomId1, b.atomId2) === bondKey)).to.be.true;
     });
 
     it('should push an undo snapshot when creating a bond', () => {
@@ -80,7 +80,7 @@ describe('BondService', () => {
       const bondKey = Structure.bondKey(o.id, h1.id);
       svc.deleteBond(bondKey);
       const bonds = tm.activeStructure.bonds;
-      expect(bonds.some((b) => Structure.bondKey(b[0], b[1]) === bondKey)).to.be.false;
+      expect(bonds.some((b) => Structure.bondKey(b.atomId1, b.atomId2) === bondKey)).to.be.false;
     });
 
     it('should delete bonds by bondKeys array', () => {
@@ -164,6 +164,40 @@ describe('BondService', () => {
       const s = makeH2O();
       const { svc } = makeServices(s);
       expect(() => svc.setBondLength(['atom-1'], 2.0)).to.not.throw();
+    });
+  });
+
+  describe('setBondRadius', () => {
+    it('updates selected bond radius', () => {
+      const s = makeH2O();
+      const { svc, tm } = makeServices(s);
+      const [o, h1] = s.atoms;
+      svc.createBond(o.id, h1.id);
+      const bondKey = Structure.bondKey(o.id, h1.id);
+
+      svc.setBondRadius([bondKey], 0.22);
+
+      const bond = tm.activeStructure.getBond(bondKey);
+      expect(bond).to.not.be.undefined;
+      expect(bond?.radius).to.be.closeTo(0.22, 1e-6);
+    });
+  });
+
+  describe('setGlobalBondRadius', () => {
+    it('updates radius for all bonds with a single call', () => {
+      const s = makeH2O();
+      const { svc, tm, um } = makeServices(s);
+      const [o, h1, h2] = s.atoms;
+      svc.createBond(o.id, h1.id);
+      svc.createBond(o.id, h2.id);
+      const beforeUndoDepth = um.depth;
+
+      svc.setGlobalBondRadius(0.18);
+
+      expect(um.depth).to.equal(beforeUndoDepth + 1);
+      for (const bond of tm.activeStructure.bonds) {
+        expect(bond.radius).to.be.closeTo(0.18, 1e-6);
+      }
     });
   });
 });

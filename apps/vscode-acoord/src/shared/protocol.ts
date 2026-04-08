@@ -435,6 +435,23 @@ export interface SetBondLengthMessage {
   length: number;
 }
 
+export interface SetBondRadiusMessage {
+  command: 'setBondRadius';
+  bondKeys: string[];
+  radius: number;
+}
+
+export interface SetGlobalBondRadiusMessage {
+  command: 'setGlobalBondRadius';
+  radius: number;
+}
+
+export interface SetBondColorMessage {
+  command: 'setBondColor';
+  bondKeys: string[];
+  color: string;
+}
+
 export interface CreateBondMessage {
   command: 'createBond';
   atomIds: string[];
@@ -560,6 +577,9 @@ export type WebviewToExtensionMessage =
   | UpdateDisplaySettingsMessage
   | UpdateAtomMessage
   | SetBondLengthMessage
+  | SetBondRadiusMessage
+  | SetGlobalBondRadiusMessage
+  | SetBondColorMessage
   | CreateBondMessage
   | DeleteBondMessage
   | CalculateBondsMessage

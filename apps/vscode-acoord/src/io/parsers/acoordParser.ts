@@ -45,6 +45,8 @@ interface ACoordUnitCell {
 interface ACoordBond {
   atomId1: string;
   atomId2: string;
+  radius?: number;
+  color?: string;
 }
 
 interface ACoordFile {
@@ -63,7 +65,7 @@ export class ACoordParser extends StructureParser {
       throw new Error('ACoordParser: invalid JSON format');
     }
 
-    if (data.version !== '1.0') {
+    if (data.version !== '1.0' && data.version !== '1.1') {
       throw new Error(`ACoordParser: unsupported version "${data.version}"`);
     }
 
@@ -111,7 +113,13 @@ export class ACoordParser extends StructureParser {
 
     if (data.bonds && Array.isArray(data.bonds)) {
       for (const bond of data.bonds) {
-        structure.addBond(bond.atomId1, bond.atomId2);
+        const radius = typeof bond.radius === 'number' && Number.isFinite(bond.radius) && bond.radius > 0
+          ? bond.radius
+          : undefined;
+        const color = typeof bond.color === 'string' && bond.color.length > 0
+          ? bond.color
+          : undefined;
+        structure.addBond(bond.atomId1, bond.atomId2, { radius, color });
       }
     }
 
@@ -142,7 +150,7 @@ export class ACoordParser extends StructureParser {
     });
 
     const output: ACoordFile = {
-      version: '1.0',
+      version: '1.1',
       atoms,
     };
 
@@ -159,10 +167,17 @@ export class ACoordParser extends StructureParser {
 
     const bonds = structure.bonds;
     if (bonds.length > 0) {
-      output.bonds = bonds.map((bond: [string, string]) => ({
-        atomId1: bond[0],
-        atomId2: bond[1],
-      }));
+      output.bonds = bonds.map((bond) => {
+        const bondData: ACoordBond = {
+          atomId1: bond.atomId1,
+          atomId2: bond.atomId2,
+          radius: bond.radius,
+        };
+        if (bond.color) {
+          bondData.color = bond.color;
+        }
+        return bondData;
+      });
     }
 
     return JSON.stringify(output, null, 2);

@@ -1,6 +1,8 @@
 import type { DisplaySettings } from './types.js';
 import { DEFAULT_BOND_SCHEME } from './bondSchemes.js';
 
+export const DEFAULT_BOND_RADIUS = 0.04;
+
 export function getDefaultDisplaySettings(): DisplaySettings {
   return {
     showAxes: true,

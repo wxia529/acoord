@@ -155,6 +155,25 @@ describe('Structure', () => {
     });
   });
 
+  describe('Bond Management', () => {
+    it('addBond() creates a bond object and getBond() resolves by key', () => {
+      const structure = new Structure('test');
+      const atom1 = new Atom('C', 0, 0, 0);
+      const atom2 = new Atom('O', 1.2, 0, 0);
+      structure.addAtom(atom1);
+      structure.addAtom(atom2);
+
+      const bond = structure.addBond(atom1.id, atom2.id);
+      const bondKey = Structure.bondKey(atom1.id, atom2.id);
+
+      expect(bond).to.not.be.null;
+      expect(structure.getBond(bondKey)).to.equal(bond);
+      expect(structure.bonds).to.have.lengthOf(1);
+      expect(structure.bonds[0].atomId1).to.equal(Structure.normalizeBondPair(atom1.id, atom2.id)[0]);
+      expect(structure.bonds[0].atomId2).to.equal(Structure.normalizeBondPair(atom1.id, atom2.id)[1]);
+    });
+  });
+
   describe('Clone', () => {
     it('should create a deep independent copy', () => {
       const structure = new Structure('test', true);
@@ -508,7 +527,8 @@ describe('Structure', () => {
       structure.addAtom(atom1);
       structure.addAtom(atom2);
 
-      structure.bonds.push([atom1.id, atom2.id]);
+      structure.addBond(atom1.id, atom2.id);
+      structure.periodicBondImages.clear();
       
       expect(structure.periodicBondImages.size).to.equal(0);
       

@@ -3,5 +3,6 @@
  */
 
 export { Atom } from './atom.js';
+export { Bond } from './bond.js';
 export { UnitCell } from './unitCell.js';
 export { Structure } from './structure.js';

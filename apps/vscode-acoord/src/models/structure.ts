@@ -1,4 +1,5 @@
 import { Atom } from './atom.js';
+import { Bond, type BondOptions } from './bond.js';
 import { UnitCell } from './unitCell.js';
 import { ELEMENT_DATA, parseElement } from '../utils/elementData.js';
 import type { BondSchemeId } from '../shared/protocol.js';
@@ -9,7 +10,8 @@ export class Structure {
   name: string;
   atoms: Atom[] = [];
   private atomIndex: Map<string, Atom> = new Map();
-  bonds: Array<[string, string]> = [];
+  bonds: Bond[] = [];
+  private bondIndex: Map<string, Bond> = new Map();
   periodicBondImages: Map<string, [number, number, number]> = new Map();
   unitCell?: UnitCell;
   isCrystal: boolean = false;
@@ -42,16 +44,17 @@ export class Structure {
     this.atomIndex.delete(atomId);
     
     const bondsToRemove: string[] = [];
-    for (const [a, b] of this.bonds) {
-      if (a === atomId || b === atomId) {
-        bondsToRemove.push(Structure.bondKey(a, b));
+    for (const bond of this.bonds) {
+      if (bond.atomId1 === atomId || bond.atomId2 === atomId) {
+        bondsToRemove.push(Structure.bondKey(bond.atomId1, bond.atomId2));
       }
     }
     
-    this.bonds = this.bonds.filter(([a, b]) => a !== atomId && b !== atomId);
+    this.bonds = this.bonds.filter((bond) => bond.atomId1 !== atomId && bond.atomId2 !== atomId);
     
     for (const key of bondsToRemove) {
       this.periodicBondImages.delete(key);
+      this.bondIndex.delete(key);
     }
   }
 
@@ -75,64 +78,93 @@ export class Structure {
     return Structure.normalizeBondPair(parts[0], parts[1]);
   }
 
-  addBond(atomId1: string, atomId2: string): void {
+  private setBondIndex(bond: Bond): void {
+    const key = Structure.bondKey(bond.atomId1, bond.atomId2);
+    this.bondIndex.set(key, bond);
+  }
+
+  private rebuildBondIndex(): void {
+    this.bondIndex.clear();
+    for (const bond of this.bonds) {
+      this.setBondIndex(bond);
+    }
+  }
+
+  private addBondEntry(atomId1: string, atomId2: string, options?: BondOptions): Bond {
+    const bond = new Bond(atomId1, atomId2, undefined, options);
+    this.bonds.push(bond);
+    this.setBondIndex(bond);
+    return bond;
+  }
+
+  addBond(atomId1: string, atomId2: string, options?: BondOptions): Bond | null {
     if (!this.getAtom(atomId1) || !this.getAtom(atomId2) || atomId1 === atomId2) {
-      return;
+      return null;
     }
     const [a, b] = Structure.normalizeBondPair(atomId1, atomId2);
-    const exists = this.bonds.some(([x, y]) => x === a && y === b);
-    if (!exists) {
-      this.bonds.push([a, b]);
+    const key = Structure.bondKey(a, b);
+    const existing = this.bondIndex.get(key);
+    if (existing) {
+      return existing;
+    }
+
+    const bond = this.addBondEntry(a, b, options);
+    
+    if (this.isCrystal && this.unitCell) {
+      const atom1 = this.getAtom(a);
+      const atom2 = this.getAtom(b);
+      if (!atom1 || !atom2) {return bond;}
+      const vectors = this.unitCell.getLatticeVectors();
       
-      if (this.isCrystal && this.unitCell) {
-        const atom1 = this.getAtom(a);
-        const atom2 = this.getAtom(b);
-        if (!atom1 || !atom2) {return;}
-        const vectors = this.unitCell.getLatticeVectors();
-        
-        let minDistSq = Infinity;
-        let bestImage: [number, number, number] = [0, 0, 0];
-        
-        for (let ox = -1; ox <= 1; ox++) {
-          for (let oy = -1; oy <= 1; oy++) {
-            for (let oz = -1; oz <= 1; oz++) {
-              const offsetX = ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0];
-              const offsetY = ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1];
-              const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
-              
-              const dx = (atom2.x + offsetX) - atom1.x;
-              const dy = (atom2.y + offsetY) - atom1.y;
-              const dz = (atom2.z + offsetZ) - atom1.z;
-              const distanceSq = dx * dx + dy * dy + dz * dz;
-              
-              if (distanceSq < minDistSq) {
-                minDistSq = distanceSq;
-                bestImage = [ox, oy, oz];
-              }
+      let minDistSq = Infinity;
+      let bestImage: [number, number, number] = [0, 0, 0];
+      
+      for (let ox = -1; ox <= 1; ox++) {
+        for (let oy = -1; oy <= 1; oy++) {
+          for (let oz = -1; oz <= 1; oz++) {
+            const offsetX = ox * vectors[0][0] + oy * vectors[1][0] + oz * vectors[2][0];
+            const offsetY = ox * vectors[0][1] + oy * vectors[1][1] + oz * vectors[2][1];
+            const offsetZ = ox * vectors[0][2] + oy * vectors[1][2] + oz * vectors[2][2];
+            
+            const dx = (atom2.x + offsetX) - atom1.x;
+            const dy = (atom2.y + offsetY) - atom1.y;
+            const dz = (atom2.z + offsetZ) - atom1.z;
+            const distanceSq = dx * dx + dy * dy + dz * dz;
+            
+            if (distanceSq < minDistSq) {
+              minDistSq = distanceSq;
+              bestImage = [ox, oy, oz];
             }
           }
         }
-        
-        const key = Structure.bondKey(a, b);
-        this.periodicBondImages.set(key, bestImage);
       }
+      
+      this.periodicBondImages.set(key, bestImage);
     }
+
+    return bond;
   }
 
   removeBond(atomId1: string, atomId2: string): void {
     const [a, b] = Structure.normalizeBondPair(atomId1, atomId2);
     const key = Structure.bondKey(a, b);
-    this.bonds = this.bonds.filter(([x, y]) => !(x === a && y === b));
+    this.bonds = this.bonds.filter((bond) => !(bond.atomId1 === a && bond.atomId2 === b));
+    this.bondIndex.delete(key);
     this.periodicBondImages.delete(key);
   }
 
   hasBond(atomId1: string, atomId2: string): boolean {
     const [a, b] = Structure.normalizeBondPair(atomId1, atomId2);
-    return this.bonds.some(([x, y]) => x === a && y === b);
+    return this.bondIndex.has(Structure.bondKey(a, b));
+  }
+
+  getBond(bondKey: string): Bond | undefined {
+    return this.bondIndex.get(bondKey);
   }
 
   clearBonds(): void {
     this.bonds = [];
+    this.bondIndex.clear();
     this.periodicBondImages.clear();
     this.hasCalculatedBonds = false;
   }
@@ -196,9 +228,11 @@ export class Structure {
     }
   }
 
-  getBonds(): Array<{ atomId1: string; atomId2: string; distance: number }> {
+  getBonds(): Array<{ atomId1: string; atomId2: string; distance: number; radius: number; color?: string }> {
     return this.bonds
-      .map(([id1, id2]) => {
+      .map((bond) => {
+        const id1 = bond.atomId1;
+        const id2 = bond.atomId2;
         const atom1 = this.getAtom(id1);
         const atom2 = this.getAtom(id2);
         if (!atom1 || !atom2) {return null;}
@@ -206,6 +240,8 @@ export class Structure {
           atomId1: id1,
           atomId2: id2,
           distance: atom1.distanceTo(atom2),
+          radius: bond.radius,
+          color: bond.color,
         };
       })
       .filter((b): b is NonNullable<typeof b> => b !== null);
@@ -214,6 +250,7 @@ export class Structure {
   calculateBonds(schemeId?: BondSchemeId): void {
     const scheme = BOND_SCHEMES[schemeId ?? DEFAULT_BOND_SCHEME];
     this.bonds = [];
+    this.bondIndex.clear();
     this.periodicBondImages.clear();
     this.hasCalculatedBonds = true;
     
@@ -283,7 +320,7 @@ export class Structure {
           if (seen.has(key)) {
             continue;
           }
-          this.bonds.push([atom1.id, atom2.id]);
+          this.addBondEntry(atom1.id, atom2.id);
           seen.add(key);
         }
       }
@@ -352,7 +389,7 @@ export class Structure {
         if (minDistSq < bondLength * bondLength) {
           const key = Structure.bondKey(atom1.id, atom2.id);
           if (!seen.has(key)) {
-            this.bonds.push([atom1.id, atom2.id]);
+            this.addBondEntry(atom1.id, atom2.id);
             this.periodicBondImages.set(key, bestImage);
             seen.add(key);
           }
@@ -467,7 +504,8 @@ export class Structure {
     for (const atom of this.atoms) {
       cloned.addAtom(atom.clone());
     }
-    cloned.bonds = this.bonds.map(([a, b]) => [a, b]);
+    cloned.bonds = this.bonds.map((bond) => bond.clone());
+    cloned.rebuildBondIndex();
     cloned.periodicBondImages = new Map(this.periodicBondImages);
     if (this.unitCell) {
       cloned.unitCell = this.unitCell.clone();
@@ -499,15 +537,17 @@ export class Structure {
    * Get periodic bonds using spatial hashing for O(n) performance
    * This is the periodic equivalent of getBonds() for crystal structures
    */
-  getPeriodicBonds(): Array<{ atomId1: string; atomId2: string; distance: number; image?: [number, number, number] }> {
+  getPeriodicBonds(): Array<{ atomId1: string; atomId2: string; distance: number; image?: [number, number, number]; radius: number; color?: string }> {
     if (!this.isCrystal || !this.unitCell) {
       return [];
     }
 
-    const bonds: Array<{ atomId1: string; atomId2: string; distance: number; image?: [number, number, number] }> = [];
+    const bonds: Array<{ atomId1: string; atomId2: string; distance: number; image?: [number, number, number]; radius: number; color?: string }> = [];
     const vectors = this.unitCell.getLatticeVectors();
 
-    for (const [id1, id2] of this.bonds) {
+    for (const bond of this.bonds) {
+      const id1 = bond.atomId1;
+      const id2 = bond.atomId2;
       const atom1 = this.getAtom(id1);
       const atom2 = this.getAtom(id2);
       if (!atom1 || !atom2) {continue;}
@@ -531,6 +571,8 @@ export class Structure {
           atomId2: id2,
           distance,
           image: storedImage,
+          radius: bond.radius,
+          color: bond.color,
         });
       } else {
         let minDist = Infinity;
@@ -565,6 +607,8 @@ export class Structure {
           atomId2: id2,
           distance: minDist,
           image: bestImage,
+          radius: bond.radius,
+          color: bond.color,
         });
       }
     }
@@ -580,7 +624,7 @@ export class Structure {
       id: this.id,
       name: this.name,
       atoms: this.atoms.map((a) => a.toJSON()),
-      bonds: this.bonds,
+      bonds: this.bonds.map((bond) => bond.toJSON()),
       periodicBondImages: Array.from(this.periodicBondImages.entries()),
       unitCell: this.unitCell?.toJSON(),
       isCrystal: this.isCrystal,
@@ -601,15 +645,50 @@ export class Structure {
       });
       s.addAtom(atom);
     }
-    s.bonds = (data as Record<string, unknown>).bonds as Array<[string, string]> | undefined 
-      ?? (data as Record<string, unknown>).manualBonds as Array<[string, string]> | undefined 
-      ?? [];
+    const rawBonds = (data as Record<string, unknown>).bonds;
+    const legacyManualBonds = (data as Record<string, unknown>).manualBonds as Array<[string, string]> | undefined;
+    const sourceBonds = Array.isArray(rawBonds) ? rawBonds : legacyManualBonds ?? [];
+
+    for (const entry of sourceBonds) {
+      if (Array.isArray(entry)) {
+        const [atomId1, atomId2] = entry;
+        if (typeof atomId1 === 'string' && typeof atomId2 === 'string') {
+          s.addBond(atomId1, atomId2);
+        }
+        continue;
+      }
+
+      if (!entry || typeof entry !== 'object') {
+        continue;
+      }
+
+      const record = entry as Record<string, unknown>;
+      const atomId1 = record.atomId1;
+      const atomId2 = record.atomId2;
+      if (typeof atomId1 !== 'string' || typeof atomId2 !== 'string') {
+        continue;
+      }
+
+      const radius = typeof record.radius === 'number' && Number.isFinite(record.radius) && record.radius > 0
+        ? record.radius
+        : undefined;
+      const color = typeof record.color === 'string' && record.color.length > 0
+        ? record.color
+        : undefined;
+      const bond = s.addBond(atomId1, atomId2, { radius, color });
+      if (bond && typeof record.id === 'string' && record.id.length > 0) {
+        bond.id = record.id;
+      }
+    }
+    s.rebuildBondIndex();
     
     const periodicBondImagesData = (data as Record<string, unknown>).periodicBondImages as
       | Array<[string, [number, number, number]]>
       | undefined;
     if (periodicBondImagesData) {
       s.periodicBondImages = new Map(periodicBondImagesData);
+    } else {
+      s.periodicBondImages.clear();
     }
     
     if (data.unitCell) {

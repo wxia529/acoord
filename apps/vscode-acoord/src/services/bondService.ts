@@ -111,6 +111,140 @@ export class BondService {
     this.trajectoryManager.commitEdit();
   }
 
+  setBondRadius(bondKeys: string[], radius: number): void {
+    if (bondKeys.length === 0 || !Number.isFinite(radius) || radius <= 0) {
+      return;
+    }
+    const keys = Array.from(
+      new Set(
+        bondKeys
+          .map((key) => (typeof key === 'string' ? key.trim() : ''))
+          .filter((key) => key.length > 0)
+      )
+    );
+    if (keys.length === 0) {
+      return;
+    }
+
+    const currentStructure = this.trajectoryManager.activeStructure;
+    const keysToUpdate = keys.filter((key) => !!currentStructure.getBond(key));
+    if (keysToUpdate.length === 0) {
+      return;
+    }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+
+    this.undoManager.push(editStructure);
+    for (const key of keysToUpdate) {
+      const bond = editStructure.getBond(key);
+      if (bond) {
+        bond.radius = radius;
+      }
+    }
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+  }
+
+  setGlobalBondRadius(radius: number): void {
+    if (!Number.isFinite(radius) || radius <= 0) {
+      return;
+    }
+
+    const currentStructure = this.trajectoryManager.activeStructure;
+    if (currentStructure.bonds.length === 0) {
+      return;
+    }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+
+    this.undoManager.push(editStructure);
+    for (const bond of editStructure.bonds) {
+      bond.radius = radius;
+    }
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+  }
+
+  setBondColor(bondKeys: string[], color: string): void {
+    if (bondKeys.length === 0 || !/^#[0-9a-fA-F]{6}$/.test(color)) {
+      return;
+    }
+    const keys = Array.from(
+      new Set(
+        bondKeys
+          .map((key) => (typeof key === 'string' ? key.trim() : ''))
+          .filter((key) => key.length > 0)
+      )
+    );
+    if (keys.length === 0) {
+      return;
+    }
+
+    const currentStructure = this.trajectoryManager.activeStructure;
+    const keysToUpdate = keys.filter((key) => !!currentStructure.getBond(key));
+    if (keysToUpdate.length === 0) {
+      return;
+    }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+
+    this.undoManager.push(editStructure);
+    for (const key of keysToUpdate) {
+      const bond = editStructure.getBond(key);
+      if (bond) {
+        bond.color = color;
+      }
+    }
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+  }
+
+  resetBondColor(bondKeys: string[]): void {
+    if (bondKeys.length === 0) {
+      return;
+    }
+    const keys = Array.from(
+      new Set(
+        bondKeys
+          .map((key) => (typeof key === 'string' ? key.trim() : ''))
+          .filter((key) => key.length > 0)
+      )
+    );
+    if (keys.length === 0) {
+      return;
+    }
+
+    const currentStructure = this.trajectoryManager.activeStructure;
+    const keysToUpdate = keys.filter((key) => !!currentStructure.getBond(key));
+    if (keysToUpdate.length === 0) {
+      return;
+    }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+
+    this.undoManager.push(editStructure);
+    for (const key of keysToUpdate) {
+      const bond = editStructure.getBond(key);
+      if (bond) {
+        bond.color = undefined;
+      }
+    }
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+  }
+
   setBondLength(atomIds: string[], length: number): void {
     if (atomIds.length < 2 || typeof length !== 'number') {
       return;

@@ -448,10 +448,15 @@ function setupInteraction(): void {
     onSetBondLength: (bondKeys: string[], length: number) => {
       if (bondKeys.length === 0) { return; }
       const bondKey = bondKeys[0];
-      const [atomId1, atomId2] = bondKey.split('-');
+      const [atomId1, atomId2] = bondKey.split('|');
       if (atomId1 && atomId2) {
         vscode.postMessage({ command: 'setBondLength', atomIds: [atomId1, atomId2], length });
       }
+    },
+
+    onSetBondRadius: (bondKeys: string[], thickness: number) => {
+      if (bondKeys.length === 0) { return; }
+      vscode.postMessage({ command: 'setBondRadius', bondKeys, radius: thickness });
     },
 
     onDeleteAtoms: (atomIds: string[]) => {

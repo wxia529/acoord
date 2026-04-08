@@ -3,6 +3,7 @@ import { renderer } from '../renderer';
 import { Vector3, Plane } from 'three';
 import { showElementPickerDialog } from './elementPicker';
 import { parseElement } from '../utils/element';
+import { DEFAULT_BOND_THICKNESS_ANGSTROM, normalizeBondThickness } from '../utils/bondThickness';
 
 export interface ContextMenuHandler {
   label?: string;
@@ -214,6 +215,7 @@ export interface ContextMenuHandlers {
   onSetAtomFixed?: (atomIds: string[], fixed: boolean) => void;
   onCreateBond?: (atomIds: string[]) => void;
   onSetBondLength?: (bondKeys: string[], length: number) => void;
+  onSetBondRadius?: (bondKeys: string[], thickness: number) => void;
   onCalculateBonds?: () => void;
   onClearBonds?: () => void;
   onAddAtom?: (element: string, x: number, y: number, z: number) => void;
@@ -576,6 +578,134 @@ function showBondLengthDialog(bondKeys: string[], handler: (length: number) => v
   });
 }
 
+function showBondRadiusDialog(
+  bondKeys: string[],
+  initialThickness: number,
+  handler: (thickness: number) => void
+): void {
+  const existingOverlay = document.getElementById('bond-radius-overlay');
+  if (existingOverlay) {
+    existingOverlay.remove();
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'bond-radius-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 10001;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  `;
+
+  const dialog = document.createElement('div');
+  dialog.style.cssText = `
+    background: #1e1e1e;
+    border: 1px solid #454545;
+    border-radius: 6px;
+    padding: 16px;
+    min-width: 240px;
+  `;
+
+  const title = document.createElement('div');
+  title.textContent = `Set Bond Thickness${bondKeys.length > 1 ? ' (Multiple)' : ''} (Å)`;
+  title.style.cssText = `
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #cccccc;
+  `;
+  dialog.appendChild(title);
+
+  const input = document.createElement('input');
+  input.type = 'number';
+  input.step = '0.01';
+  input.min = '0.01';
+  input.max = '2.0';
+  input.value = initialThickness.toFixed(3);
+  input.style.cssText = `
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #454545;
+    border-radius: 4px;
+    background: #2d2d2d;
+    color: #cccccc;
+    font-size: 13px;
+    margin-bottom: 12px;
+    box-sizing: border-box;
+  `;
+  dialog.appendChild(input);
+
+  const buttonContainer = document.createElement('div');
+  buttonContainer.style.cssText = `
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  `;
+
+  const cancelButton = document.createElement('button');
+  cancelButton.textContent = 'Cancel';
+  cancelButton.style.cssText = `
+    background: transparent;
+    border: 1px solid #454545;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #cccccc;
+    cursor: pointer;
+  `;
+  cancelButton.addEventListener('click', () => overlay.remove());
+  buttonContainer.appendChild(cancelButton);
+
+  const okButton = document.createElement('button');
+  okButton.textContent = 'OK';
+  okButton.style.cssText = `
+    background: #0e639c;
+    border: 1px solid #0e639c;
+    border-radius: 4px;
+    padding: 6px 12px;
+    color: #ffffff;
+    cursor: pointer;
+  `;
+  okButton.addEventListener('click', () => {
+    const radius = parseFloat(input.value);
+    if (!isNaN(radius) && radius > 0) {
+      handler(radius);
+    }
+    overlay.remove();
+  });
+  buttonContainer.appendChild(okButton);
+
+  dialog.appendChild(buttonContainer);
+  overlay.appendChild(dialog);
+  document.body.appendChild(overlay);
+
+  input.focus();
+  input.select();
+
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+    }
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const radius = parseFloat(input.value);
+      if (!isNaN(radius) && radius > 0) {
+        handler(radius);
+      }
+      overlay.remove();
+    } else if (e.key === 'Escape') {
+      overlay.remove();
+    }
+  });
+}
+
 export function createAtomContextMenu(
   atomIds: string[],
   handlers: ContextMenuHandlers,
@@ -672,6 +802,13 @@ export function createBondContextMenu(
   bondKeys: string[],
   handlers: ContextMenuHandlers,
 ): ContextMenuHandler[] {
+  const firstBond = bondKeys.length > 0
+    ? structureStore.currentStructure?.bonds.find((bond) => bond.key === bondKeys[0])
+    : undefined;
+  const initialThickness = normalizeBondThickness(
+    firstBond?.radius ?? DEFAULT_BOND_THICKNESS_ANGSTROM
+  );
+
   return [
     {
       label: 'Delete bond' + (bondKeys.length > 1 ? 's' : ''),
@@ -682,6 +819,14 @@ export function createBondContextMenu(
       action: () => {
         showBondLengthDialog(bondKeys, (length) => {
           handlers.onSetBondLength?.(bondKeys, length);
+        });
+      },
+    },
+    {
+      label: 'Set bond thickness...',
+      action: () => {
+        showBondRadiusDialog(bondKeys, initialThickness, (thickness) => {
+          handlers.onSetBondRadius?.(bondKeys, thickness);
         });
       },
     },

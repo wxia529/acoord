@@ -302,6 +302,21 @@ export class MessageRouter {
       return true;
     });
 
+    this.registerTyped('setBondRadius', (message) => {
+      this.bondService.setBondRadius(message.bondKeys, message.radius);
+      return true;
+    });
+
+    this.registerTyped('setGlobalBondRadius', (message) => {
+      this.bondService.setGlobalBondRadius(message.radius);
+      return true;
+    });
+
+    this.registerTyped('setBondColor', (message) => {
+      this.bondService.setBondColor(message.bondKeys, message.color);
+      return true;
+    });
+
     this.registerTyped('setBondScheme', (message) => {
       const settings = this.displayConfigService.getSessionDisplaySettings();
       if (settings) {

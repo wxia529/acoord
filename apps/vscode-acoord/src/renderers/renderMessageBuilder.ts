@@ -218,16 +218,17 @@ export class RenderMessageBuilder {
         continue;
       }
 
+      const bondColor = bondInfo.color;
       wireBonds.push({
         key: Structure.bondKey(atom1.id, atom2.id),
         atomId1: atom1.id,
         atomId2: atom2.id,
         start: [atom1.x, atom1.y, atom1.z] as [number, number, number],
         end: [atom2.x, atom2.y, atom2.z] as [number, number, number],
-        radius: 0.04,
-        color: '#C0C0C0',
-        color1: atom1.color,
-        color2: atom2.color,
+        radius: bondInfo.radius,
+        color: bondColor || '#C0C0C0',
+        color1: bondColor || atom1.color,
+        color2: bondColor || atom2.color,
         selected: this.state.selectedBondKeys.includes(Structure.bondKey(atom1.id, atom2.id)),
       });
     }
@@ -263,6 +264,7 @@ export class RenderMessageBuilder {
 
       const bondKey = Structure.bondKey(bond.atomId1, bond.atomId2);
       const isSelected = this.state.selectedBondKeys.includes(bondKey);
+      const bondColor = bond.color;
 
       const isCrossBoundary = bond.image && (bond.image[0] !== 0 || bond.image[1] !== 0 || bond.image[2] !== 0);
       if (isCrossBoundary) {
@@ -275,10 +277,10 @@ export class RenderMessageBuilder {
           atomId2: bond.atomId2,
           start: [atom1.x, atom1.y, atom1.z],
           end: [midX, midY, midZ],
-          radius: 0.04,
-          color: atom1.color,
-          color1: atom1.color,
-          color2: atom1.color,
+          radius: bond.radius,
+          color: bondColor || atom1.color,
+          color1: bondColor || atom1.color,
+          color2: bondColor || atom1.color,
           selected: isSelected,
           periodicStub: true,
         });
@@ -292,10 +294,10 @@ export class RenderMessageBuilder {
           atomId2: bond.atomId1,
           start: [atom2.x, atom2.y, atom2.z],
           end: [mid2X, mid2Y, mid2Z],
-          radius: 0.04,
-          color: atom2.color,
-          color1: atom2.color,
-          color2: atom2.color,
+          radius: bond.radius,
+          color: bondColor || atom2.color,
+          color1: bondColor || atom2.color,
+          color2: bondColor || atom2.color,
           selected: isSelected,
           periodicStub: true,
         });
@@ -306,10 +308,10 @@ export class RenderMessageBuilder {
           atomId2: bond.atomId2,
           start: [atom1.x, atom1.y, atom1.z],
           end: endPos,
-          radius: 0.04,
-          color: '#C0C0C0',
-          color1: atom1.color,
-          color2: atom2.color,
+          radius: bond.radius,
+          color: bondColor || '#C0C0C0',
+          color1: bondColor || atom1.color,
+          color2: bondColor || atom2.color,
           selected: isSelected,
         });
       }

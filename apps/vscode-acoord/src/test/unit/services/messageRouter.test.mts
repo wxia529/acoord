@@ -109,6 +109,48 @@ describe('MessageRouter – dispatch contract', () => {
       await router.route({ command: 'b' });
       expect(log).to.deep.equal(['b']);
     });
+
+    it('should dispatch setBondRadius payloads correctly', async () => {
+      let received: unknown = null;
+      router.register('setBondRadius', (msg) => {
+        received = msg;
+        return true;
+      });
+
+      const payload = { command: 'setBondRadius', bondKeys: ['a|b'], radius: 0.2 };
+      const result = await router.route(payload);
+
+      expect(result).to.be.true;
+      expect(received).to.deep.equal(payload);
+    });
+
+    it('should dispatch setGlobalBondRadius payloads correctly', async () => {
+      let received: unknown = null;
+      router.register('setGlobalBondRadius', (msg) => {
+        received = msg;
+        return true;
+      });
+
+      const payload = { command: 'setGlobalBondRadius', radius: 0.16 };
+      const result = await router.route(payload);
+
+      expect(result).to.be.true;
+      expect(received).to.deep.equal(payload);
+    });
+
+    it('should dispatch setBondColor payloads correctly', async () => {
+      let received: unknown = null;
+      router.register('setBondColor', (msg) => {
+        received = msg;
+        return true;
+      });
+
+      const payload = { command: 'setBondColor', bondKeys: ['a|b'], color: '#112233' };
+      const result = await router.route(payload);
+
+      expect(result).to.be.true;
+      expect(received).to.deep.equal(payload);
+    });
   });
 
   // ── 2. Unknown command handling ───────────────────────────────────────────

@@ -62,6 +62,7 @@ export interface InteractionHandlers {
   onSelectByElement?: (element: string) => void;
   onCreateBond?: (atomIds: string[]) => void;
   onSetBondLength?: (bondKeys: string[], length: number) => void;
+  onSetBondRadius?: (bondKeys: string[], thickness: number) => void;
   onDeleteAtoms?: (atomIds: string[]) => void;
   onDeleteBonds?: (bondKeys: string[]) => void;
   onCalculateBonds?: () => void;
@@ -614,6 +615,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
           onSetAtomFixed: handlers.onSetAtomFixed,
           onCreateBond: handlers.onCreateBond,
           onSetBondLength: handlers.onSetBondLength,
+          onSetBondRadius: handlers.onSetBondRadius,
           onCalculateBonds: handlers.onCalculateBonds,
           onClearBonds: handlers.onClearBonds,
           onAddAtom: handlers.onAddAtom,
@@ -888,6 +890,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     onSetAtomFixed: handlers.onSetAtomFixed,
     onCreateBond: handlers.onCreateBond,
     onSetBondLength: handlers.onSetBondLength,
+    onSetBondRadius: handlers.onSetBondRadius,
     onCalculateBonds: handlers.onCalculateBonds,
     onClearBonds: handlers.onClearBonds,
     onAddAtom: handlers.onAddAtom,

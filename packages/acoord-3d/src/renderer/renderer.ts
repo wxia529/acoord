@@ -818,8 +818,7 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
       const start = new THREE.Vector3(bond.start[0] * scale, bond.start[1] * scale, bond.start[2] * scale);
       const end = new THREE.Vector3(bond.end[0] * scale, bond.end[1] * scale, bond.end[2] * scale);
       const length = start.distanceTo(end);
-      const bondThicknessScale = Number.isFinite(getDisplayStore().bondThicknessScale) ? getDisplayStore().bondThicknessScale : 1;
-      const bondRadius = Math.max(bond.radius * sizeScale * bondThicknessScale, 0.03) * (highlightBond ? 1.35 : 1);
+      const bondRadius = Math.max(bond.radius * sizeScale, 0.03) * (highlightBond ? 1.35 : 1);
       const midpoint = start.clone().add(end).multiplyScalar(0.5);
       const emissive = isSelectedBond ? '#704214' : '#000000';
 

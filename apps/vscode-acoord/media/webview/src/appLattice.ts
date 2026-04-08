@@ -8,8 +8,12 @@
  */
 import { displayStore, structureStore, selectionStore } from './state';
 import { getElementById } from './utils/domCache';
-import { updateSettings } from './settingsUtil';
-import { debounce } from './utils/performance';
+import { throttle } from './utils/performance';
+import {
+  areBondThicknessesMixed,
+  DEFAULT_BOND_THICKNESS_ANGSTROM,
+  normalizeBondThickness,
+} from './utils/bondThickness';
 import type {
   UnitCellParams,
   VscodeContext,
@@ -74,13 +78,27 @@ export function updateLatticeUI(
   if (superX) { superX.value = String(nx); superX.disabled = !hasUnitCell; }
   if (superY) { superY.value = String(ny); superY.disabled = !hasUnitCell; }
   if (superZ) { superZ.value = String(nz); superZ.disabled = !hasUnitCell; }
+
+  const bondSizeSlider = getElementById<HTMLInputElement>('bond-size-slider');
+  const bondSizeValue = getElementById<HTMLElement>('bond-size-value');
+  const bondThicknesses = (structureStore.currentStructure?.bonds ?? [])
+    .map((bond) => normalizeBondThickness(bond.radius));
+  const fallbackThickness = DEFAULT_BOND_THICKNESS_ANGSTROM;
+  const effectiveThickness = bondThicknesses.length > 0
+    ? bondThicknesses[0]
+    : fallbackThickness;
+  const hasMixedThickness = areBondThicknessesMixed(bondThicknesses);
+  if (bondSizeSlider) {
+    bondSizeSlider.value = effectiveThickness.toFixed(3);
+  }
+  if (bondSizeValue) {
+    bondSizeValue.textContent = hasMixedThickness
+      ? `${effectiveThickness.toFixed(3)} (Mixed)`
+      : effectiveThickness.toFixed(3);
+  }
 }
 
 // ── Atom size panel ────────────────────────────────────────────────────────────
-
-function rerenderCurrentStructure(): void {
-  _cb?.rerenderCurrentStructure();
-}
 
 export function updateSelectedAtomSizePanel(): void {
   const atomSizeSelectedValue = getElementById<HTMLElement>('atom-size-selected-value');
@@ -103,18 +121,7 @@ export function updateSelectedAtomSizePanel(): void {
 
 export function setup(callbacks: AppLatticeContext): void {
   _cb = callbacks;
-  const { vscode, renderer, setError, rerenderCurrentStructure, updateCounts, updateAtomList,
-    clampAtomSize, getBaseAtomId, ATOM_SIZE_MIN, ATOM_SIZE_MAX } = callbacks;
-
-  // Debounced renders to avoid excessive GPU work during slider drag (16ms = 60fps)
-  const debouncedRenderStructure = debounce((): void => {
-    if (structureStore.currentStructure) {
-      renderer.renderStructure(structureStore.currentStructure, { updateCounts, updateAtomList });
-    }
-  }, 16);
-  const debouncedRerenderCurrentStructure = debounce((): void => {
-    rerenderCurrentStructure();
-  }, 16);
+  const { vscode, setError, renderer, updateCounts, updateAtomList } = callbacks;
 
   // ── Lattice params ────────────────────────────────────────────────────────
 
@@ -182,16 +189,36 @@ export function setup(callbacks: AppLatticeContext): void {
   // ── Bond thickness slider ───────────────────────────────────────────────────
 
   const bondSizeSlider = getElementById<HTMLInputElement>('bond-size-slider');
+  const previewGlobalBondThickness = throttle((thickness: number): void => {
+    const structure = structureStore.currentStructure;
+    if (!structure) {
+      return;
+    }
+    for (const bond of structure.bonds) {
+      bond.radius = thickness;
+    }
+    for (const bond of structure.renderBonds) {
+      bond.radius = thickness;
+    }
+    renderer.renderStructure(structure, { updateCounts, updateAtomList }, { fitCamera: false });
+  }, 33);
 
   if (bondSizeSlider) {
     bondSizeSlider.addEventListener('input', (event: Event) => {
-      displayStore.bondThicknessScale = parseFloat((event.target as HTMLInputElement).value);
+      const effectiveThickness = parseFloat((event.target as HTMLInputElement).value);
+      const thickness = normalizeBondThickness(effectiveThickness);
       const bondSizeValue = getElementById<HTMLElement>('bond-size-value');
-      if (bondSizeValue) { bondSizeValue.textContent = displayStore.bondThicknessScale.toFixed(1); }
-      updateSettings();
-      if (structureStore.currentStructure) {
-        debouncedRenderStructure();
-      }
+      if (bondSizeValue) { bondSizeValue.textContent = thickness.toFixed(3); }
+      previewGlobalBondThickness(thickness);
+    });
+
+    bondSizeSlider.addEventListener('change', (event: Event) => {
+      const effectiveThickness = parseFloat((event.target as HTMLInputElement).value);
+      const thickness = normalizeBondThickness(effectiveThickness);
+      vscode.postMessage({
+        command: 'setGlobalBondRadius',
+        radius: thickness,
+      });
     });
   }
 
