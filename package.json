@@ -24,5 +24,8 @@
   },
   "devDependencies": {
     "nx": "^20.0.0"
+  },
+  "dependencies": {
+    "vsce": "^2.15.0"
   }
 }
