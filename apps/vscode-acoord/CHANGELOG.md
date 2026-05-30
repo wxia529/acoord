@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.13]
+
+### Added
+
+- **GitHub Pages documentation**: Added a VitePress GitHub Pages deployment workflow and root-level documentation scripts.
+- **ACoord native editor registration**: Registered `.acoord` files with the custom editor and editor-title preview action.
+
+### Changed
+
+- **Documentation refresh**: Updated README and guide content to match the current monorepo, build commands, VS Code compatibility, source installation flow, and supported features.
+- **Extension manifest cleanup**: Removed stale command and view contributions that were not backed by registered extension commands, and exposed implemented color-scheme commands instead.
+
+### Fixed
+
+- **Custom editor dirty state**: Opening a structure in preview no longer marks the document dirty when no structural edit occurred.
+- **Custom editor save state**: Save and Save As now use VS Code's custom document save flow so the editor dirty indicator clears after saving.
+- **Custom editor save failures**: Failed or cancelled custom-editor saves now propagate back to VS Code instead of being reported as successful.
+- **Supercell dirty state**: Changing supercell dimensions now participates in undo and correctly marks the custom document dirty.
+- **VS Code debug task**: Local extension debug tasks now invoke npm directly instead of being affected by user-level package manager settings such as Yarn.
+
 ## [0.3.11]
 
 ### Changed

@@ -30,6 +30,7 @@ describe('documentChangePolicy', () => {
       { command: 'setAtomColor', atomIds: ['atom_1'], color: '#ffffff' },
       { command: 'createBond', atomIds: ['atom_1', 'atom_2'] },
       { command: 'calculateBonds' },
+      { command: 'setSupercell', supercell: [2, 2, 2] },
       { command: 'setUnitCell', params: { a: 1, b: 1, c: 1, alpha: 90, beta: 90, gamma: 90 } },
     ];
 

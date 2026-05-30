@@ -364,8 +364,7 @@ export class MessageRouter {
       const nx = Math.max(1, Math.floor(Number(s0) || 1));
       const ny = Math.max(1, Math.floor(Number(s1) || 1));
       const nz = Math.max(1, Math.floor(Number(s2) || 1));
-      this.unitCellService.setSupercell([nx, ny, nz]);
-      return true;
+      return this.unitCellService.setSupercell([nx, ny, nz]);
     });
   }
 

@@ -28,6 +28,7 @@ const DOCUMENT_MUTATION_COMMANDS = new Set<WebviewCommand>([
   'setBondRadius',
   'setCovalentRadius',
   'setGlobalBondRadius',
+  'setSupercell',
   'setUnitCell',
   'toggleUnitCell',
   'updateAtom',

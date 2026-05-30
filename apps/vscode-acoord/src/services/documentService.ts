@@ -15,6 +15,7 @@ export class DocumentService {
       vscode.window.showErrorMessage(
         `Failed to save structure: ${error instanceof Error ? error.message : String(error)}`
       );
+      throw error;
     }
   }
 
@@ -99,6 +100,7 @@ export class DocumentService {
       vscode.window.showErrorMessage(
         `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
       );
+      throw error;
     }
   }
 

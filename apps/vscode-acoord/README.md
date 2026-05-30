@@ -2,7 +2,7 @@
 
 > **Note**: This extension is part of the [acoord monorepo](../../README.md). For development setup, see the monorepo root.
 
-**Version:** 0.3.12  
+**Version:** 0.3.13  
 **License:** MIT  
 **Repository:** https://github.com/wxia529/acoord  
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=wxia529.acoord

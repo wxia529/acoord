@@ -137,19 +137,32 @@ export class UnitCellService {
     return true;
   }
 
-  setSupercell(supercell: [number, number, number]): void {
+  setSupercell(supercell: [number, number, number]): boolean {
     const nx = Math.max(1, Math.floor(Number(supercell[0]) || 1));
     const ny = Math.max(1, Math.floor(Number(supercell[1]) || 1));
     const nz = Math.max(1, Math.floor(Number(supercell[2]) || 1));
     
     const scStructure = this.trajectoryManager.activeStructure;
-    
-    if (!scStructure.unitCell) {
-      scStructure.supercell = [1, 1, 1];
-    } else {
-      scStructure.supercell = [nx, ny, nz];
+    const nextSupercell: [number, number, number] = scStructure.unitCell ? [nx, ny, nz] : [1, 1, 1];
+    const currentSupercell = scStructure.supercell || [1, 1, 1];
+    if (
+      currentSupercell[0] === nextSupercell[0] &&
+      currentSupercell[1] === nextSupercell[1] &&
+      currentSupercell[2] === nextSupercell[2]
+    ) {
+      return false;
     }
+
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+    this.undoManager.push(editStructure);
     
-    this.renderer.setStructure(scStructure);
+    editStructure.supercell = nextSupercell;
+    
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+    return true;
   }
 }

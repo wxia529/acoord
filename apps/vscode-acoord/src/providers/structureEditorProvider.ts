@@ -417,15 +417,19 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
           format.toUpperCase()
         );
         if (!chosen) {
-          return;
+          throw new Error('Save As cancelled.');
         }
         exportFrames = chosen;
       }
       await StructureDocumentManager.saveAs(destination, exportFrames, format);
     } catch (error) {
+      if (error instanceof Error && error.message === 'Save As cancelled.') {
+        throw error;
+      }
       vscode.window.showErrorMessage(
         `Failed to export structure: ${error instanceof Error ? error.message : String(error)}`
       );
+      throw error;
     }
   }
 
