@@ -503,20 +503,53 @@ Parser signals "not my format" by throwing. FileManager catches and tries next.
 
 ## 9. Build System
 
-### 9.1 Extension Host
+The monorepo uses Nx for task orchestration, dependency ordering, affected
+runs, and caching. Project targets delegate to local npm scripts instead of
+Nx-specific build executors.
+
+From the monorepo root:
+
+```bash
+npm run build                  # nx run-many --target=build --all
+npm run test                   # nx run-many --target=test --all
+npm run watch                  # nx run-many --target=watch --all
+npx nx run vscode-acoord:build # Builds acoord-3d first, then this extension
+npx nx affected -t build       # Build projects affected by current changes
+npx nx affected -t test        # Test projects affected by current changes
+npx nx graph                   # Visualize project dependencies
+```
+
+### 9.1 Nx Targets
+
+| Target | Nx executor | Underlying script/command | Outputs |
+|---|---|---|---|
+| `vscode-acoord:build` | `nx:run-script` | `npm run compile` | `out/` |
+| `vscode-acoord:watch` | `nx:run-script` | `npm run watch` | none |
+| `vscode-acoord:test` | `nx:run-script` | `npm run test:unit` | cached test result |
+| `vscode-acoord:lint` | `nx:run-script` | `npm run lint` | cached lint result |
+| `vscode-acoord:package` | `nx:run-commands` | `npx vsce package --no-dependencies` | `*.vsix` |
+| `acoord-3d:build` | `nx:run-script` | `npm run build` | `dist/` |
+| `acoord-3d:watch` | `nx:run-script` | `npm run watch` | none |
+| `acoord-3d:test` | `nx:run-script` | `npm run test` | cached test result |
+
+`vscode-acoord:build`, `vscode-acoord:test`, and `vscode-acoord:package`
+depend on upstream builds. Because this package depends on workspace package
+`acoord-3d`, Nx builds `acoord-3d` before running extension build/package tasks.
+
+### 9.2 Extension Host
 
 - **Compiler:** `tsc` (strict mode)
 - **Target:** ES2022, module: Node16
 - **Output:** `out/` directory
 
-### 9.2 Webview
+### 9.3 Webview
 
 - **Bundler:** esbuild via `build/webview.mjs`
 - **Entry:** `media/webview/src/app.ts`
 - **Output:** `out/webview/webview.js`
 - **Target:** ES2020, module: ESNext
 
-### 9.3 acoord-3d
+### 9.4 acoord-3d
 
 - **Bundler:** esbuild via `build.config.mjs`
 - **Entry:** `src/index.ts`
@@ -524,7 +557,7 @@ Parser signals "not my format" by throwing. FileManager catches and tries next.
 - **Format:** ESM only
 - **External:** `three` (peer dependency)
 
-### 9.4 Scripts
+### 9.5 Local Scripts
 
 ```bash
 npm run compile          # Full build: tsc + esbuild

@@ -16,6 +16,7 @@ import { MessageRouter } from '../services/messageRouter.js';
 import { DisplayConfigService } from '../services/displayConfigService.js';
 import { DocumentService } from '../services/documentService.js';
 import { ClipboardService } from '../services/clipboardService.js';
+import { isDocumentMutationMessage } from './documentChangePolicy.js';
 
 import type { WebviewToExtensionMessage } from '../shared/protocol.js';
 
@@ -52,6 +53,7 @@ class EditorSession {
   }
 
   displaySettings?: DisplaySettings;
+  dragStartFingerprint?: string;
   
   getColorScheme() {
     return this.renderer.getColorScheme();
@@ -232,6 +234,16 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
   ) {
     const { messageRouter } = session;
 
+    if (message.command === 'saveStructure') {
+      await vscode.commands.executeCommand('workbench.action.files.save');
+      return;
+    }
+
+    if (message.command === 'saveStructureAs') {
+      await vscode.commands.executeCommand('workbench.action.files.saveAs');
+      return;
+    }
+
     if (message.command === 'undo') {
       const hadContent = !session.undoManager.isEmpty;
       this.undoLastEdit(session);
@@ -250,18 +262,30 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       return;
     }
 
-    const undoDepthBefore = session.undoManager.depth;
+    const isPreviewDrag =
+      (message.command === 'moveAtom' && message.preview === true) ||
+      (message.command === 'moveGroup' && message.preview === true) ||
+      (message.command === 'setAtomsPositions' && message.preview === true);
+    const isMutation = !isPreviewDrag && isDocumentMutationMessage(message);
+    const fingerprintBefore = isMutation
+      ? this.getDocumentFingerprint(session)
+      : undefined;
+    if (message.command === 'beginDrag') {
+      session.dragStartFingerprint = this.getDocumentFingerprint(session);
+    }
     const handled = await messageRouter.route(message);
 
     if (handled) {
       if (message.command === 'endDrag') {
         // A drag sequence is complete. Do NOT call renderStructure() here
-      // because setAtomsPositions (sent just before endDrag from the webview)
-      // has already updated the model. Calling renderStructure() would send
-      // the full render message back and overwrite the positions we just set.
-      if (session.undoManager.depth > undoDepthBefore) {
+        // because setAtomsPositions (sent just before endDrag from the webview)
+        // has already updated the model. Calling renderStructure() would send
+        // the full render message back and overwrite the positions we just set.
+        const fingerprintAfter = this.getDocumentFingerprint(session);
+        if (session.dragStartFingerprint && session.dragStartFingerprint !== fingerprintAfter) {
           this.notifyDocumentChanged(session, 'Drag');
         }
+        session.dragStartFingerprint = undefined;
         return;
       } else if (message.command !== 'beginDrag') {
         // Preview drag messages update the extension model but must NOT trigger
@@ -271,13 +295,8 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         // message on every pointermove frame would cause the IPC latency to
         // fight the local preview, producing the drag-stutter bug.
         // See DEVELOPMENT.md §12.3 and §15.3.
-        const isPreviewDrag =
-          (message.command === 'moveAtom'        && (message as { preview?: boolean }).preview === true) ||
-          (message.command === 'moveGroup'        && (message as { preview?: boolean }).preview === true) ||
-          (message.command === 'setAtomsPositions' && (message as { preview?: boolean }).preview === true);
-
         if (!isPreviewDrag) {
-          if (session.undoManager.depth > undoDepthBefore) {
+          if (isMutation && fingerprintBefore !== this.getDocumentFingerprint(session)) {
             this.notifyDocumentChanged(session, `Command: ${message.command}`);
           }
           this.renderStructure(session);
@@ -320,6 +339,10 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     }
 
     webviewPanel.webview.postMessage(message);
+  }
+
+  private getDocumentFingerprint(session: EditorSession): string {
+    return JSON.stringify(session.trajectoryManager.frames.map((frame) => frame.toJSON()));
   }
 
   private notifyDocumentChanged(session: EditorSession, label: string = 'Structure modified'): void {

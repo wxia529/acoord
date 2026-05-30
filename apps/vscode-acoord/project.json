@@ -9,7 +9,7 @@
       "options": {
         "script": "compile"
       },
-      "outputs": ["{projectRoot}/out", "{projectRoot}/media/webview/dist"],
+      "outputs": ["{projectRoot}/out"],
       "cache": true,
       "dependsOn": ["^build"]
     },
@@ -50,6 +50,7 @@
         "command": "npx vsce package --no-dependencies",
         "cwd": "{projectRoot}"
       },
+      "outputs": ["{projectRoot}/*.vsix"],
       "dependsOn": ["build"]
     }
   },

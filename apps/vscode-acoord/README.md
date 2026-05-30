@@ -117,7 +117,7 @@ npm run build
 ```bash
 # From monorepo root
 npm run watch          # Watch mode for all projects
-npx nx run vscode-acoord:test:unit  # Run unit tests
+npx nx run vscode-acoord:test  # Run unit tests
 ```
 
 See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed architecture and contribution guidelines.
@@ -314,10 +314,10 @@ npm install
 npm run watch
 
 # Run unit tests
-npm run test:unit
+npx nx run vscode-acoord:test
 
 # Run linting
-npm run lint
+npx nx run vscode-acoord:lint
 
 # Launch Extension Development Host (F5 in VS Code)
 ```

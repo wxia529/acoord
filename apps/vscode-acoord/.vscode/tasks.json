@@ -4,16 +4,18 @@
 	"version": "2.0.0",
 	"tasks": [
 		{
-			"type": "npm",
-			"script": "compile",
+			"label": "npm: compile",
+			"type": "shell",
+			"command": "npm run compile",
 			"group": "build",
 			"presentation": {
 				"reveal": "silent"
 			}
 		},
 		{
-			"type": "npm",
-			"script": "watch",
+			"label": "npm: watch",
+			"type": "shell",
+			"command": "npm run watch",
 			"problemMatcher": {
 				"pattern": {
 					"regexp": ".*",
