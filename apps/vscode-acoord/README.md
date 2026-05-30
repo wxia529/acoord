@@ -2,7 +2,7 @@
 
 > **Note**: This extension is part of the [acoord monorepo](../../README.md). For development setup, see the monorepo root.
 
-**Version:** 0.3.11  
+**Version:** 0.3.12  
 **License:** MIT  
 **Repository:** https://github.com/wxia529/acoord  
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=wxia529.acoord
@@ -36,7 +36,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 
 - **Dual Projection Modes** — Orthographic and perspective camera
 - **Lighting System** — Ambient, key, fill, and rim lights with interactive picker
-- **Color Schemes** — Built-in presets (Bright, JMol, CPK) and custom schemes
+- **Color Schemes** — Built-in presets (Bright, Jmol) and custom schemes
 - **Axis Indicator** — Real-time 3D orientation overlay
 - **HD Image Export** — High-resolution PNG export from any viewpoint
 - **Supercell Display** — Visualize periodic boundaries with proper bond rendering
@@ -58,7 +58,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 
 | Format | Extensions | Notes |
 |--------|------------|-------|
-| **XYZ / extXYZ** | `.xyz`, `.extxyz` | Trajectory support for multi-frame files |
+| **XYZ** | `.xyz` | Trajectory support for multi-frame files |
 | **CIF** | `.cif` | Full crystallographic data |
 | **POSCAR** | `POSCAR`, `CONTCAR`, `.vasp` | Selective dynamics preserved via fixed flags |
 | **PDB** | `.pdb` | Basic CRYST1 + ATOM/HETATM records |
@@ -199,7 +199,6 @@ Adjust lighting in the **Lighting** panel:
 Choose from built-in presets or create custom schemes:
 - **Bright** — High-contrast colors (default)
 - **JMol** — JMol-compatible colors
-- **CPK** — Traditional CPK coloring
 
 Apply to selected atoms using the **Apply** button.
 
@@ -336,5 +335,5 @@ MIT License — see [LICENSE](../../LICENSE) for details.
 
 ## Contact
 
-- **Issues:** https://github.com/wxia529/vscode-acoord/issues
-- **Discussions:** https://github.com/wxia529/vscode-acoord/discussions
+- **Issues:** https://github.com/wxia529/acoord/issues
+- **Discussions:** https://github.com/wxia529/acoord/discussions

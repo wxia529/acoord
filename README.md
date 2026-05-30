@@ -1,6 +1,8 @@
-# ACoord Monorepo
+# ACoord
 
-Atomic Coordinate Toolkit
+Atomic Coordinate Toolkit is a TypeScript monorepo for visualizing and editing
+atomic, molecular, and crystal structures in VS Code. The workspace contains the
+VS Code extension and a reusable Three.js rendering package.
 
 ## Project Structure
 
@@ -30,6 +32,10 @@ npm run watch
 npm run test
 ```
 
+For extension debugging, open the repository in VS Code and press `F5`. The
+debug task compiles `apps/vscode-acoord` and launches an Extension Development
+Host.
+
 ## Common Commands
 
 ```bash
@@ -47,6 +53,10 @@ npx nx graph
 # Affected tasks (based on git changes)
 npx nx affected -t build
 npx nx affected -t test
+
+# Documentation site
+npm run docs:dev
+npm run docs:build
 ```
 
 ## Nx Build Model
@@ -76,5 +86,12 @@ production outputs from dependencies.
 
 ## Documentation
 
+- [User Documentation](https://wxia529.github.io/acoord/)
 - [vscode-acoord Development Guide](apps/vscode-acoord/DEVELOPMENT.md)
 - [acoord-3d Usage Guide](packages/acoord-3d/README.md)
+
+## Publishing
+
+- Extension package: `npm run package`
+- Documentation: GitHub Pages builds from `docs/` using VitePress on pushes to
+  `main`

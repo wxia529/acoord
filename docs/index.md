@@ -15,22 +15,30 @@ hero:
       link: https://github.com/wxia529/acoord
 
 features:
-  - title: '15+ File Formats'
-    details: 'Support for XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP, SIESTA fdf, and native .acoord format'
-    icon: 📁
-  - title: 'Interactive 3D'
-    details: 'Real-time 3D rendering with Three.js inside VS Code. Rotate, zoom, and explore atomic structures'
-    icon: 🎮
-  - title: 'Trajectory Support'
-    details: 'Visualize molecular dynamics trajectories from XDATCAR and other multi-frame files'
-    icon: 🎬
-  - title: 'Full Editing'
-    details: 'Add, delete, move atoms. Create and measure bonds. Edit unit cells and build supercells'
-    icon: ✏️
-  - title: 'Color Schemes'
-    details: 'Customizable atom color schemes. Import/export configurations. Built-in Jmol and Bright presets'
-    icon: 🎨
-  - title: 'Native VS Code'
-    details: 'Seamless integration with VS Code. Custom editor, keyboard shortcuts, and workspace support'
-    icon: 💻
+  - title: 'Broad Format Support'
+    details: 'Open and save common molecular, crystallographic, and simulation formats including XYZ, CIF, POSCAR, PDB, QE, STRU, SIESTA FDF, and native .acoord.'
+  - title: 'Interactive 3D Editing'
+    details: 'Inspect structures with a Three.js viewer, then select, move, add, delete, copy, and paste atoms without leaving VS Code.'
+  - title: 'Crystal and Trajectory Tools'
+    details: 'Navigate multi-frame structures, edit unit cells, display supercells, and preserve selective dynamics where the source format supports it.'
+  - title: 'Color and Measurement Workflow'
+    details: 'Measure distances, angles, and dihedrals; manage bonds; and apply built-in or custom color schemes.'
+  - title: 'VS Code Native'
+    details: 'Uses the Custom Editor API, normal save/dirty semantics, workspace commands, keyboard shortcuts, and extension-host parsing.'
 ---
+
+## Built for Structure Editing
+
+ACoord is designed for researchers and engineers who already keep simulation
+inputs and outputs in VS Code. The extension host owns parsing, bond detection,
+serialization, and edit history; the webview is focused on rendering and input.
+
+## Documentation Map
+
+- Start with [Getting Started](/guide/getting-started) if you are opening your
+  first structure.
+- Use [File Formats](/guide/file-formats) to check read/write behavior.
+- Follow [Editing Atoms](/tutorials/editing-atoms) for structural edits and
+  saving behavior.
+- Browse [Features](/features/) for visualization, selection, measurement, unit
+  cell, and color-scheme details.

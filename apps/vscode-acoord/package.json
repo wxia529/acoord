@@ -57,6 +57,9 @@
             "filenamePattern": "*.xyz"
           },
           {
+            "filenamePattern": "*.acoord"
+          },
+          {
             "filenamePattern": "*.poscar"
           },
           {
@@ -138,18 +141,8 @@
       "editor/title": [
         {
           "command": "acoord.openStructureEditor",
-          "when": "resourceExtname =~ /\\.(cif|xyz|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep|fdf)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
+          "when": "resourceExtname =~ /\\.(cif|xyz|acoord|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep|fdf)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
           "group": "navigation"
-        }
-      ]
-    },
-    "views": {
-      "explorer": [
-        {
-          "id": "acoordExplorer",
-          "name": "ACoord Explorer",
-          "when": "acoord.structureOpen",
-          "icon": "media/preview-light.svg"
         }
       ]
     },
@@ -201,28 +194,18 @@
         "category": "ACoord"
       },
       {
-        "command": "acoord.selectDisplayConfig",
-        "title": "ACoord: Select Display Configuration",
+        "command": "acoord.exportColorScheme",
+        "title": "ACoord: Export Color Scheme",
         "category": "ACoord"
       },
       {
-        "command": "acoord.saveDisplayConfig",
-        "title": "ACoord: Save Current Display Settings",
+        "command": "acoord.importColorScheme",
+        "title": "ACoord: Import Color Scheme",
         "category": "ACoord"
       },
       {
-        "command": "acoord.exportDisplayConfigs",
-        "title": "ACoord: Export Display Configurations",
-        "category": "ACoord"
-      },
-      {
-        "command": "acoord.importDisplayConfigs",
-        "title": "ACoord: Import Display Configurations",
-        "category": "ACoord"
-      },
-      {
-        "command": "acoord.deleteDisplayConfig",
-        "title": "ACoord: Delete Display Configuration",
+        "command": "acoord.manageColorSchemes",
+        "title": "ACoord: Manage Color Schemes",
         "category": "ACoord"
       }
     ]
@@ -238,9 +221,9 @@
     "test": "vscode-test",
     "test:unit": "mocha",
     "test:validate": "mocha",
-    "docs:dev": "vitepress dev docs",
-    "docs:build": "vitepress build docs",
-    "docs:preview": "vitepress preview docs"
+    "docs:dev": "vitepress dev ../../docs",
+    "docs:build": "vitepress build ../../docs",
+    "docs:preview": "vitepress preview ../../docs"
   },
   "dependencies": {
     "@vscode/webview-ui-toolkit": "^1.4.0",

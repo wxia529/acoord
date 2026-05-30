@@ -8,12 +8,12 @@ ACoord is a powerful extension for visualizing and editing atomic, molecular, an
 
 ACoord provides:
 
-- 🎨 **Interactive 3D Visualization** — Render atomic structures with full rotation, zoom, and pan controls
-- 📁 **Multi-Format Support** — Open and save 12+ file formats including CIF, XYZ, POSCAR, XDATCAR, PDB, and more
-- ✏️ **Full Editing Capabilities** — Add, delete, move atoms; create and measure bonds; edit unit cells
-- 🎬 **Trajectory Visualization** — Animate molecular dynamics trajectories from simulation output files
-- 🎯 **Precise Selection** — Select individual atoms or use box selection for complex structures
-- 🎨 **Customizable Display** — Color schemes, atom sizes, bond styles, and lighting controls
+- **Interactive 3D visualization** — Render atomic structures with full rotation, zoom, and pan controls
+- **Multi-format support** — Open and save common molecular, crystallographic, and simulation formats
+- **Editing capabilities** — Add, delete, move atoms; create and measure bonds; edit unit cells
+- **Trajectory visualization** — Animate molecular dynamics trajectories from simulation output files
+- **Precise selection** — Select individual atoms or use box selection for complex structures
+- **Customizable display** — Color schemes, atom sizes, bond styles, and lighting controls
 
 ## Quick Example
 

@@ -4,24 +4,23 @@ import { defineConfig } from 'vitepress';
 export default defineConfig({
   title: 'ACoord',
   description: 'Atomic Coordinate Toolkit for VS Code',
-  base: '/vscode-acoord/',
+  base: '/acoord/',
 
   head: [
-    ['link', { rel: 'icon', href: '/favicon.ico' }],
+    ['link', { rel: 'icon', href: '/acoord/favicon.ico' }],
   ],
 
   themeConfig: {
-    // https://vitepress.dev/reference/default-theme-config
+    logo: '/logo.png',
 
-    // 顶部导航栏
     nav: [
       { text: 'Home', link: '/' },
       { text: 'Guide', link: '/guide/' },
       { text: 'Tutorials', link: '/tutorials/' },
       { text: 'Features', link: '/features/' },
+      { text: 'GitHub', link: 'https://github.com/wxia529/acoord' },
     ],
 
-    // 侧边栏
     sidebar: {
       '/guide/': [
         {
@@ -60,18 +59,15 @@ export default defineConfig({
       ],
     },
 
-    // 社交链接
     socialLinks: [
       { icon: 'github', link: 'https://github.com/wxia529/acoord' },
     ],
 
-    // 页脚
     footer: {
       message: 'Released under the MIT License.',
       copyright: 'Copyright © 2026 ACoord',
     },
 
-    // 搜索
     search: {
       provider: 'local',
     },

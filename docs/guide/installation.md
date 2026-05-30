@@ -44,8 +44,8 @@ For development or latest features:
 
 ### Prerequisites
 
-- Node.js 18+ 
-- npm or yarn
+- Node.js 22 is recommended for local development
+- npm
 - Git
 
 ### Steps
@@ -53,17 +53,16 @@ For development or latest features:
 ```bash
 # 1. Clone the repository
 git clone https://github.com/wxia529/acoord.git
-cd vscode-acoord
+cd acoord
 
-# 2. Install dependencies
+# 2. Install workspace dependencies
 npm install
 
-# 3. Build the extension
-npm run compile
+# 3. Build all projects
+npm run build
 
 # 4. Package as VSIX (optional)
-npm install -g @vscode/vsce
-vsce package
+npm run package
 
 # 5. Install the VSIX file
 # Follow Method 2 steps above
@@ -85,8 +84,8 @@ npm run watch
 
 | Component | Requirement |
 |-----------|-------------|
-| VS Code | 1.109.0 or later |
-| Node.js | 18+ (for building) |
+| VS Code | 1.90.0 or later |
+| Node.js | 22 recommended for building |
 | OS | Windows, macOS, or Linux |
 | GPU | Any GPU supporting WebGL (for 3D rendering) |
 
@@ -103,7 +102,7 @@ To remove ACoord:
 
 ### Extension Not Appearing
 
-- Ensure VS Code is version 1.109.0 or later
+- Ensure VS Code is version 1.90.0 or later
 - Check **File → Preferences → Settings → Extensions** to ensure extensions are enabled
 - Try reloading VS Code (`Ctrl+Shift+P` → **Developer: Reload Window**)
 

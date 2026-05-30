@@ -4,7 +4,7 @@ This guide will help you get up and running with ACoord in just a few minutes.
 
 ## Prerequisites
 
-- Visual Studio Code 1.109.0 or later
+- Visual Studio Code 1.90.0 or later
 - Any structure file (`.cif`, `.xyz`, `POSCAR`, etc.)
 
 ## Step 1: Install ACoord

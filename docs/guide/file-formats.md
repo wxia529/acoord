@@ -1,6 +1,8 @@
 # Supported File Formats
 
-ACoord supports 15+ file formats for reading and writing atomic structures.
+ACoord supports molecular, crystallographic, and simulation formats for reading
+and writing atomic structures. Read-only output formats can be opened and then
+exported to a writable format with **Save As**.
 
 ## Format Overview
 
@@ -164,7 +166,7 @@ CASTEP output file from geometry optimization or MD runs.
 
 SIESTA input file format with calculation parameters.
 
-```fdf
+```text
 SystemName          Water
 SystemLabel         H2O
 
@@ -209,7 +211,8 @@ kgrid_Monkhorst_Pack    1  1  1
 
 ### ACoord Native (.acoord)
 
-Native JSON format preserving all information.
+Native JSON format preserving atoms, bonds, unit-cell data, and ACoord-specific
+properties.
 
 ```json
 {
@@ -235,6 +238,10 @@ Native JSON format preserving all information.
 - ✅ Fast read/write
 - ✅ Human-readable JSON
 - ✅ Full fidelity round-trip
+
+**Note:** ACoord registers `.acoord` files with the VS Code custom editor, so
+they can be reopened directly from the editor title action or **Reopen With**
+menu.
 
 ## Format Detection
 

@@ -17,7 +17,10 @@
     "watch": "nx run-many --target=watch --all",
     "lint": "nx run-many --target=lint --all",
     "dev": "nx run vscode-acoord:watch",
-    "package": "nx run vscode-acoord:package"
+    "package": "nx run vscode-acoord:package",
+    "docs:dev": "npm --workspace acoord run docs:dev",
+    "docs:build": "npm --workspace acoord run docs:build",
+    "docs:preview": "npm --workspace acoord run docs:preview"
   },
   "devDependencies": {
     "nx": "^20.0.0"

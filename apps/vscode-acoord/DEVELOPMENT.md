@@ -1,7 +1,7 @@
 # ACoord Developer Guide
 
-**Version:** 0.3.10  
-**Last Updated:** 2026-03-21  
+**Version:** 0.3.12  
+**Last Updated:** 2026-05-30  
 **License:** MIT
 
 This document describes the **actual architecture** of ACoord. All new code must conform to the patterns described here.
