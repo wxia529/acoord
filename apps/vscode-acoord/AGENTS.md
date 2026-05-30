@@ -35,6 +35,9 @@ npx nx run vscode-acoord:test
 
 # Run lint
 npx nx run vscode-acoord:lint
+
+# Create VSIX package
+npx nx run vscode-acoord:package
 ```
 
 ### From Package Directory
@@ -47,6 +50,7 @@ npm run watch            # Watch mode (tsc + esbuild)
 npm run lint             # ESLint
 npm run test:unit        # Unit tests (no VS Code)
 npm run test             # Integration tests (requires VS Code)
+npx vsce package --no-dependencies # Create .vsix package
 ```
 
 **Single test:**

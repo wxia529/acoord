@@ -24,8 +24,10 @@ acoord/
 npm run build              # Build all projects
 npm run test               # Test all projects
 npm run watch              # Watch mode (all projects)
+npm run package            # Build vscode-acoord VSIX package
 npx nx run acoord-3d:build # Build specific project
 npx nx run vscode-acoord:test
+npx nx run vscode-acoord:package
 npx nx graph               # View dependency graph
 ```
 
@@ -45,6 +47,7 @@ npm run compile            # tsc + esbuild webview
 npm run watch
 npm run lint               # ESLint
 npm run test:unit          # Unit tests (no VS Code)
+npx vsce package --no-dependencies # Create .vsix package
 npx mocha --import tsx --timeout 5000 src/test/unit/parsers/xyz.test.mts
 ```
 
@@ -230,7 +233,7 @@ describe('createRenderer', () => {
 npm run watch
 
 # Terminal 2: Run tests (optional)
-npm run test:unit
+npm --workspace acoord run test:unit
 
 # VS Code: Press F5 to launch Extension Development Host
 ```
@@ -238,7 +241,8 @@ npm run test:unit
 ### Before Committing
 
 ```bash
-npm run lint && npm run test:unit && npm run compile
+npm --workspace acoord run lint && npm --workspace acoord run test:unit && npm --workspace acoord run compile
+npm run build
 ```
 
 ### Adding a Message (vscode-acoord)
