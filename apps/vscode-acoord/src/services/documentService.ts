@@ -37,6 +37,7 @@ export class DocumentService {
       { id: 'in', label: 'QE input (.in)' },
       { id: 'stru', label: 'ABACUS STRU' },
       { id: 'fdf', label: 'SIESTA fdf (.fdf)' },
+      { id: 'dat', label: 'OpenMX input (.dat)' },
     ];
 
     const selected = await vscode.window.showQuickPick(formatOptions, {

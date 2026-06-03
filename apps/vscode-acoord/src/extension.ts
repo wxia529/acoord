@@ -192,10 +192,10 @@ export function activate(context: vscode.ExtensionContext) {
             defaultUri: vscode.Uri.joinPath(workspaceFolder.uri, defaultFileName),
           };
           if (!isPoscarFormat) {
-              saveOptions.filters = {
-                'Structure Files': ['cif', 'xyz', 'poscar', 'vasp', 'xdatcar', 'pdb', 'gjf', 'inp', 'in', 'pwi', 'stru'],
-              };
-            }
+            saveOptions.filters = {
+              'Structure Files': [selectedFormat],
+            };
+          }
 
           const exportUri = await vscode.window.showSaveDialog(saveOptions);
           if (!exportUri) {

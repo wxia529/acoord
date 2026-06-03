@@ -12,4 +12,5 @@ export { ACoordParser } from './acoordParser.js';
 export { CellParser } from './cellParser.js';
 export { CastepParser } from './castepParser.js';
 export { SIESTAParser } from './siestaParser.js';
+export { OpenMXParser } from './openmxParser.js';
 export { StructureParser } from './structureParser.js';

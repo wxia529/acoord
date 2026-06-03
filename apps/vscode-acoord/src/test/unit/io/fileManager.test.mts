@@ -14,6 +14,7 @@ describe('FileManager', () => {
       assert.strictEqual(getFileExtension('structure.pdb'), 'pdb');
       assert.strictEqual(getFileExtension('file.stru'), 'stru');
       assert.strictEqual(getFileExtension('data.cell'), 'cell');
+      assert.strictEqual(getFileExtension('openmx.dat'), 'dat');
     });
 
     it('should handle files with STRU in name but different extension', () => {
@@ -78,6 +79,7 @@ describe('FileManager', () => {
       assert.strictEqual(FileManager.resolveFormat('water.cif'), 'cif');
       assert.strictEqual(FileManager.resolveFormat('test.xyz'), 'xyz');
       assert.strictEqual(FileManager.resolveFormat('STRU.cell'), 'cell');
+      assert.strictEqual(FileManager.resolveFormat('openmx.dat'), 'dat');
     });
 
     it('should use fallback for unknown formats', () => {

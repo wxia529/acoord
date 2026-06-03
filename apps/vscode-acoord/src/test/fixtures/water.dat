@@ -1,0 +1,28 @@
+System.Name                   Water
+DATA.PATH                     ./
+
+Species.Number                2
+<Definition.of.Atomic.Species
+  O   O6.0-s2p2d1   O_PBE19
+  H   H6.0-s2p1     H_PBE19
+Definition.of.Atomic.Species>
+
+Atoms.Number                  3
+Atoms.SpeciesAndCoordinates.Unit   Frac
+<Atoms.SpeciesAndCoordinates
+     1  O        0.5000000       0.5000000       0.5000000     3.0   3.0
+     2  H        0.5375000       0.5000000       0.6750000     0.5   0.5
+     3  H        0.4625000       0.5000000       0.6750000     0.5   0.5
+Atoms.SpeciesAndCoordinates>
+
+Atoms.UnitVectors.Unit        Ang
+<Atoms.UnitVectors
+      15.0000000       0.0000000       0.0000000
+       0.0000000      15.0000000       0.0000000
+       0.0000000       0.0000000      15.0000000
+Atoms.UnitVectors>
+
+scf.XcType                    GGA-PBE
+scf.SpinPolarization          off
+scf.energycutoff              220.0
+scf.Kgrid                     1  1  1

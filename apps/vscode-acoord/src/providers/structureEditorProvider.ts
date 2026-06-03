@@ -239,11 +239,6 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
       return;
     }
 
-    if (message.command === 'saveStructureAs') {
-      await vscode.commands.executeCommand('workbench.action.files.saveAs');
-      return;
-    }
-
     if (message.command === 'undo') {
       const hadContent = !session.undoManager.isEmpty;
       this.undoLastEdit(session);

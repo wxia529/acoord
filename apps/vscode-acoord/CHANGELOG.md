@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.14]
+
+### Added
+
+- **OpenMX input support**: Added `.dat` parsing and export for OpenMX input files, including lattice vectors, Cartesian/fractional atomic coordinates, `MD.Fixed.XYZ` constraints, and default OpenMX SCF/MD/DOS export parameters.
+
+### Fixed
+
+- **Save As format list**: Save As from the custom editor now uses ACoord's export flow instead of VS Code's generic custom-document Save As dialog, so only relevant export formats are shown.
+- **Export dialog format filter**: The `ACoord: Export Structure` save dialog now filters to the format selected in the export picker instead of showing unrelated structure formats.
+- **OpenMX parameter preservation**: Saving an edited `.dat` file now preserves existing OpenMX calculation parameters and only updates structure-related sections.
+
 ## [0.3.13]
 
 ### Added

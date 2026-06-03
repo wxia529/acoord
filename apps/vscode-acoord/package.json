@@ -3,7 +3,7 @@
   "displayName": "ACoord",
   "description": "Atomic Coordinate Toolkit",
   "publisher": "wxia529",
-  "version": "0.3.13",
+  "version": "0.3.14",
   "license": "MIT",
   "type": "module",
   "icon": "media/acoord-icon.png",
@@ -133,6 +133,9 @@
           },
           {
             "filenamePattern": "*.fdf"
+          },
+          {
+            "filenamePattern": "*.dat"
           }
         ]
       }
@@ -141,7 +144,7 @@
       "editor/title": [
         {
           "command": "acoord.openStructureEditor",
-          "when": "resourceExtname =~ /\\.(cif|xyz|acoord|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep|fdf)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
+          "when": "resourceExtname =~ /\\.(cif|xyz|acoord|poscar|vasp|xdatcar|outcar|pdb|gjf|com|inp|in|pwi|out|pwo|log|stru|cell|castep|fdf|dat)$/i || resourceFilename =~ /STRU|OUTCAR|XDATCAR|POSCAR|CONTCAR/i || editorLangId == gaussian",
           "group": "navigation"
         }
       ]
