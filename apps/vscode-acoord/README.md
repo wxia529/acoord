@@ -18,7 +18,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 ### Core Capabilities
 
 - **Interactive 3D Viewer** — Real-time rendering with selection, measurement, and editing
-- **15 File Format Support** — XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP, SIESTA, and more
+- **16+ File Format Support** — XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, Quantum ESPRESSO, ABACUS STRU, CASTEP, SIESTA, OpenMX, and more
 - **Trajectory Visualization** — Frame-by-frame navigation for MD simulations and geometry optimizations
 - **Crystal Structure Tools** — Lattice editing, supercell generation, periodic bond display
 - **Advanced Display Controls** — Lighting, color schemes, projection modes, atom sizing
@@ -43,7 +43,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 
 ### Productivity
 
-- **Format Preservation** — Save GJF, XYZ, ORCA, QE, STRU files while preserving headers and keywords
+- **Format Preservation** — Save GJF, XYZ, ORCA, QE, STRU, OpenMX, and related input files while preserving headers and keywords
 - **Undo/Redo** — Full undo/redo support for all structural edits
 - **Keyboard Shortcuts** — Extensive keyboard bindings for efficient editing
 - **Right-Click Context Menu** — Quick access to atom and bond operations
@@ -66,6 +66,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 | **ORCA Input** | `.inp` | Preserves ! settings and blocks |
 | **Quantum ESPRESSO Input** | `.in`, `.pwi` | Preserves &CONTROL, &SYSTEM, &ELECTRONS sections |
 | **ABACUS STRU** | `.STRU` | Fixed atoms as `0 0 0`, free atoms as `1 1 1` |
+| **OpenMX Input** | `.dat` | Preserves calculation parameters; updates coordinates, lattice, species, and fixed constraints |
 | **ACoord Native** | `.acoord` | JSON format preserving all atom properties |
 
 ### Trajectory Support (Read Only)
@@ -158,6 +159,11 @@ Select 2, 3, or 4 atoms to display:
 1. Click **Save** (Ctrl+S) to save in current format
 2. Click **Save As** (Ctrl+Shift+S) to choose format
 3. Click **Export Image** to save high-resolution PNG
+
+When saving edited OpenMX `.dat` files, ACoord preserves existing calculation
+parameters and only updates structure-related sections. Existing species rows
+in `Definition.of.Atomic.Species` are kept as-is, new species receive default
+OpenMX PAO/VPS entries, and removed species are dropped.
 
 ---
 

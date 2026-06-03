@@ -239,10 +239,12 @@ export class OpenMXParser extends StructureParser {
 
     const lines = rawContent.split(/\r?\n/);
     const resultLines: string[] = [];
+    const species = this.getSpeciesOrder(structure);
     const vectors = structure.unitCell.getLatticeVectors();
     const coordUnit = this.parseCoordinateUnit(lines);
     const vectorUnit = this.parseUnitVectorUnit(lines);
     const originalAtomLines = this.extractBlock(lines, 'Atoms.SpeciesAndCoordinates');
+    const originalSpeciesLines = this.extractSpeciesLines(lines);
     const hasConstraints = this.hasFixedConstraints(structure);
     let fixedBlockHandled = false;
 
@@ -254,6 +256,28 @@ export class OpenMXParser extends StructureParser {
       if (/^Atoms\.Number\s+/i.test(trimmed)) {
         resultLines.push(this.replaceKeywordValue(line, structure.atoms.length.toString()));
         i++;
+        continue;
+      }
+
+      if (/^Species\.Number\s+/i.test(trimmed)) {
+        resultLines.push(this.replaceKeywordValue(line, species.length.toString()));
+        i++;
+        continue;
+      }
+
+      if (this.isBlockStart(trimmed, 'Definition.of.Atomic.Species')) {
+        resultLines.push(line);
+        i++;
+        while (i < lines.length && !this.isBlockEnd(this.stripComment(lines[i]).trim(), 'Definition.of.Atomic.Species')) {
+          i++;
+        }
+        for (const symbol of species) {
+          resultLines.push(this.formatSpeciesLine(symbol, originalSpeciesLines.get(symbol)));
+        }
+        if (i < lines.length) {
+          resultLines.push(lines[i]);
+          i++;
+        }
         continue;
       }
 
@@ -409,6 +433,29 @@ export class OpenMXParser extends StructureParser {
     return result;
   }
 
+  private extractRawBlock(lines: string[], name: string): string[] {
+    const result: string[] = [];
+    let inBlock = false;
+
+    for (const raw of lines) {
+      const line = this.stripComment(raw).trim();
+      if (!inBlock) {
+        if (this.isBlockStart(line, name)) {
+          inBlock = true;
+        }
+        continue;
+      }
+      if (this.isBlockEnd(line, name)) {
+        break;
+      }
+      if (line) {
+        result.push(raw);
+      }
+    }
+
+    return result;
+  }
+
   private parseAtomLine(
     line: string,
     lineNum: number,
@@ -470,6 +517,30 @@ export class OpenMXParser extends StructureParser {
     const defaults = this.getOpenMXSpeciesDefaults(element);
     const charge = (0.5 * defaults.valence).toFixed(1);
     return `${charge}  ${charge}`;
+  }
+
+  private extractSpeciesLines(lines: string[]): Map<string, string> {
+    const speciesLines = new Map<string, string>();
+    const block = this.extractRawBlock(lines, 'Definition.of.Atomic.Species');
+    for (const line of block) {
+      const tokens = this.stripComment(line).trim().split(/\s+/);
+      if (tokens.length < 1) {
+        continue;
+      }
+      const element = parseElement(tokens[0]);
+      if (element && !speciesLines.has(element)) {
+        speciesLines.set(element, line);
+      }
+    }
+    return speciesLines;
+  }
+
+  private formatSpeciesLine(symbol: string, originalLine?: string): string {
+    if (originalLine) {
+      return originalLine;
+    }
+    const defaults = this.getOpenMXSpeciesDefaults(symbol);
+    return `  ${symbol}   ${defaults.pao}   ${defaults.vps}`;
   }
 
   private formatUnitVectorLine(vector: number[], unit: 'ang' | 'bohr'): string {

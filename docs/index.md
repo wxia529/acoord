@@ -16,7 +16,7 @@ hero:
 
 features:
   - title: 'Broad Format Support'
-    details: 'Open and save common molecular, crystallographic, and simulation formats including XYZ, CIF, POSCAR, PDB, QE, STRU, SIESTA FDF, and native .acoord.'
+    details: 'Open and save common molecular, crystallographic, and simulation formats including XYZ, CIF, POSCAR, PDB, QE, STRU, SIESTA FDF, OpenMX DAT, and native .acoord.'
   - title: 'Interactive 3D Editing'
     details: 'Inspect structures with a Three.js viewer, then select, move, add, delete, copy, and paste atoms without leaving VS Code.'
   - title: 'Crystal and Trajectory Tools'

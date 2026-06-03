@@ -19,6 +19,7 @@ exported to a writable format with **Save As**.
 | Quantum ESPRESSO | ✅ | ✅ | `.in`, `.pwi` | QE input |
 | QE Output | ✅ | ❌ | `.out`, `.pwo`, `.log` | QE output |
 | ABACUS | ✅ | ✅ | `.stru` | ABACUS STRU |
+| OpenMX | ✅ | ✅ | `.dat` | OpenMX input |
 | CASTEP Cell | ✅ | ✅ | `.cell` | CASTEP input structure |
 | CASTEP Output | ✅ | ❌ | `.castep` | CASTEP output file |
 | SIESTA fdf | ✅ | ✅ | `.fdf` | SIESTA input structure |
@@ -136,6 +137,46 @@ Quantum chemistry input files.
 - ✅ Atom types and positions
 - ✅ Unit cell
 - ✅ Numerical orbital info
+
+### OpenMX Input (.dat)
+
+OpenMX input files with structure, species, and calculation parameters.
+
+```text
+System.Name                   Water
+DATA.PATH                     ./
+
+Species.Number                2
+<Definition.of.Atomic.Species
+  O   O6.0-s2p2d1   O_PBE19
+  H   H6.0-s2p1     H_PBE19
+Definition.of.Atomic.Species>
+
+Atoms.Number                  3
+Atoms.SpeciesAndCoordinates.Unit   Frac
+<Atoms.SpeciesAndCoordinates
+  1  O  0.5000000  0.5000000  0.5000000  3.0  3.0
+  2  H  0.5375000  0.5000000  0.6750000  0.5  0.5
+  3  H  0.4625000  0.5000000  0.6750000  0.5  0.5
+Atoms.SpeciesAndCoordinates>
+```
+
+**Support:**
+- ✅ `Atoms.UnitVectors` lattice vectors
+- ✅ `Atoms.SpeciesAndCoordinates` in `Ang` or `Frac`
+- ✅ `Atoms.UnitVectors.Unit` in `Ang` or `Bohr`
+- ✅ `MD.Fixed.XYZ` constraints mapped to fixed/selective dynamics state
+- ✅ `Species.Number` and `Definition.of.Atomic.Species` update on edit
+- ✅ Existing species rows are preserved exactly when the species remains
+- ✅ New species receive default OpenMX PAO/VPS entries
+- ✅ Existing calculation parameters are preserved when saving an edited `.dat`
+
+**Save behavior:**
+- Opening and saving an existing `.dat` only updates structure-related sections:
+  `Atoms.SpeciesAndCoordinates`, `Atoms.UnitVectors`, `MD.Fixed.XYZ`,
+  `Species.Number`, and `Definition.of.Atomic.Species`.
+- Exporting from another format to `.dat` generates default OpenMX SCF/MD/DOS
+  parameters using ACoord's OpenMX defaults.
 
 ### CASTEP Formats
 
@@ -274,3 +315,5 @@ For trajectory files like XDATCAR:
 - Use XYZ for simple molecules (universal compatibility)
 - Use PDB for biomolecules (standard in structural biology)
 - Use SIESTA fdf for SIESTA DFT calculations
+- Use OpenMX `.dat` when you need to keep existing OpenMX calculation settings
+  while editing coordinates, lattice vectors, species, or fixed constraints

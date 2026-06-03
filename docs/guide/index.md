@@ -33,6 +33,7 @@ Open any supported structure file (e.g., `.cif`, `.xyz`, `POSCAR`) in VS Code, a
 | ORCA | `.inp` | ORCA input files |
 | Quantum ESPRESSO | `.in`, `.pwi`, `.out`, `.pwo`, `.log` | QE input and output files |
 | ABACUS | `.stru` | ABACUS STRU format |
+| OpenMX | `.dat` | OpenMX input files |
 | ACoord Native | `.acoord` | Native format with full metadata |
 
 ## Next Steps

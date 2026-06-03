@@ -115,6 +115,30 @@ MD.Fixed.XYZ>`;
     expect(serialized).to.contain('      0.5166667');
   });
 
+  it('should update species definitions while preserving existing species lines', () => {
+    const content = fixtureContent
+      .replace('  O   O6.0-s2p2d1   O_PBE19', '  O   O_CUSTOM_PAO   O_CUSTOM_VPS')
+      .replace('  H   H6.0-s2p1     H_PBE19', '  H   H_CUSTOM_PAO   H_CUSTOM_VPS');
+    const structure = parser.parse(content);
+    structure.atoms = [
+      new Atom('O', structure.atoms[0].x, structure.atoms[0].y, structure.atoms[0].z, undefined, {
+        color: structure.atoms[0].color,
+        radius: structure.atoms[0].radius,
+      }),
+      new Atom('C', 1, 2, 3, undefined, {
+        color: '#909090',
+        radius: 0.4,
+      }),
+    ];
+
+    const serialized = parser.serialize(structure);
+
+    expect(serialized).to.contain('Species.Number                2');
+    expect(serialized).to.contain('  O   O_CUSTOM_PAO   O_CUSTOM_VPS');
+    expect(serialized).to.contain('  C   C6.0-s2p2d1   C_PBE19');
+    expect(serialized).to.not.contain('H_CUSTOM_PAO');
+  });
+
   it('should serialize MD.Fixed.XYZ constraints', () => {
     const structure = parser.parse(fixtureContent);
     structure.atoms[0].fixed = true;

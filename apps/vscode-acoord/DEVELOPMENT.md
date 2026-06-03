@@ -31,7 +31,7 @@ ACoord is a VS Code extension for 3D visualization and editing of atomic, molecu
 
 ### 1.1 Key Characteristics
 
-- **15 file formats** — XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, QE, ABACUS STRU, CASTEP, SIESTA, .acoord native
+- **16+ file formats** — XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, QE, ABACUS STRU, CASTEP, SIESTA, OpenMX, .acoord native
 - **50+ webview commands** — Typed JSON messages via `src/shared/protocol.ts`
 - **Interactive 3D rendering** — Three.js inside VS Code Custom Editor API
 - **Trajectory support** — Multi-frame file navigation

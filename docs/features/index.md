@@ -71,7 +71,7 @@ Constraint management for geometry optimization:
 | Crystal | CIF, POSCAR, CONTCAR |
 | Molecule | XYZ, PDB |
 | Trajectory | XDATCAR, OUTCAR |
-| Quantum | Gaussian, ORCA, QE, ABACUS, CASTEP, SIESTA |
+| Quantum | Gaussian, ORCA, QE, ABACUS, CASTEP, SIESTA, OpenMX |
 | Native | .acoord |
 
 ### Undo/Redo
