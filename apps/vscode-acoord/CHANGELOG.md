@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.16]
+
+### Fixed
+
+- **OpenMX fixed constraints after atom deletion**: Saving an edited `.dat` file after deleting atoms now writes exactly one updated `MD.Fixed.XYZ` block with current atom indices.
+
 ## [0.3.15]
 
 ### Fixed

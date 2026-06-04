@@ -321,6 +321,7 @@ export class OpenMXParser extends StructureParser {
       }
 
       if (this.isBlockStart(trimmed, 'MD.Fixed.XYZ')) {
+        const shouldWriteFixedBlock = !fixedBlockHandled && hasConstraints;
         fixedBlockHandled = true;
         i++;
         while (i < lines.length && !this.isBlockEnd(this.stripComment(lines[i]).trim(), 'MD.Fixed.XYZ')) {
@@ -329,7 +330,7 @@ export class OpenMXParser extends StructureParser {
         if (i < lines.length) {
           i++;
         }
-        if (hasConstraints) {
+        if (shouldWriteFixedBlock) {
           this.writeFixedConstraints(resultLines, structure);
         }
         continue;

@@ -154,6 +154,25 @@ MD.Fixed.XYZ>`;
     expect(serialized).to.contain('MD.Fixed.XYZ>');
   });
 
+  it('should write one updated MD.Fixed.XYZ block after deleting an atom', () => {
+    const content = `${fixtureContent}
+MD.Opt.criterion              0.0003
+<MD.Fixed.XYZ
+  1  1 1 1
+  2  0 0 0
+  3  0 0 0
+MD.Fixed.XYZ>`;
+    const structure = parser.parse(content);
+    structure.removeAtom(structure.atoms[1].id);
+
+    const serialized = parser.serialize(structure);
+
+    expect(serialized.match(/<MD\.Fixed\.XYZ/g)).to.have.lengthOf(1);
+    expect(serialized).to.contain('     1  1 1 1');
+    expect(serialized).to.contain('     2  0 0 0');
+    expect(serialized).to.not.contain('     3  0 0 0');
+  });
+
   it('should round-trip parse → serialize → parse', () => {
     const original = parser.parse(fixtureContent);
     const serialized = parser.serialize(original);
