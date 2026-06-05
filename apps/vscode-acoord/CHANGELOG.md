@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.17]
+
+### Added
+
+- **ABACUS STRU metadata support**: STRU parsing now preserves ABACUS species, numerical orbital, lattice, magnetism, velocity, and spin-constraint metadata while keeping rendering data focused on structure coordinates.
+
+### Changed
+
+- **ABACUS STRU save behavior**: Saving edited STRU files now updates only coordinates, fixed-atom flags, atom counts, and species/orbital rows needed by element additions or removals. Existing pseudo, orbital, magnetism, velocity, and spin-constraint text is preserved.
+- **ABACUS defaults**: New STRU exports now use APNS v1 pseudopotential defaults and APNS efficiency orbital defaults, with precision orbital defaults prepared for future use.
+
+### Fixed
+
+- **ABACUS STRU validation**: STRU parsing now rejects malformed numeric tokens, missing lattice values, and unsupported coordinate modes with line-specific errors.
+- **Context menu positioning**: Right-click menus now stay within the webview viewport near the bottom or right edge.
+- **Context menu conflicts**: Right-click no longer opens both the ACoord menu and the VS Code default menu, and right-click release no longer leaves camera dragging stuck.
+
 ## [0.3.16]
 
 ### Fixed

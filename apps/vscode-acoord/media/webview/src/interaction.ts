@@ -284,6 +284,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     }
 
     if (event.button === 2) {
+      event.preventDefault();
       interactionStore.rightDragStart = { x: event.clientX, y: event.clientY };
       interactionStore.rightDragMoved = false;
       
@@ -579,6 +580,7 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     }
     
     if (event.button === 2 && interactionStore.rightDragType !== 'none') {
+      event.preventDefault();
       const wasMoved = interactionStore.rightDragMoved;
       
       if (wasMoved) {

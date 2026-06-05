@@ -22,6 +22,8 @@ interface ContextMenuOptions {
 
 let activeMenu: HTMLDivElement | null = null;
 let closeCallback: (() => void) | null = null;
+const MENU_VIEWPORT_MARGIN = 8;
+let globalContextMenuSuppressed = false;
 
 const COMMON_ELEMENTS = [
   'C', 'H', 'O', 'N', 'S', 'P', 'F', 'Cl', 'Br',
@@ -64,12 +66,29 @@ const DIVIDER_STYLE = `
 
 const SUBMENU_ARROW = '▸';
 
+function clampToViewport(value: number, size: number, viewportSize: number): number {
+  return Math.max(MENU_VIEWPORT_MARGIN, Math.min(value, viewportSize - size - MENU_VIEWPORT_MARGIN));
+}
+
+function positionMenuWithinViewport(menu: HTMLElement, x: number, y: number): void {
+  const rect = menu.getBoundingClientRect();
+  const adjustedX = clampToViewport(x, rect.width, window.innerWidth);
+  const adjustedY = clampToViewport(y, rect.height, window.innerHeight);
+
+  menu.style.left = `${adjustedX}px`;
+  menu.style.top = `${adjustedY}px`;
+}
+
 function createMenuElement(options: ContextMenuOptions): HTMLDivElement {
   const menu = document.createElement('div');
   menu.setAttribute('role', 'menu');
   menu.style.cssText = MENU_STYLE;
   menu.style.left = `${options.x}px`;
   menu.style.top = `${options.y}px`;
+  menu.addEventListener('contextmenu', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+  });
 
   for (const item of options.items) {
     if (item.divider) {
@@ -140,6 +159,15 @@ function createMenuElement(options: ContextMenuOptions): HTMLDivElement {
           if (rect.right + submenuRect.width > window.innerWidth) {
             submenuContainer.style.left = 'auto';
             submenuContainer.style.right = '100%';
+          } else {
+            submenuContainer.style.left = '100%';
+            submenuContainer.style.right = 'auto';
+          }
+          const overflowBottom = rect.top + submenuRect.height - window.innerHeight + MENU_VIEWPORT_MARGIN;
+          if (overflowBottom > 0) {
+            submenuContainer.style.top = `${-overflowBottom}px`;
+          } else {
+            submenuContainer.style.top = '0';
           }
         });
         menuItem.addEventListener('mouseleave', () => {
@@ -159,19 +187,11 @@ export function showContextMenu(options: ContextMenuOptions): void {
   
   activeMenu = createMenuElement(options);
   closeCallback = options.onClose || null;
-  
-  const rect = activeMenu.getBoundingClientRect();
-  const adjustedX = options.x + rect.width > window.innerWidth 
-    ? window.innerWidth - rect.width - 8 
-    : options.x;
-  const adjustedY = options.y + rect.height > window.innerHeight 
-    ? window.innerHeight - rect.height - 8 
-    : options.y;
-  
-  activeMenu.style.left = `${adjustedX}px`;
-  activeMenu.style.top = `${adjustedY}px`;
-  
+
+  activeMenu.style.visibility = 'hidden';
   document.body.appendChild(activeMenu);
+  positionMenuWithinViewport(activeMenu, options.x, options.y);
+  activeMenu.style.visibility = 'visible';
   
   const closeOnOutsideClick = (e: MouseEvent) => {
     if (activeMenu && !activeMenu.contains(e.target as Node)) {
@@ -947,7 +967,15 @@ export function setupContextMenu(
 ): void {
   canvas.addEventListener('contextmenu', (event: MouseEvent) => {
     event.preventDefault();
+    event.stopPropagation();
   });
+
+  if (!globalContextMenuSuppressed) {
+    document.addEventListener('contextmenu', (event: MouseEvent) => {
+      event.preventDefault();
+    }, { capture: true });
+    globalContextMenuSuppressed = true;
+  }
 }
 
 export function showContextMenuAt(
