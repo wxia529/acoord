@@ -61,22 +61,34 @@ export function updateSelectedInputs(atom: Atom | null): void {
   const x = document.getElementById('sel-x') as HTMLInputElement | null;
   const y = document.getElementById('sel-y') as HTMLInputElement | null;
   const z = document.getElementById('sel-z') as HTMLInputElement | null;
+  const fx = document.getElementById('sel-fx') as HTMLInputElement | null;
+  const fy = document.getElementById('sel-fy') as HTMLInputElement | null;
+  const fz = document.getElementById('sel-fz') as HTMLInputElement | null;
   const disabled = !atom;
   if (el) el.disabled = disabled;
   if (x) x.disabled = disabled;
   if (y) y.disabled = disabled;
   if (z) z.disabled = disabled;
+  if (fx) fx.disabled = disabled || !atom?.fractionalPosition;
+  if (fy) fy.disabled = disabled || !atom?.fractionalPosition;
+  if (fz) fz.disabled = disabled || !atom?.fractionalPosition;
   if (!atom) {
     if (el) el.value = '';
     if (x) x.value = '';
     if (y) y.value = '';
     if (z) z.value = '';
+    if (fx) fx.value = '';
+    if (fy) fy.value = '';
+    if (fz) fz.value = '';
     return;
   }
   if (el) el.value = atom.element;
   if (x) x.value = atom.position[0].toFixed(4);
   if (y) y.value = atom.position[1].toFixed(4);
   if (z) z.value = atom.position[2].toFixed(4);
+  if (fx) fx.value = atom.fractionalPosition?.[0].toFixed(6) ?? '';
+  if (fy) fy.value = atom.fractionalPosition?.[1].toFixed(6) ?? '';
+  if (fz) fz.value = atom.fractionalPosition?.[2].toFixed(6) ?? '';
 }
 
 export function updateAtomColorPreview(): void {

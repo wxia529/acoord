@@ -184,10 +184,14 @@ export class RenderMessageBuilder {
    */
   private getAtomGeometry(): WireAtom[] {
     return this.state.structure.atoms.map((atom) => {
+      const fractionalPosition = this.state.structure.unitCell
+        ? this.state.structure.unitCell.cartesianToFractional(atom.x, atom.y, atom.z)
+        : undefined;
       return {
         id: atom.id,
         element: atom.element,
         position: [atom.x, atom.y, atom.z] as [number, number, number],
+        fractionalPosition,
         radius: atom.radius,
         color: atom.color,
         selected: atom.selected,

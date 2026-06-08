@@ -519,6 +519,12 @@ vscode-checkbox::part(control) {
   margin-bottom: 8px;
 }
 
+.coordinate-input-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  column-gap: 8px;
+}
+
 #structure-info {
   font-size: 11px;
   color: var(--acoord-muted);
@@ -620,6 +626,17 @@ vscode-checkbox::part(control) {
   border: 1px solid var(--vscode-input-border, #3c3c3c);
   border-radius: 4px;
   font-size: 12px;
+}
+
+.coordinate-input-grid .input-group input[type="number"] {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+}
+
+.coordinate-input-grid input[readonly] {
+  color: var(--acoord-muted);
+  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .input-group input[type="text"]:focus,

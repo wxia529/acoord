@@ -20,6 +20,7 @@ export interface WireAtom {
   element: string;
   color: string;
   position: [number, number, number];
+  fractionalPosition?: [number, number, number];
   radius: number;
   selected?: boolean;
   selectable?: boolean;

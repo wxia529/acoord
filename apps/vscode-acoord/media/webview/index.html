@@ -92,17 +92,31 @@
               <label>Element</label>
               <input type="text" id="sel-element" placeholder="Select an atom" maxlength="3" />
             </div>
-            <div class="input-group">
-              <label>X (A)</label>
-              <input type="number" id="sel-x" step="0.01" />
-            </div>
-            <div class="input-group">
-              <label>Y (A)</label>
-              <input type="number" id="sel-y" step="0.01" />
-            </div>
-            <div class="input-group">
-              <label>Z (A)</label>
-              <input type="number" id="sel-z" step="0.01" />
+            <div class="coordinate-input-grid">
+              <div class="input-group">
+                <label>X (A)</label>
+                <input type="number" id="sel-x" step="0.01" />
+              </div>
+              <div class="input-group">
+                <label>Fx</label>
+                <input type="number" id="sel-fx" step="0.000001" readonly tabindex="-1" />
+              </div>
+              <div class="input-group">
+                <label>Y (A)</label>
+                <input type="number" id="sel-y" step="0.01" />
+              </div>
+              <div class="input-group">
+                <label>Fy</label>
+                <input type="number" id="sel-fy" step="0.000001" readonly tabindex="-1" />
+              </div>
+              <div class="input-group">
+                <label>Z (A)</label>
+                <input type="number" id="sel-z" step="0.01" />
+              </div>
+              <div class="input-group">
+                <label>Fz</label>
+                <input type="number" id="sel-fz" step="0.000001" readonly tabindex="-1" />
+              </div>
             </div>
             <vscode-button id="btn-apply-atom" appearance="primary">Apply</vscode-button>
           </div>
