@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - **Text context menus**: Right-clicking the sidebar, status-bar coordinates, or input fields now opens the native context menu so values can be copied.
+- **Status-bar text selection**: Coordinate values in the status bar can now be selected by dragging without status updates clearing the selection.
 
 ## [0.3.18]
 

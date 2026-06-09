@@ -29,17 +29,18 @@ export function updateStatusBar(force?: boolean): void {
   const frameEl = document.getElementById('status-frame') as HTMLElement | null;
   
   if (!modeEl || !selectionEl) return;
+
+  const selected = structureStore.currentSelectedAtom;
+  const selectedId = selected ? selected.id : null;
+  if (!force && statusSelectionLock && selectedId === lastStatusSelectedId) {
+    return;
+  }
   
   updateModeDisplay(modeEl, hintEl);
   updateSelectionDisplay(selectionEl);
   updateMeasurementDisplay();
   updateFrameDisplay(frameEl);
   
-  const selected = structureStore.currentSelectedAtom;
-  const selectedId = selected ? selected.id : null;
-  if (!force && statusSelectionLock && selectedId === lastStatusSelectedId) {
-    return;
-  }
   lastStatusSelectedId = selectedId;
 }
 
@@ -140,7 +141,7 @@ export function updateMeasurementDisplay(): void {
 export function syncStatusSelectionLock(): void {
   const selection = document.getSelection();
   const statusBar = document.getElementById('status-bar') as HTMLElement | null;
-  if (!selection || !statusBar || selection.isCollapsed) {
+  if (!selection || !statusBar) {
     statusSelectionLock = false;
     return;
   }

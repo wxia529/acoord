@@ -499,7 +499,7 @@ function start(): void {
 
   document.addEventListener('selectionchange', () => {
     syncStatusSelectionLock();
-    if (!isStatusSelectionLocked()) { updateStatusBar(true); }
+    if (!isStatusSelectionLocked()) { updateStatusBar(); }
   });
 }
 
