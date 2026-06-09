@@ -93,7 +93,7 @@ export interface TransformContext {
 /** Atom editing context */
 export interface EditContext {
   normalizeHexColor: (value: string) => string | null;
-  applySelectedAtomChanges: () => void;
+  applySelectedAtomChanges: (coordinateMode?: 'cartesian' | 'fractional') => void;
   deleteSelectedAtoms?: () => boolean;
 }
 

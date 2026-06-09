@@ -148,7 +148,8 @@ const toolCallbacks = {
   applyRotation: (angleDeg: number, preview: boolean) =>
     applyRotation(angleDeg, preview, vscode),
 
-  applySelectedAtomChanges: () => applySelectedAtomChanges(vscode),
+  applySelectedAtomChanges: (coordinateMode?: 'cartesian' | 'fractional') =>
+    applySelectedAtomChanges(vscode, coordinateMode),
 };
 
 function setupUI(): void {

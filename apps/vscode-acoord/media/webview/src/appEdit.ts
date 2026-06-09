@@ -62,17 +62,19 @@ export function setup(callbacks: AppEditContext): void {
 
   // ── Selected Atom panel ────────────────────────────────────────────────────
 
-  const btnApplyAtom = document.getElementById('btn-apply-atom') as HTMLButtonElement | null;
+  const btnApplyCartesian = document.getElementById('btn-apply-cartesian') as HTMLButtonElement | null;
+  const btnApplyFractional = document.getElementById('btn-apply-fractional') as HTMLButtonElement | null;
   const selElement = document.getElementById('sel-element') as HTMLInputElement | null;
-  const selX = document.getElementById('sel-x') as HTMLInputElement | null;
-  const selY = document.getElementById('sel-y') as HTMLInputElement | null;
-  const selZ = document.getElementById('sel-z') as HTMLInputElement | null;
 
-  if (btnApplyAtom) { btnApplyAtom.addEventListener('click', applySelectedAtomChanges); }
-  if (selElement) { selElement.addEventListener('change', applySelectedAtomChanges); }
-  if (selX) { selX.addEventListener('change', applySelectedAtomChanges); }
-  if (selY) { selY.addEventListener('change', applySelectedAtomChanges); }
-  if (selZ) { selZ.addEventListener('change', applySelectedAtomChanges); }
+  if (btnApplyCartesian) {
+    btnApplyCartesian.addEventListener('click', () => applySelectedAtomChanges('cartesian'));
+  }
+  if (btnApplyFractional) {
+    btnApplyFractional.addEventListener('click', () => applySelectedAtomChanges('fractional'));
+  }
+  if (selElement) {
+    selElement.addEventListener('change', () => applySelectedAtomChanges('cartesian'));
+  }
 
   // ── Atom Color ─────────────────────────────────────────────────────────────
 

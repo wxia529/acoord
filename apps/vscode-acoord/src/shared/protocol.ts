@@ -428,6 +428,7 @@ export interface UpdateAtomMessage {
   x?: number;
   y?: number;
   z?: number;
+  fractionalPosition?: [number, number, number];
 }
 
 export interface SetBondLengthMessage {

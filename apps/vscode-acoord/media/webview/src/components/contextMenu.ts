@@ -29,6 +29,15 @@ const COMMON_ELEMENTS = [
   'C', 'H', 'O', 'N', 'S', 'P', 'F', 'Cl', 'Br',
 ];
 
+function allowsNativeContextMenu(target: EventTarget | null): boolean {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+  return !!target.closest(
+    'input, textarea, [contenteditable="true"], #sidebar, #status-bar'
+  );
+}
+
 const MENU_STYLE = `
   position: fixed;
   background: #1e1e1e;
@@ -972,6 +981,9 @@ export function setupContextMenu(
 
   if (!globalContextMenuSuppressed) {
     document.addEventListener('contextmenu', (event: MouseEvent) => {
+      if (allowsNativeContextMenu(event.target)) {
+        return;
+      }
       event.preventDefault();
     }, { capture: true });
     globalContextMenuSuppressed = true;

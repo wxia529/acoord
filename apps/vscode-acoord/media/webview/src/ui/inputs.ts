@@ -133,9 +133,26 @@ export function updateAdsorptionUI(): void {
   if (input) input.value = ref.distance.toFixed(4);
 }
 
-export function applySelectedAtomChanges(vscode: { postMessage: (msg: unknown) => void }): void {
+export function applySelectedAtomChanges(
+  vscode: { postMessage: (msg: unknown) => void },
+  coordinateMode: 'cartesian' | 'fractional' = 'cartesian'
+): void {
   if (!structureStore.currentSelectedAtom) return;
   const el = (document.getElementById('sel-element') as HTMLInputElement | null)?.value.trim() ?? '';
+  if (coordinateMode === 'fractional') {
+    const fx = parseFloat((document.getElementById('sel-fx') as HTMLInputElement | null)?.value ?? '');
+    const fy = parseFloat((document.getElementById('sel-fy') as HTMLInputElement | null)?.value ?? '');
+    const fz = parseFloat((document.getElementById('sel-fz') as HTMLInputElement | null)?.value ?? '');
+    if (!Number.isFinite(fx) || !Number.isFinite(fy) || !Number.isFinite(fz)) return;
+    vscode.postMessage({
+      command: 'updateAtom',
+      atomId: structureStore.currentSelectedAtom.id,
+      element: el || structureStore.currentSelectedAtom.element,
+      fractionalPosition: [fx, fy, fz],
+    });
+    return;
+  }
+
   const x = parseFloat((document.getElementById('sel-x') as HTMLInputElement | null)?.value ?? '');
   const y = parseFloat((document.getElementById('sel-y') as HTMLInputElement | null)?.value ?? '');
   const z = parseFloat((document.getElementById('sel-z') as HTMLInputElement | null)?.value ?? '');

@@ -525,6 +525,16 @@ vscode-checkbox::part(control) {
   column-gap: 8px;
 }
 
+.coordinate-apply-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 8px;
+}
+
+.coordinate-apply-actions vscode-button {
+  width: 100%;
+}
+
 #structure-info {
   font-size: 11px;
   color: var(--acoord-muted);
@@ -560,6 +570,11 @@ vscode-checkbox::part(control) {
 
 #status-selection {
   color: var(--acoord-text);
+}
+
+.status-coordinate {
+  color: var(--acoord-text);
+  white-space: nowrap;
 }
 
 #status-hint {
@@ -632,11 +647,6 @@ vscode-checkbox::part(control) {
   box-sizing: border-box;
   min-width: 0;
   width: 100%;
-}
-
-.coordinate-input-grid input[readonly] {
-  color: var(--acoord-muted);
-  background-color: rgba(255, 255, 255, 0.03);
 }
 
 .input-group input[type="text"]:focus,

@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.19]
+
+### Changed
+
+- **Editable fractional coordinates**: Fractional coordinates in the selected atom Properties panel can now be edited and applied independently using dedicated Cartesian and fractional Apply buttons. The status bar also shows both coordinate forms for the selected atom.
+
+### Fixed
+
+- **Text context menus**: Right-clicking the sidebar, status-bar coordinates, or input fields now opens the native context menu so values can be copied.
+
 ## [0.3.18]
 
 ### Added

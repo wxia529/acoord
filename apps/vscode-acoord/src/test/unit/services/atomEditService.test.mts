@@ -1,6 +1,7 @@
 import { expect } from 'chai';
 import { Structure } from '../../../models/structure.js';
 import { Atom } from '../../../models/atom.js';
+import { UnitCell } from '../../../models/unitCell.js';
 import { RenderMessageBuilder } from '../../../renderers/renderMessageBuilder.js';
 import { TrajectoryManager } from '../../../providers/trajectoryManager.js';
 import { UndoManager } from '../../../providers/undoManager.js';
@@ -219,6 +220,32 @@ describe('AtomEditService', () => {
       const s = makeStructure();
       const { svc } = makeServices(s);
       expect(svc.updateAtom('nonexistent', { element: 'Fe' })).to.be.false;
+    });
+
+    it('should update position from fractional coordinates', () => {
+      const s = makeStructure();
+      s.unitCell = new UnitCell(10, 20, 30, 90, 90, 90);
+      const { svc, tm } = makeServices(s);
+      const id = s.atoms[0].id;
+
+      const result = svc.updateAtom(id, { fractionalPosition: [0.25, 0.5, 0.75] });
+
+      expect(result).to.be.true;
+      const atom = tm.activeStructure.getAtom(id);
+      expect(atom).to.not.be.undefined;
+      expect(atom?.x).to.be.closeTo(2.5, 1e-9);
+      expect(atom?.y).to.be.closeTo(10, 1e-9);
+      expect(atom?.z).to.be.closeTo(22.5, 1e-9);
+    });
+
+    it('should reject fractional coordinates without a unit cell', () => {
+      const s = makeStructure();
+      const { svc } = makeServices(s);
+
+      expect(() => svc.updateAtom(
+        s.atoms[0].id,
+        { fractionalPosition: [0.25, 0.5, 0.75] }
+      )).to.throw('updateAtom: fractional coordinates require a unit cell');
     });
   });
 });

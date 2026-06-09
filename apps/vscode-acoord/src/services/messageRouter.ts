@@ -264,6 +264,7 @@ export class MessageRouter {
           x: message.x,
           y: message.y,
           z: message.z,
+          fractionalPosition: message.fractionalPosition,
         });
       }
       return true;

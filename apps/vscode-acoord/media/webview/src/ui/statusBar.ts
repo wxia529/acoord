@@ -1,5 +1,5 @@
 import { structureStore, selectionStore, interactionStore, trajectoryStore } from '../state';
-import { getFractionalCoords, getMeasurementText } from '../utils/measurements';
+import { getMeasurementText } from '../utils/measurements';
 
 let statusSelectionLock = false;
 let lastStatusSelectedId: string | null = null;
@@ -73,6 +73,10 @@ function updateModeDisplay(modeEl: HTMLElement, hintEl: HTMLElement | null): voi
 function updateSelectionDisplay(selectionEl: HTMLElement): void {
   const atomCount = selectionStore.selectedAtomIds.length;
   const bondCount = selectionStore.selectedBondKeys.length;
+  const cartesianEl = document.getElementById('status-cartesian') as HTMLElement | null;
+  const fractionalEl = document.getElementById('status-fractional') as HTMLElement | null;
+
+  updateCoordinateDisplay(cartesianEl, fractionalEl, atomCount);
   
   if (atomCount === 0 && bondCount === 0) {
     selectionEl.textContent = 'Selected: 0';
@@ -92,6 +96,31 @@ function updateSelectionDisplay(selectionEl: HTMLElement): void {
     parts.push(`${bondCount} bonds`);
   }
   selectionEl.textContent = parts.join(' | ');
+}
+
+function updateCoordinateDisplay(
+  cartesianEl: HTMLElement | null,
+  fractionalEl: HTMLElement | null,
+  atomCount: number
+): void {
+  const selected = structureStore.currentSelectedAtom;
+  const showCoordinates = atomCount === 1 && selected !== null;
+
+  if (cartesianEl) {
+    cartesianEl.hidden = !showCoordinates;
+    cartesianEl.textContent = showCoordinates
+      ? `Cartesian: (${selected.position.map((value) => value.toFixed(4)).join(', ')})`
+      : '';
+  }
+
+  if (fractionalEl) {
+    fractionalEl.hidden = !showCoordinates;
+    fractionalEl.textContent = showCoordinates
+      ? `Fractional: ${selected.fractionalPosition
+        ? `(${selected.fractionalPosition.map((value) => value.toFixed(6)).join(', ')})`
+        : '--'}`
+      : '';
+  }
 }
 
 function updateFrameDisplay(frameEl: HTMLElement | null): void {

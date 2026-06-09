@@ -464,7 +464,13 @@ export class AtomEditService {
 
   updateAtom(
     atomId: string,
-    options: { element?: string; x?: number; y?: number; z?: number }
+    options: {
+      element?: string;
+      x?: number;
+      y?: number;
+      z?: number;
+      fractionalPosition?: [number, number, number];
+    }
   ): boolean {
     if (!this.trajectoryManager.isEditing) {
       this.trajectoryManager.beginEdit();
@@ -476,6 +482,18 @@ export class AtomEditService {
       return false;
     }
 
+    let fractionalCartesianPosition: [number, number, number] | undefined;
+    if (options.fractionalPosition) {
+      if (!editStructure.unitCell) {
+        throw new Error('updateAtom: fractional coordinates require a unit cell');
+      }
+      const [fx, fy, fz] = options.fractionalPosition;
+      if (![fx, fy, fz].every(Number.isFinite)) {
+        throw new Error('updateAtom: fractional coordinates must be finite numbers');
+      }
+      fractionalCartesianPosition = editStructure.unitCell.fractionalToCartesian(fx, fy, fz);
+    }
+
     this.undoManager.push(editStructure);
     
     if (options.element) {
@@ -485,7 +503,10 @@ export class AtomEditService {
       }
     }
     
-    if (
+    if (fractionalCartesianPosition) {
+      const [x, y, z] = fractionalCartesianPosition;
+      atom.setPosition(x, y, z);
+    } else if (
       typeof options.x === 'number' &&
       typeof options.y === 'number' &&
       typeof options.z === 'number'

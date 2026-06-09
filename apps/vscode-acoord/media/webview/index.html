@@ -99,7 +99,7 @@
               </div>
               <div class="input-group">
                 <label>Fx</label>
-                <input type="number" id="sel-fx" step="0.000001" readonly tabindex="-1" />
+                <input type="number" id="sel-fx" step="0.000001" />
               </div>
               <div class="input-group">
                 <label>Y (A)</label>
@@ -107,7 +107,7 @@
               </div>
               <div class="input-group">
                 <label>Fy</label>
-                <input type="number" id="sel-fy" step="0.000001" readonly tabindex="-1" />
+                <input type="number" id="sel-fy" step="0.000001" />
               </div>
               <div class="input-group">
                 <label>Z (A)</label>
@@ -115,10 +115,13 @@
               </div>
               <div class="input-group">
                 <label>Fz</label>
-                <input type="number" id="sel-fz" step="0.000001" readonly tabindex="-1" />
+                <input type="number" id="sel-fz" step="0.000001" />
               </div>
             </div>
-            <vscode-button id="btn-apply-atom" appearance="primary">Apply</vscode-button>
+            <div class="coordinate-apply-actions">
+              <vscode-button id="btn-apply-cartesian" appearance="primary">Apply Cartesian</vscode-button>
+              <vscode-button id="btn-apply-fractional" appearance="secondary">Apply Fractional</vscode-button>
+            </div>
           </div>
           <div id="properties-multi-atom" style="display:none;">
             <div class="properties-message">
@@ -563,6 +566,8 @@
     <span id="status-atoms">Atoms: 0</span>
     <span id="status-bonds">Bonds: 0</span>
     <span id="status-selection">Selected: 0</span>
+    <span id="status-cartesian" class="status-coordinate" hidden></span>
+    <span id="status-fractional" class="status-coordinate" hidden></span>
     <span id="status-measurement">--</span>
     <span id="status-hint">Move: Shift+Alt+drag | Add: type element</span>
     <span id="status-frame">Frame 1/1</span>
