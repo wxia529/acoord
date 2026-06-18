@@ -85,10 +85,16 @@ Fixed atoms are constrained during geometry optimization (e.g., in VASP calculat
 The 3D cross marker is visible from any viewing angle and respects depth occlusion (hidden when behind other atoms).
 :::
 
-::: info VASP POSCAR Compatibility
-Fixed atoms are synced with selective dynamics flags:
-- Fixed atom → `[F F F]` (constrained in all directions)
-- Free atom → `[T T T]` (fully relaxed)
+::: info Constraint Export
+Fixed atoms are synced with format-native movement constraints where supported:
+- POSCAR: selective dynamics flags
+- QE: `ATOMIC_POSITIONS` `if_pos` flags
+- ABACUS STRU: atom movement flags
+- OpenMX: `MD.Fixed.XYZ`
+- CASTEP cell: `IONIC_CONSTRAINTS`
+
+If every atom is free, ACoord omits redundant fixed/free flags when the target
+format allows the constraint fields to be left blank.
 :::
 
 ## Undo and Redo

@@ -62,6 +62,24 @@ describe('ACoord Parser', () => {
     expect(parsed.bonds[0].color).to.be.undefined;
   });
 
+  it('omits unconstrained selective dynamics on serialize', () => {
+    const structure = new Structure('unconstrained');
+    const atom = new Atom('C', 0, 0, 0, 'atom_a', {
+      color: '#FF0000',
+      radius: 0.7,
+    });
+    atom.selectiveDynamics = [true, true, true];
+    structure.addAtom(atom);
+
+    const serialized = parser.serialize(structure);
+    const parsed = JSON.parse(serialized) as {
+      atoms: Array<{ fixed?: boolean; selectiveDynamics?: [boolean, boolean, boolean] }>;
+    };
+
+    expect(parsed.atoms[0].fixed).to.be.undefined;
+    expect(parsed.atoms[0].selectiveDynamics).to.be.undefined;
+  });
+
   it('round-trips v1.1 bond radius and color', () => {
     const original = JSON.stringify({
       version: '1.1',

@@ -75,6 +75,28 @@ Direct
     expect(reparsed.atoms[1].selectiveDynamics).to.deep.equal([true, true, false]);
   });
 
+  it('should omit selective dynamics when all atoms are unconstrained', () => {
+    const parser = new POSCARParser();
+
+    const original = `Simple BCC Iron
+1.0
+2.866 0.0 0.0
+0.0 2.866 0.0
+0.0 0.0 2.866
+Fe
+2
+Selective dynamics
+Direct
+0.0 0.0 0.0 T T T
+0.5 0.5 0.5 T T T`;
+
+    const structure = parser.parse(original);
+    const serialized = parser.serialize(structure);
+
+    expect(serialized).to.not.match(/^Selective dynamics$/im);
+    expect(serialized).to.not.match(/\s[TF]\s+[TF]\s+[TF]\s*$/im);
+  });
+
   describe('fixture file round-trip (water.vasp)', () => {
     const parser = new POSCARParser();
     const fixtureContent = readFileSync(join(FIXTURES, 'water.vasp'), 'utf-8');

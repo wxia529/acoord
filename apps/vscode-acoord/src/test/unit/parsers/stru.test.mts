@@ -64,6 +64,34 @@ H
     expect(reparsed.unitCell).to.be.instanceOf(UnitCell);
   });
 
+  it('should omit movement flags when all atoms are mobile', () => {
+    const structure = parser.parse(SILICON_STRU);
+    const serialized = parser.serialize(structure);
+
+    expect(serialized).to.not.include('  1 1 1');
+    expect(serialized).to.not.include('  1  1  1');
+    expect(serialized).to.not.include('  0 0 0');
+  });
+
+  it('should preserve partial movement constraints', () => {
+    const content = `ATOMIC_POSITIONS
+Cartesian_angstrom
+C
+0.0
+2
+0.0 0.0 0.0 0 1 1
+1.0 0.0 0.0 1 1 1
+`;
+    const structure = parser.parse(content);
+    const serialized = parser.serialize(structure);
+    const reparsed = parser.parse(serialized);
+
+    expect(structure.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
+    expect(serialized).to.include('0.000000000000  0.000000000000  0.000000000000  0 1 1');
+    expect(serialized).to.include('1.000000000000  0.000000000000  0.000000000000  1 1 1');
+    expect(reparsed.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
+  });
+
   describe('fixture file round-trip (water.stru)', () => {
     const fixtureContent = readFileSync(join(FIXTURES, 'water.stru'), 'utf-8');
 
@@ -184,6 +212,8 @@ H
     expect(serialized).to.include('H  1.008  H.upf');
     expect(serialized).to.include('O_gga_6au_100Ry_2s2p1d.orb');
     expect(serialized).to.include('H_gga_6au_100Ry_2s1p.orb');
+    expect(serialized).to.not.include('  1 1 1');
+    expect(serialized).to.not.include('  0 0 0');
   });
 
   it('should parse // comments and preserve species and orbital metadata', () => {

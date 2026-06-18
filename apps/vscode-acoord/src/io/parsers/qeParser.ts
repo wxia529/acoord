@@ -13,6 +13,7 @@ interface ParsedAtom {
   element: string;
   position: [number, number, number];
   fixed: boolean;
+  selectiveDynamics?: [boolean, boolean, boolean];
 }
 
 interface ParsedCellBlock {
@@ -109,7 +110,7 @@ export class QEParser extends StructureParser {
         [0, 0, 20],
       ];
 
-    const hasFixedFlags = structure.atoms.some((atom) => atom.fixed);
+    const hasFixedFlags = this.hasPositionConstraints(structure);
 
     lines.push('&CONTROL');
     lines.push(`  calculation = 'scf'`);
@@ -137,7 +138,7 @@ export class QEParser extends StructureParser {
     for (const atom of structure.atoms) {
       const base = `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`;
       if (hasFixedFlags) {
-        lines.push(`${base}  ${atom.fixed ? '0 0 0' : '1 1 1'}`);
+        lines.push(`${base}  ${this.formatPositionFlags(atom)}`);
       } else {
         lines.push(base);
       }
@@ -160,7 +161,7 @@ export class QEParser extends StructureParser {
     const vectors = structure.unitCell
       ? structure.unitCell.getLatticeVectors()
       : null;
-    const hasFixedFlags = structure.atoms.some((atom) => atom.fixed);
+    const hasFixedFlags = this.hasPositionConstraints(structure);
     
     const originalSpeciesLines = this.extractSpeciesLines(lines);
 
@@ -250,7 +251,7 @@ export class QEParser extends StructureParser {
         for (const atom of structure.atoms) {
           const base = `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`;
           if (hasFixedFlags) {
-            resultLines.push(`${base}  ${atom.fixed ? '0 0 0' : '1 1 1'}`);
+            resultLines.push(`${base}  ${this.formatPositionFlags(atom)}`);
           } else {
             resultLines.push(base);
           }
@@ -391,6 +392,7 @@ export class QEParser extends StructureParser {
         radius: getDefaultAtomRadius(item.element),
       });
       atom.fixed = item.fixed;
+      atom.selectiveDynamics = item.selectiveDynamics;
       structure.addAtom(atom);
     }
 
@@ -480,6 +482,7 @@ export class QEParser extends StructureParser {
         radius: getDefaultAtomRadius(item.element),
       });
       atom.fixed = item.fixed;
+      atom.selectiveDynamics = item.selectiveDynamics;
       structure.addAtom(atom);
     }
     return structure;
@@ -560,6 +563,7 @@ export class QEParser extends StructureParser {
         element: parsed.element,
         position,
         fixed: parsed.fixed,
+        selectiveDynamics: parsed.selectiveDynamics,
       });
 
       i++;
@@ -592,9 +596,15 @@ export class QEParser extends StructureParser {
     }
 
     let fixed = false;
+    let selectiveDynamics: [boolean, boolean, boolean] | undefined;
     if (parts.length >= 7) {
       const flags = parts.slice(4, 7).map((value) => parseInt(value, 10));
       if (flags.every((value) => value === 0 || value === 1)) {
+        selectiveDynamics = [
+          flags[0] === 1,
+          flags[1] === 1,
+          flags[2] === 1,
+        ];
         fixed = flags[0] === 0 && flags[1] === 0 && flags[2] === 0;
       }
     }
@@ -603,6 +613,7 @@ export class QEParser extends StructureParser {
       element,
       position: [x, y, z],
       fixed,
+      selectiveDynamics,
     };
   }
 
@@ -826,6 +837,19 @@ export class QEParser extends StructureParser {
       return null;
     }
     return value * BOHR_TO_ANGSTROM;
+  }
+
+  private hasPositionConstraints(structure: Structure): boolean {
+    return structure.atoms.some((atom) =>
+      atom.fixed || atom.selectiveDynamics?.some((canMove) => !canMove)
+    );
+  }
+
+  private formatPositionFlags(atom: Atom): string {
+    const selectiveDynamics = atom.selectiveDynamics ?? (atom.fixed
+      ? [false, false, false] as [boolean, boolean, boolean]
+      : [true, true, true] as [boolean, boolean, boolean]);
+    return selectiveDynamics.map((canMove) => canMove ? '1' : '0').join(' ');
   }
 
   private parseNumber(value: string): number {

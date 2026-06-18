@@ -143,7 +143,7 @@ export class ACoordParser extends StructureParser {
       if (atom.fixed) {
         atomData.fixed = true;
       }
-      if (atom.selectiveDynamics) {
+      if (atom.selectiveDynamics?.some((canMove) => !canMove)) {
         atomData.selectiveDynamics = atom.selectiveDynamics;
       }
       return atomData;

@@ -2,7 +2,7 @@
 
 > **Note**: This extension is part of the [acoord monorepo](../../README.md). For development setup, see the monorepo root.
 
-**Version:** 0.3.13  
+**Version:** 0.3.20  
 **License:** MIT  
 **Repository:** https://github.com/wxia529/acoord  
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=wxia529.acoord
@@ -65,7 +65,7 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 | **Gaussian Input** | `.gjf` | Preserves route section and metadata |
 | **ORCA Input** | `.inp` | Preserves ! settings and blocks |
 | **Quantum ESPRESSO Input** | `.in`, `.pwi` | Preserves &CONTROL, &SYSTEM, &ELECTRONS sections |
-| **ABACUS STRU** | `.STRU` | Fixed atoms as `0 0 0`, free atoms as `1 1 1` |
+| **ABACUS STRU** | `.STRU` | Preserves species, orbitals, movement flags, magnetism, velocity, and spin extras |
 | **OpenMX Input** | `.dat` | Preserves calculation parameters; updates coordinates, lattice, species, and fixed constraints |
 | **ACoord Native** | `.acoord` | JSON format preserving all atom properties |
 
@@ -160,10 +160,11 @@ Select 2, 3, or 4 atoms to display:
 2. Click **Save As** (Ctrl+Shift+S) to choose format
 3. Click **Export Image** to save high-resolution PNG
 
-When saving edited OpenMX `.dat` files, ACoord preserves existing calculation
-parameters and only updates structure-related sections. Existing species rows
-in `Definition.of.Atomic.Species` are kept as-is, new species receive default
-OpenMX PAO/VPS entries, and removed species are dropped.
+When saving edited input files, ACoord preserves existing calculation
+parameters where the format supports round-trip metadata and only updates
+structure-related sections. Fixed-atom or selective-dynamics flags are omitted
+when every atom is unconstrained, and are written only when a real full or
+partial movement constraint exists.
 
 ---
 
@@ -241,7 +242,9 @@ Mark atoms as fixed for geometry optimization:
 1. Select atoms
 2. Right-click → **Fix atom** (or **Unfix atom**)
 3. Fixed atoms display with white 3D cross markers
-4. Saved as selective dynamics flags in POSCAR/STRU
+4. Saved as format-native constraints in POSCAR, QE, STRU, OpenMX, CASTEP cell,
+   and native `.acoord` where supported. If all atoms are free, redundant
+   fixed/free flags are omitted when the format allows it.
 
 ---
 

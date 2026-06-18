@@ -461,8 +461,14 @@ export class STRUParser extends StructureParser {
             let z = this.parseStrictFloat(parts[2], 'atom coordinate', i + 1);
 
             let fixed = false;
+            let selectiveDynamics: [boolean, boolean, boolean] | undefined;
             const extras = this.parseAtomExtras(parts.slice(3), i + 1, splitPositionLine.commentSuffix);
             if (extras.moveFlags) {
+              selectiveDynamics = [
+                extras.moveFlags[0] === 1,
+                extras.moveFlags[1] === 1,
+                extras.moveFlags[2] === 1,
+              ];
               fixed = extras.moveFlags.every((flag) => flag === 0);
             }
 
@@ -498,6 +504,7 @@ export class STRUParser extends StructureParser {
               radius: getDefaultAtomRadius(element),
             });
             atom.fixed = fixed;
+            atom.selectiveDynamics = selectiveDynamics;
             structure.addAtom(atom);
             atomExtras.set(atom.id, extras);
           }
@@ -604,6 +611,7 @@ export class STRUParser extends StructureParser {
       lines.push('Cartesian_angstrom');
     }
 
+    const hasMovementConstraints = this.hasMovementConstraints(structure);
     for (const [element, atoms] of elements) {
       lines.push('');
       lines.push(element);
@@ -620,8 +628,9 @@ export class STRUParser extends StructureParser {
           y = frac[1];
           z = frac[2];
         }
-        const flag = atom.fixed ? '0 0 0' : '1 1 1';
-        lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}  ${flag}`);
+        const flag = hasMovementConstraints ? this.formatMovementFlags(atom) : null;
+        const extras = flag ? `  ${flag}` : '';
+        lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}${extras}`);
       }
     }
 
@@ -753,6 +762,7 @@ export class STRUParser extends StructureParser {
     const elementMagnetism = structure.metadata.get('struElementMagnetism') as Map<string, string> | undefined;
     const elementBlocks = structure.metadata.get('struElementBlocks') as Map<string, StruElementBlockMetadata> | undefined;
     const atomExtras = structure.metadata.get('struAtomExtras') as Map<string, StruAtomExtras> | undefined;
+    const hasMovementConstraints = this.hasMovementConstraints(structure);
     
     for (const [element, atoms] of elements) {
       const elementBlock = elementBlocks?.get(element);
@@ -763,7 +773,7 @@ export class STRUParser extends StructureParser {
 
       for (const atom of atoms) {
         const [x, y, z] = this.getOutputCoordinates(atom, structure, coordType);
-        const flag = atom.fixed ? '0 0 0' : '1 1 1';
+        const flag = hasMovementConstraints ? this.formatMovementFlags(atom) : null;
         const extras = this.formatAtomExtras(atomExtras?.get(atom.id), flag);
         lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}${extras}`);
       }
@@ -1025,30 +1035,38 @@ export class STRUParser extends StructureParser {
     return [atom.x, atom.y, atom.z];
   }
 
-  private formatAtomExtras(extras: StruAtomExtras | undefined, fallbackFlags: string): string {
+  private formatAtomExtras(extras: StruAtomExtras | undefined, fallbackFlags: string | null): string {
     if (extras?.originalTokens) {
       const tokens = [...extras.originalTokens];
-      const moveFlags = fallbackFlags.split(/\s+/);
-      if (extras.movementStyle === 'm' && extras.movementStart !== undefined) {
-        tokens.splice(extras.movementStart, 4, 'm', ...moveFlags);
+      const moveFlags = fallbackFlags?.split(/\s+/);
+      if (moveFlags) {
+        if (extras.movementStyle === 'm' && extras.movementStart !== undefined) {
+          tokens.splice(extras.movementStart, 4, 'm', ...moveFlags);
+        } else if (extras.movementStyle === 'bare' && extras.movementStart !== undefined) {
+          tokens.splice(extras.movementStart, 3, ...moveFlags);
+        } else {
+          tokens.unshift(...moveFlags);
+        }
+      } else if (extras.movementStyle === 'm' && extras.movementStart !== undefined) {
+        tokens.splice(extras.movementStart, 4);
       } else if (extras.movementStyle === 'bare' && extras.movementStart !== undefined) {
-        tokens.splice(extras.movementStart, 3, ...moveFlags);
-      } else {
-        tokens.unshift(...moveFlags);
+        tokens.splice(extras.movementStart, 3);
       }
       const tokenText = tokens.length > 0 ? `  ${tokens.join(' ')}` : '';
       return `${tokenText}${extras.commentSuffix ?? ''}`;
     }
 
-    const moveFlags = fallbackFlags.split(/\s+/);
     const tokens: string[] = [];
-    if (extras?.movementStyle === 'm') {
-      tokens.push('m', ...moveFlags);
-    } else {
-      tokens.push(...moveFlags);
+    if (fallbackFlags) {
+      const moveFlags = fallbackFlags.split(/\s+/);
+      if (extras?.movementStyle === 'm') {
+        tokens.push('m', ...moveFlags);
+      } else {
+        tokens.push(...moveFlags);
+      }
     }
     if (!extras) {
-      return `  ${tokens.join(' ')}`;
+      return tokens.length > 0 ? `  ${tokens.join(' ')}` : '';
     }
     if (extras.velocity) {
       tokens.push(extras.velocityKeyword ?? 'v', ...extras.velocity.map((value) => this.formatNumber(value)));
@@ -1069,6 +1087,29 @@ export class STRUParser extends StructureParser {
       tokens.push('sc', ...extras.sc.map((value) => this.formatNumber(value)));
     }
     return `  ${tokens.join(' ')}`;
+  }
+
+  private hasMovementConstraints(structure: Structure): boolean {
+    return structure.atoms.some((atom) =>
+      atom.fixed || this.hasPartialMovementConstraint(atom)
+    );
+  }
+
+  private formatMovementFlags(atom: Atom): string {
+    let selectiveDynamics: [boolean, boolean, boolean];
+    if (atom.fixed) {
+      selectiveDynamics = [false, false, false];
+    } else if (this.hasPartialMovementConstraint(atom)) {
+      selectiveDynamics = atom.selectiveDynamics as [boolean, boolean, boolean];
+    } else {
+      selectiveDynamics = [true, true, true];
+    }
+    return selectiveDynamics.map((canMove) => canMove ? '1' : '0').join(' ');
+  }
+
+  private hasPartialMovementConstraint(atom: Atom): boolean {
+    return atom.selectiveDynamics?.some((canMove) => !canMove) === true
+      && atom.selectiveDynamics.some((canMove) => canMove);
   }
 
   private getLatticeVectorsAngstrom(structure: Structure): number[][] | null {

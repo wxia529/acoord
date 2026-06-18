@@ -52,7 +52,9 @@ Constraint management for geometry optimization:
 
 - Mark atoms as fixed (constrained) or free
 - Visual indicator: white 3D cross marker on atom surface
-- Syncs with selective dynamics in VASP POSCAR files
+- Syncs with format-native constraints in POSCAR, QE, STRU, OpenMX, CASTEP cell,
+  and native `.acoord` files where supported
+- Omits redundant constraint flags when all atoms are unconstrained
 
 ## Additional Features
 

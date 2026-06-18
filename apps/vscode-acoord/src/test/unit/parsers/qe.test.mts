@@ -58,6 +58,52 @@ Si  0.25  0.25  0.25
     expect(reparsed.unitCell).to.be.instanceOf(UnitCell);
   });
 
+  it('should omit position flags when all atoms are unconstrained', () => {
+    const qeWithUnconstrainedFlags = `&CONTROL
+  calculation = 'relax'
+/
+&SYSTEM
+  ibrav = 0
+  nat = 2
+  ntyp = 1
+/
+ATOMIC_SPECIES
+C  12.011  C.UPF
+ATOMIC_POSITIONS angstrom
+C  0.0  0.0  0.0  1 1 1
+C  1.0  0.0  0.0  1 1 1
+`;
+    const structure = parser.parse(qeWithUnconstrainedFlags);
+    const serialized = parser.serialize(structure);
+
+    expect(serialized).to.not.match(/\s[01]\s+[01]\s+[01]\s*$/m);
+  });
+
+  it('should preserve partial position constraints', () => {
+    const qeWithPartialFlags = `&CONTROL
+  calculation = 'relax'
+/
+&SYSTEM
+  ibrav = 0
+  nat = 2
+  ntyp = 1
+/
+ATOMIC_SPECIES
+C  12.011  C.UPF
+ATOMIC_POSITIONS angstrom
+C  0.0  0.0  0.0  0 1 1
+C  1.0  0.0  0.0  1 1 1
+`;
+    const structure = parser.parse(qeWithPartialFlags);
+    const serialized = parser.serialize(structure);
+    const reparsed = parser.parse(serialized);
+
+    expect(structure.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
+    expect(serialized).to.include('C  0.0000000000  0.0000000000  0.0000000000  0 1 1');
+    expect(serialized).to.include('C  1.0000000000  0.0000000000  0.0000000000  1 1 1');
+    expect(reparsed.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
+  });
+
   describe('fixture file round-trip (water.qe.in)', () => {
     const fixtureContent = readFileSync(join(FIXTURES, 'water.qe.in'), 'utf-8');
 

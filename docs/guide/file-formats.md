@@ -129,7 +129,13 @@ Quantum chemistry input files.
 - ✅ `pw.x` input format
 - ✅ Cell parameters
 - ✅ Atomic positions
+- ✅ Fixed and partially constrained position flags
 - ✅ Output file parsing (final structure)
+
+**Save behavior:**
+- `ATOMIC_POSITIONS` movement flags are written only when at least one atom has
+  a real constraint. If every atom is unconstrained, ACoord omits redundant
+  `1 1 1` flags.
 
 ### ABACUS STRU
 
@@ -137,6 +143,13 @@ Quantum chemistry input files.
 - ✅ Atom types and positions
 - ✅ Unit cell
 - ✅ Numerical orbital info
+- ✅ Movement flags, magnetism, velocity, and spin-constraint extras
+
+**Save behavior:**
+- Existing STRU species, orbital, lattice, magnetism, velocity, and spin extras
+  are preserved where possible.
+- Movement flags are written only when at least one atom is fixed or partially
+  constrained. If every atom is mobile, ACoord omits redundant `1 1 1` flags.
 
 ### OpenMX Input (.dat)
 
@@ -175,6 +188,7 @@ Atoms.SpeciesAndCoordinates>
 - Opening and saving an existing `.dat` only updates structure-related sections:
   `Atoms.SpeciesAndCoordinates`, `Atoms.UnitVectors`, `MD.Fixed.XYZ`,
   `Species.Number`, and `Definition.of.Atomic.Species`.
+- `MD.Fixed.XYZ` is omitted when every atom is unconstrained.
 - Exporting from another format to `.dat` generates default OpenMX SCF/MD/DOS
   parameters using ACoord's OpenMX defaults.
 
@@ -192,6 +206,7 @@ CASTEP input structure file.
 - ✅ SPIN, LABEL, SPECIES_MASS metadata
 - ✅ Unit conversion (bohr, nm, pm, cm, m)
 - ✅ Round-trip serialization preserving all metadata
+- ✅ Omits `IONIC_CONSTRAINTS` when every atom is unconstrained
 
 #### CASTEP Output (.castep)
 
