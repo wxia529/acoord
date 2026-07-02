@@ -296,21 +296,50 @@ export class ORCAParser extends StructureParser {
   }
 
   private buildCartesianConstraintLines(structure: Structure): string[] {
-    const lines: string[] = [];
+    const constrainedIndices: Record<'C' | 'X' | 'Y' | 'Z', number[]> = {
+      C: [],
+      X: [],
+      Y: [],
+      Z: [],
+    };
     for (let atomIndex = 0; atomIndex < structure.atoms.length; atomIndex++) {
       const atom = structure.atoms[atomIndex];
       const canMove = atom.selectiveDynamics ?? (atom.fixed
         ? [false, false, false]
         : [true, true, true]);
       if (atom.fixed || canMove.every((value) => !value)) {
-        lines.push(`    { C ${atomIndex} C }`);
+        constrainedIndices.C.push(atomIndex);
         continue;
       }
       (['X', 'Y', 'Z'] as const).forEach((axis, axisIndex) => {
         if (!canMove[axisIndex]) {
-          lines.push(`    { ${axis} ${atomIndex} C }`);
+          constrainedIndices[axis].push(atomIndex);
         }
       });
+    }
+
+    return (['C', 'X', 'Y', 'Z'] as const).flatMap((axis) =>
+      this.compressConstraintIndices(axis, constrainedIndices[axis])
+    );
+  }
+
+  private compressConstraintIndices(axis: 'C' | 'X' | 'Y' | 'Z', indices: number[]): string[] {
+    const lines: string[] = [];
+    let rangeStart = indices[0];
+    let rangeEnd = indices[0];
+
+    for (let i = 1; i <= indices.length; i++) {
+      const index = indices[i];
+      if (index === rangeEnd + 1) {
+        rangeEnd = index;
+        continue;
+      }
+      if (rangeStart !== undefined && rangeEnd !== undefined) {
+        const atomRange = rangeStart === rangeEnd ? `${rangeStart}` : `${rangeStart}:${rangeEnd}`;
+        lines.push(`    { ${axis} ${atomRange} C }`);
+      }
+      rangeStart = index;
+      rangeEnd = index;
     }
     return lines;
   }

@@ -136,8 +136,7 @@ H  0.000 -0.586  0.757
 
     const serialized = parser.serialize(structure);
     expect(serialized).to.contain('{ C 0 C }');
-    expect(serialized).to.contain('{ C 2 C }');
-    expect(serialized).to.contain('{ C 3 C }');
+    expect(serialized).to.contain('{ C 2:3 C }');
     expect(serialized).to.contain('{ B 0 1 1.0 C }');
 
     const reparsed = parser.parse(serialized);
