@@ -113,4 +113,69 @@ H  0.757  0.586  0.000
     expect(serLines[1]).to.equal('%pal nprocs 4 end');
     expect(serLines[2]).to.equal('%maxcore 8192');
   });
+
+  it('should parse and round-trip Cartesian atom constraints', () => {
+    const constrainedOrca = `! B3LYP def2-SVP Opt
+%geom Constraints
+  { C 0 C }
+  { C 2:3 C }
+  { B 0 1 1.0 C }
+end
+end
+
+* xyz 0 1
+O  0.000  0.000  0.000
+H  0.757  0.586  0.000
+H -0.757  0.586  0.000
+H  0.000 -0.586  0.757
+*`;
+    const structure = parser.parse(constrainedOrca);
+
+    expect(structure.atoms.map((atom) => atom.fixed)).to.deep.equal([true, false, true, true]);
+    expect(structure.atoms[0].selectiveDynamics).to.deep.equal([false, false, false]);
+
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.contain('{ C 0 C }');
+    expect(serialized).to.contain('{ C 2 C }');
+    expect(serialized).to.contain('{ C 3 C }');
+    expect(serialized).to.contain('{ B 0 1 1.0 C }');
+
+    const reparsed = parser.parse(serialized);
+    expect(reparsed.atoms.map((atom) => atom.fixed)).to.deep.equal([true, false, true, true]);
+  });
+
+  it('should preserve partial Cartesian constraints', () => {
+    const constrainedOrca = `%geom
+Constraints
+  { X 1 C }
+  { Z 1 C }
+end
+end
+* xyz 0 1
+H 0 0 0
+H 0 0 1
+*`;
+    const structure = parser.parse(constrainedOrca);
+
+    expect(structure.atoms[1].fixed).to.equal(false);
+    expect(structure.atoms[1].selectiveDynamics).to.deep.equal([false, true, false]);
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.contain('{ X 1 C }');
+    expect(serialized).to.contain('{ Z 1 C }');
+  });
+
+  it('should add and remove fixed atom constraints without changing other geom settings', () => {
+    const structure = parser.parse(WATER_ORCA);
+    structure.atoms[1].fixed = true;
+    structure.atoms[1].selectiveDynamics = [false, false, false];
+
+    const constrained = parser.serialize(structure);
+    expect(constrained).to.match(/%geom\s+Constraints\s+\{ C 1 C \}\s+end\s+end/i);
+
+    const reparsed = parser.parse(constrained);
+    reparsed.atoms[1].fixed = false;
+    reparsed.atoms[1].selectiveDynamics = [true, true, true];
+    const unconstrained = parser.serialize(reparsed);
+    expect(unconstrained).to.not.contain('{ C 1 C }');
+  });
 });

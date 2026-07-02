@@ -65,6 +65,7 @@ export class GJFParser extends StructureParser {
     structure.metadata.set('gjfRawContent', rawContent);
     
     const latticeVectors: number[][] = [];
+    let hasFreezeCodes = false;
 
     // Atom and TV lines until blank line or EOF
     for (; idx < lines.length; idx++) {
@@ -94,17 +95,27 @@ export class GJFParser extends StructureParser {
         continue;
       }
 
-      const x = parseFloat(parts[1]);
-      const y = parseFloat(parts[2]);
-      const z = parseFloat(parts[3]);
+      const hasFreezeCode = parts.length >= 5 && this.isInteger(parts[1]);
+      const coordinateOffset = hasFreezeCode ? 2 : 1;
+      const x = parseFloat(parts[coordinateOffset]);
+      const y = parseFloat(parts[coordinateOffset + 1]);
+      const z = parseFloat(parts[coordinateOffset + 2]);
       if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
         continue;
       }
+      const fixed = hasFreezeCode && parseInt(parts[1], 10) === -1;
+      hasFreezeCodes ||= hasFreezeCode;
       structure.addAtom(new Atom(element, x, y, z, undefined, {
         color: BRIGHT_SCHEME.colors[element] || '#C0C0C0',
         radius: getDefaultAtomRadius(element),
+        fixed,
+        selectiveDynamics: hasFreezeCode
+          ? (fixed ? [false, false, false] : [true, true, true])
+          : undefined,
       }));
     }
+
+    structure.metadata.set('gjfHasFreezeCodes', hasFreezeCodes);
 
     if (latticeVectors.length === 3) {
       structure.isCrystal = true;
@@ -137,18 +148,7 @@ export class GJFParser extends StructureParser {
     const multiplicity = structure.metadata.get('multiplicity') as number ?? 1;
     lines.push(`${charge} ${multiplicity}`);
 
-    for (const atom of structure.atoms) {
-      lines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
-      );
-    }
-
-    if (structure.unitCell) {
-      const vectors = structure.unitCell.getLatticeVectors();
-      for (const vec of vectors) {
-        lines.push(`TV  ${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
-      }
-    }
+    this.writeGJFCoordinates(lines, structure);
 
     return lines.join('\n');
   }
@@ -210,9 +210,13 @@ export class GJFParser extends StructureParser {
   }
 
   private writeGJFCoordinates(lines: string[], structure: Structure): void {
+    const includeFreezeCodes = structure.metadata.get('gjfHasFreezeCodes') === true
+      || structure.atoms.some((atom) => atom.fixed);
+
     for (const atom of structure.atoms) {
+      const freezeCode = includeFreezeCodes ? `  ${atom.fixed ? -1 : 0}` : '';
       lines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${atom.element}${freezeCode}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
       );
     }
 

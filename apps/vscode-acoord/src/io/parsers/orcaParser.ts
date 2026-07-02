@@ -68,6 +68,8 @@ export class ORCAParser extends StructureParser {
       }));
     }
 
+    this.applyCartesianConstraints(lines, structure);
+
     return structure;
   }
 
@@ -80,7 +82,8 @@ export class ORCAParser extends StructureParser {
     }
 
     // Replace charge/multiplicity and coordinate section
-    return this.replaceORCASections(savedRawContent, structure);
+    const updatedContent = this.replaceORCASections(savedRawContent, structure);
+    return this.synchronizeCartesianConstraints(updatedContent, structure);
   }
 
   private generateDefaultORCA(structure: Structure): string {
@@ -91,6 +94,13 @@ export class ORCAParser extends StructureParser {
 
     const charge = structure.metadata.get('charge') as number ?? 0;
     const multiplicity = structure.metadata.get('multiplicity') as number ?? 1;
+    const constraints = this.buildCartesianConstraintLines(structure);
+    if (constraints.length > 0) {
+      lines.push('%geom Constraints');
+      lines.push(...constraints);
+      lines.push('end');
+      lines.push('end');
+    }
     lines.push(`* xyz ${charge} ${multiplicity}`);
     for (const atom of structure.atoms) {
       lines.push(
@@ -168,5 +178,140 @@ export class ORCAParser extends StructureParser {
         `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
       );
     }
+  }
+
+  private applyCartesianConstraints(lines: string[], structure: Structure): void {
+    const constrainedAxes = structure.atoms.map(() => [false, false, false] as [boolean, boolean, boolean]);
+    let inGeom = false;
+    let inConstraints = false;
+
+    for (const rawLine of lines) {
+      const line = rawLine.replace(/#.*$/, '');
+      const trimmed = line.trim();
+
+      if (!inGeom && /^%geom\b/i.test(trimmed)) {
+        inGeom = true;
+        inConstraints = /\bconstraints\b/i.test(trimmed);
+      } else if (inGeom && !inConstraints && /^constraints\b/i.test(trimmed)) {
+        inConstraints = true;
+      } else if (inConstraints && /^end\b/i.test(trimmed)) {
+        inConstraints = false;
+        continue;
+      } else if (inGeom && /^end\b/i.test(trimmed)) {
+        inGeom = false;
+        continue;
+      }
+
+      if (!inConstraints) {
+        continue;
+      }
+
+      const entryPattern = /\{\s*([CXYZ])\s+(\d+)(?::(\d+))?\s+C\s*\}/gi;
+      for (const match of line.matchAll(entryPattern)) {
+        const axis = match[1].toUpperCase();
+        const start = Number.parseInt(match[2], 10);
+        const end = match[3] ? Number.parseInt(match[3], 10) : start;
+        for (let atomIndex = start; atomIndex <= end && atomIndex < constrainedAxes.length; atomIndex++) {
+          if (axis === 'C' || axis === 'X') {
+            constrainedAxes[atomIndex][0] = true;
+          }
+          if (axis === 'C' || axis === 'Y') {
+            constrainedAxes[atomIndex][1] = true;
+          }
+          if (axis === 'C' || axis === 'Z') {
+            constrainedAxes[atomIndex][2] = true;
+          }
+        }
+      }
+    }
+
+    for (let i = 0; i < structure.atoms.length; i++) {
+      const axes = constrainedAxes[i];
+      if (!axes.some(Boolean)) {
+        continue;
+      }
+      structure.atoms[i].selectiveDynamics = axes.map((constrained) => !constrained) as [boolean, boolean, boolean];
+      structure.atoms[i].fixed = axes.every(Boolean);
+    }
+  }
+
+  private synchronizeCartesianConstraints(content: string, structure: Structure): string {
+    const lines = content.split(/\r?\n/);
+    const constraintLines = this.buildCartesianConstraintLines(structure);
+    const result: string[] = [];
+    let inGeom = false;
+    let inConstraints = false;
+    let foundConstraints = false;
+
+    for (const line of lines) {
+      const trimmed = line.trim();
+      if (!inGeom && /^%geom\b/i.test(trimmed)) {
+        inGeom = true;
+        inConstraints = /\bconstraints\b/i.test(trimmed);
+        foundConstraints ||= inConstraints;
+        result.push(line);
+        continue;
+      }
+      if (inGeom && !inConstraints && /^constraints\b/i.test(trimmed)) {
+        inConstraints = true;
+        foundConstraints = true;
+        result.push(line);
+        continue;
+      }
+      if (inConstraints && /^end\b/i.test(trimmed)) {
+        result.push(...constraintLines);
+        result.push(line);
+        inConstraints = false;
+        continue;
+      }
+      if (inGeom && !inConstraints && /^end\b/i.test(trimmed)) {
+        inGeom = false;
+        result.push(line);
+        continue;
+      }
+      if (inConstraints) {
+        const updated = line.replace(/\{\s*[CXYZ]\s+\d+(?::\d+)?\s+C\s*\}/gi, '').trimEnd();
+        if (updated.trim() !== '') {
+          result.push(updated);
+        }
+        continue;
+      }
+      result.push(line);
+    }
+
+    if (foundConstraints || constraintLines.length === 0) {
+      return result.join('\n');
+    }
+
+    const geomIndex = result.findIndex((line) => /^%geom\b/i.test(line.trim()));
+    const block = ['  Constraints', ...constraintLines, '  end'];
+    if (geomIndex >= 0) {
+      result.splice(geomIndex + 1, 0, ...block);
+    } else {
+      const xyzIndex = result.findIndex((line) => /^\*\s*xyz\b/i.test(line.trim()));
+      const insertionIndex = xyzIndex >= 0 ? xyzIndex : result.length;
+      result.splice(insertionIndex, 0, '%geom', ...block, 'end');
+    }
+    return result.join('\n');
+  }
+
+  private buildCartesianConstraintLines(structure: Structure): string[] {
+    const lines: string[] = [];
+    for (let atomIndex = 0; atomIndex < structure.atoms.length; atomIndex++) {
+      const atom = structure.atoms[atomIndex];
+      const canMove = atom.selectiveDynamics ?? (atom.fixed
+        ? [false, false, false]
+        : [true, true, true]);
+      if (atom.fixed || canMove.every((value) => !value)) {
+        lines.push(`    { C ${atomIndex} C }`);
+        continue;
+      }
+      (['X', 'Y', 'Z'] as const).forEach((axis, axisIndex) => {
+        if (!canMove[axisIndex]) {
+          lines.push(`    { ${axis} ${atomIndex} C }`);
+        }
+      });
+    }
+    return lines;
   }
 }

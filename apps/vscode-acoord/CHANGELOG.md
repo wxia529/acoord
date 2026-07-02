@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.21]
+
+### Added
+
+- **Gaussian fixed atoms**: GJF parsing and serialization now support Gaussian freeze codes, mapping `-1` to fixed atoms and preserving explicit freeze-code columns.
+- **ORCA Cartesian constraints**: ORCA parsing and serialization now support full and axis-specific Cartesian atom constraints in `%geom Constraints`, including atom ranges, while preserving unrelated geometry constraints.
+
 ## [0.3.20]
 
 ### Changed
