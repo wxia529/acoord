@@ -6,6 +6,7 @@ import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
 import { fractionalToCartesian } from '../../utils/parserUtils.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 type QEUnit = 'angstrom' | 'bohr' | 'alat' | 'crystal';
 
@@ -127,7 +128,7 @@ export class QEParser extends StructureParser {
     lines.push('/');
     lines.push('CELL_PARAMETERS angstrom');
     for (const vec of vectors) {
-      lines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+      lines.push(formatCoordinateTriplet(vec));
     }
     lines.push('ATOMIC_SPECIES');
     for (const symbol of speciesOrder) {
@@ -136,7 +137,7 @@ export class QEParser extends StructureParser {
     }
     lines.push('ATOMIC_POSITIONS angstrom');
     for (const atom of structure.atoms) {
-      const base = `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`;
+      const base = `${atom.element.padEnd(4)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`;
       if (hasFixedFlags) {
         lines.push(`${base}  ${this.formatPositionFlags(atom)}`);
       } else {
@@ -192,7 +193,7 @@ export class QEParser extends StructureParser {
         // Write new cell vectors
         if (vectors) {
           for (const vec of vectors) {
-            resultLines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+            resultLines.push(formatCoordinateTriplet(vec));
           }
         }
         continue;
@@ -249,7 +250,7 @@ export class QEParser extends StructureParser {
 
         // Write new atom positions
         for (const atom of structure.atoms) {
-          const base = `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`;
+          const base = `${atom.element.padEnd(4)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`;
           if (hasFixedFlags) {
             resultLines.push(`${base}  ${this.formatPositionFlags(atom)}`);
           } else {

@@ -4,6 +4,10 @@ ACoord supports molecular, crystallographic, and simulation formats for reading
 and writing atomic structures. Read-only output formats can be opened and then
 exported to a writable format with **Save As**.
 
+Writable text formats use fixed-precision, right-aligned coordinate columns for
+readability and stable diffs. PDB output follows its mandatory fixed-column
+layout, while native `.acoord` stores coordinates as JSON numbers.
+
 ## Format Overview
 
 | Format | Read | Write | Extensions | Description |

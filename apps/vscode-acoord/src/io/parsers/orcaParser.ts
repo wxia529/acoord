@@ -3,6 +3,7 @@ import { Atom } from '../../models/atom.js';
 import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 /**
  * ORCA input file parser (.inp)
@@ -109,7 +110,7 @@ export class ORCAParser extends StructureParser {
     lines.push(`* xyz ${charge} ${multiplicity}`);
     for (const atom of structure.atoms) {
       lines.push(
-        `${this.getAtomLabel(atom)}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${this.getAtomLabel(atom).padEnd(6)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
       );
     }
     lines.push('*');
@@ -180,7 +181,7 @@ export class ORCAParser extends StructureParser {
   private writeORCACoordinates(lines: string[], structure: Structure): void {
     for (const atom of structure.atoms) {
       lines.push(
-        `${this.getAtomLabel(atom)}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${this.getAtomLabel(atom).padEnd(6)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
       );
     }
   }

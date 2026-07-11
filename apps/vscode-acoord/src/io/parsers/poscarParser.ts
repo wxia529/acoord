@@ -5,6 +5,7 @@ import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { expandElements, fractionalToCartesian } from '../../utils/parserUtils.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 type CoordinateMode = 'direct' | 'cartesian';
 
@@ -92,7 +93,7 @@ export class POSCARParser extends StructureParser {
       ? structure.unitCell.getLatticeVectors()
       : [[1, 0, 0], [0, 1, 0], [0, 0, 1]];
     for (const vec of latticeVectors) {
-      lines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+      lines.push(formatCoordinateTriplet(vec));
     }
 
     const grouped = new Map<string, Atom[]>();
@@ -128,7 +129,7 @@ export class POSCARParser extends StructureParser {
         fz = frac[2];
       }
 
-      let row = `${fx.toFixed(10)}  ${fy.toFixed(10)}  ${fz.toFixed(10)}`;
+      let row = formatCoordinateTriplet([fx, fy, fz]);
       if (hasSelectiveDynamics) {
         const sd = atom.selectiveDynamics ?? (atom.fixed
           ? [false, false, false] as [boolean, boolean, boolean]

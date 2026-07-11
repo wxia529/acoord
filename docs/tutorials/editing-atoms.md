@@ -59,9 +59,13 @@ H basis by default: Gaussian writes `Bq`, while ORCA writes `H:`.
 4. Click **Insert H Ghost Atom**.
 
 A non-zero normal offset requires at least three non-collinear selected atoms.
-The normal direction is normalized deterministically, so changing selection
-order does not randomly swap the positive and negative sides. Ghost and dummy
-atoms do not participate in automatic bonding or mass calculations.
+Three atoms define an exact plane. Four or more atoms use a PCA least-squares
+best-fit plane, so every selected atom contributes to the normal. If the fitted
+plane RMS deviation exceeds `0.1 Å`, ACoord warns that the selection is noticeably
+non-planar but still inserts the ghost. Collinear selections are rejected. The
+normal direction is normalized deterministically, so changing selection order
+does not randomly swap the positive and negative sides. Ghost and dummy atoms
+do not participate in automatic bonding or mass calculations.
 
 ::: warning Ghost versus dummy
 A ghost atom has no nucleus or electrons but carries basis functions. A dummy

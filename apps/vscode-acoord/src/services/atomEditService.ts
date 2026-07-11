@@ -6,6 +6,12 @@ import { parseElement, getDefaultAtomRadius, ELEMENT_DATA } from '../utils/eleme
 import { BRIGHT_SCHEME } from '../config/presets/color-schemes/index.js';
 import { DisplaySettings } from '../config/types.js';
 import { ColorScheme } from '../shared/protocol.js';
+import { fitPlane } from '../utils/planeFit.js';
+
+export interface InsertGhostAtomResult {
+  atomId: string;
+  planeRms?: number;
+}
 
 export interface PositionUpdate {
   id: string;
@@ -85,7 +91,7 @@ export class AtomEditService {
 
   /** Insert a dummy atom at the geometric center or center of mass of selected atoms. */
   insertDummyAtom(atomIds: string[], centerMode: 'geometry' | 'mass'): string {
-    return this.insertSpecialAtom(atomIds, centerMode, 'dummy', 'X');
+    return this.insertSpecialAtom(atomIds, centerMode, 'dummy', 'X').atomId;
   }
 
   /** Insert a ghost atom carrying the requested element basis (H by default). */
@@ -94,7 +100,7 @@ export class AtomEditService {
     centerMode: 'geometry' | 'mass',
     basisElement: string = 'H',
     normalOffset: number = 0
-  ): string {
+  ): InsertGhostAtomResult {
     const element = parseElement(basisElement);
     if (!element) {
       throw new Error(`insertGhostAtom: invalid basis element "${basisElement}"`);
@@ -111,7 +117,7 @@ export class AtomEditService {
     role: 'dummy' | 'ghost',
     element: string,
     normalOffset: number = 0
-  ): string {
+  ): InsertGhostAtomResult {
     const uniqueIds = [...new Set(atomIds)];
     if (uniqueIds.length === 0) {
       throw new Error('insertDummyAtom: select at least one atom');
@@ -153,8 +159,16 @@ export class AtomEditService {
     let centerX = x / totalWeight;
     let centerY = y / totalWeight;
     let centerZ = z / totalWeight;
+    let planeRms: number | undefined;
     if (normalOffset !== 0) {
-      const [nx, ny, nz] = this.getPlaneNormal(atoms);
+      let plane;
+      try {
+        plane = fitPlane(atoms);
+      } catch (error) {
+        throw new Error(`insertGhostAtom: ${error instanceof Error ? error.message : String(error)}`);
+      }
+      const [nx, ny, nz] = plane.normal;
+      planeRms = plane.rms;
       centerX += nx * normalOffset;
       centerY += ny * normalOffset;
       centerZ += nz * normalOffset;
@@ -169,50 +183,7 @@ export class AtomEditService {
     editStructure.addAtom(specialAtom);
     this.renderer.setStructure(editStructure);
     this.trajectoryManager.commitEdit();
-    return specialAtom.id;
-  }
-
-  private getPlaneNormal(atoms: Atom[]): [number, number, number] {
-    if (atoms.length < 3) {
-      throw new Error('insertGhostAtom: non-zero normal offset requires at least three atoms');
-    }
-    for (let i = 0; i < atoms.length - 2; i++) {
-      for (let j = i + 1; j < atoms.length - 1; j++) {
-        for (let k = j + 1; k < atoms.length; k++) {
-          const abx = atoms[j].x - atoms[i].x;
-          const aby = atoms[j].y - atoms[i].y;
-          const abz = atoms[j].z - atoms[i].z;
-          const acx = atoms[k].x - atoms[i].x;
-          const acy = atoms[k].y - atoms[i].y;
-          const acz = atoms[k].z - atoms[i].z;
-          let nx = aby * acz - abz * acy;
-          let ny = abz * acx - abx * acz;
-          let nz = abx * acy - aby * acx;
-          const length = Math.hypot(nx, ny, nz);
-          if (length <= 1e-12) {
-            continue;
-          }
-          nx /= length;
-          ny /= length;
-          nz /= length;
-          const components = [nx, ny, nz];
-          let dominantIndex = 0;
-          if (Math.abs(ny) > Math.abs(components[dominantIndex])) {
-            dominantIndex = 1;
-          }
-          if (Math.abs(nz) > Math.abs(components[dominantIndex])) {
-            dominantIndex = 2;
-          }
-          if (components[dominantIndex] < 0) {
-            nx = -nx;
-            ny = -ny;
-            nz = -nz;
-          }
-          return [nx, ny, nz];
-        }
-      }
-    }
-    throw new Error('insertGhostAtom: selected atoms are collinear; plane normal is undefined');
+    return { atomId: specialAtom.id, planeRms };
   }
 
   deleteAtom(atomId: string): void {

@@ -4,6 +4,7 @@ import { UnitCell } from '../../models/unitCell.js';
 import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 /**
  * CIF file format parser (basic implementation)
@@ -71,7 +72,7 @@ export class CIFParser extends StructureParser {
         fz = frac[2];
       }
       lines.push(
-        `${atom.element}${idx + 1}  ${atom.element}  ${fx.toFixed(10)}  ${fy.toFixed(10)}  ${fz.toFixed(10)}`
+        `${`${atom.element}${idx + 1}`.padEnd(8)}  ${atom.element.padEnd(3)}  ${formatCoordinateTriplet([fx, fy, fz])}`
       );
     });
 

@@ -183,13 +183,18 @@ export class MessageRouter {
     });
 
     this.registerTyped('insertGhostAtom', (message) => {
-      const atomId = this.atomEditService.insertGhostAtom(
+      const result = this.atomEditService.insertGhostAtom(
         message.atomIds,
         message.centerMode,
         message.basisElement ?? 'H',
         message.normalOffset ?? 0
       );
-      this.selectionService.setSelection([atomId]);
+      this.selectionService.setSelection([result.atomId]);
+      if (result.planeRms !== undefined && result.planeRms > 0.1) {
+        void vscode.window.showWarningMessage(
+          `ACoord: selected atoms are noticeably non-planar (best-fit plane RMS ${result.planeRms.toFixed(4)} Å).`
+        );
+      }
       return true;
     });
 

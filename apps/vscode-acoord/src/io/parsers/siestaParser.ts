@@ -6,6 +6,7 @@ import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
 import { fractionalToCartesian } from '../../utils/parserUtils.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 interface FDFHeader {
   systemName: string;
@@ -395,7 +396,7 @@ export class SIESTAParser extends StructureParser {
 
     const lines: string[] = [];
     for (const vec of vectors) {
-      lines.push(`  ${vec[0].toFixed(10)}   ${vec[1].toFixed(10)}   ${vec[2].toFixed(10)}`);
+      lines.push(`  ${formatCoordinateTriplet(vec)}`);
     }
     return lines.join('\n');
   }
@@ -436,7 +437,7 @@ export class SIESTAParser extends StructureParser {
       }
 
       lines.push(
-        `  ${frac[0].toFixed(10)}   ${frac[1].toFixed(10)}   ${frac[2].toFixed(10)}   ${speciesIdx}`
+        `  ${formatCoordinateTriplet(frac)}  ${speciesIdx.toString().padStart(4)}`
       );
     }
 
@@ -491,7 +492,7 @@ export class SIESTAParser extends StructureParser {
       const vectors = structure.unitCell.getLatticeVectors();
       lines.push('%block LatticeVectors');
       for (const vec of vectors) {
-        lines.push(`  ${vec[0].toFixed(10)}   ${vec[1].toFixed(10)}   ${vec[2].toFixed(10)}`);
+        lines.push(`  ${formatCoordinateTriplet(vec)}`);
       }
       lines.push('%endblock LatticeVectors');
       lines.push('');
@@ -508,7 +509,7 @@ export class SIESTAParser extends StructureParser {
       const frac = structure.unitCell.cartesianToFractional(atom.x, atom.y, atom.z);
       const speciesIdx = speciesOrder.indexOf(atom.element) + 1;
       lines.push(
-        `  ${frac[0].toFixed(10)}   ${frac[1].toFixed(10)}   ${frac[2].toFixed(10)}   ${speciesIdx}`
+        `  ${formatCoordinateTriplet(frac)}  ${speciesIdx.toString().padStart(4)}`
       );
     }
     lines.push('%endblock AtomicCoordinatesAndAtomicSpecies');

@@ -4,6 +4,7 @@ import { UnitCell } from '../../models/unitCell.js';
 import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 /**
  * Gaussian input file format parser (GJF/COM)
@@ -224,14 +225,14 @@ export class GJFParser extends StructureParser {
     for (const atom of structure.atoms) {
       const freezeCode = includeFreezeCodes ? `  ${atom.fixed ? -1 : 0}` : '';
       lines.push(
-        `${this.getAtomLabel(atom)}${freezeCode}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${(this.getAtomLabel(atom) + freezeCode).padEnd(8)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
       );
     }
 
     if (structure.unitCell) {
       const vectors = structure.unitCell.getLatticeVectors();
       for (const vec of vectors) {
-        lines.push(`TV  ${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+        lines.push(`${'TV'.padEnd(8)}  ${formatCoordinateTriplet(vec)}`);
       }
     }
   }

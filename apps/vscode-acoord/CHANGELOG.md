@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.1]
+
+### Changed
+
+- **Best-fit ghost plane**: Four or more selected atoms now use a PCA least-squares plane, with RMS non-planarity warnings above `0.1 Å`; three atoms retain an exact plane.
+- **Aligned coordinate output**: Writable free-form formats now use stable right-aligned X, Y, and Z columns; PDB retains its standard fixed-width columns and `.acoord` remains structured JSON.
+
 ## [0.4.0]
 
 ### Added

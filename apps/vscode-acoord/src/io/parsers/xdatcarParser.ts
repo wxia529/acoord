@@ -5,6 +5,7 @@ import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { expandElements, fractionalToCartesian } from '../../utils/parserUtils.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 interface XdatcarHeader {
   label: string;
@@ -109,7 +110,7 @@ export class XDATCARParser extends StructureParser {
     lines.push(label);
     lines.push('1.0');
     for (const vec of headerVectors) {
-      lines.push(`${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+      lines.push(formatCoordinateTriplet(vec));
     }
     lines.push(elementOrder.join(' '));
     lines.push(
@@ -141,7 +142,7 @@ export class XDATCARParser extends StructureParser {
             fy = frac[1];
             fz = frac[2];
           }
-          lines.push(`${fx.toFixed(8)}  ${fy.toFixed(8)}  ${fz.toFixed(8)}`);
+          lines.push(formatCoordinateTriplet([fx, fy, fz], 8));
         }
       }
     }

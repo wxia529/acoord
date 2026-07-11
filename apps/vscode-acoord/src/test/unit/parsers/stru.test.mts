@@ -87,8 +87,8 @@ C
     const reparsed = parser.parse(serialized);
 
     expect(structure.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
-    expect(serialized).to.include('0.000000000000  0.000000000000  0.000000000000  0 1 1');
-    expect(serialized).to.include('1.000000000000  0.000000000000  0.000000000000  1 1 1');
+    expect(serialized).to.match(/0\.000000000000\s+0\.000000000000\s+0\.000000000000\s+0 1 1/);
+    expect(serialized).to.match(/1\.000000000000\s+0\.000000000000\s+0\.000000000000\s+1 1 1/);
     expect(reparsed.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
   });
 
@@ -337,8 +337,8 @@ Fe
     const serialized = parser.serialize(structure);
 
     expect(serialized).to.include('2.5000 // default mag');
-    expect(serialized).to.include('0.000000000000  0.000000000000  0.000000000000  m 0 0 0 mag 1 angle1 90 angle2 0 lambda 0.10 sc 0.5 // first');
-    expect(serialized).to.include('1.000000000000  1.000000000000  1.000000000000  1 1 1 magmom 0 0 1 velocity 1 2 3 // second');
+    expect(serialized).to.match(/0\.000000000000\s+0\.000000000000\s+0\.000000000000\s+m 0 0 0 mag 1 angle1 90 angle2 0 lambda 0\.10 sc 0\.5 \/\/ first/);
+    expect(serialized).to.match(/1\.000000000000\s+1\.000000000000\s+1\.000000000000\s+1 1 1 magmom 0 0 1 velocity 1 2 3 \/\/ second/);
   });
 
   it('should throw descriptive errors for malformed atom rows', () => {

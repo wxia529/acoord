@@ -4,6 +4,7 @@ import { UnitCell } from '../../models/unitCell.js';
 import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 /**
  * XYZ file format parser
@@ -149,7 +150,7 @@ export class XYZParser extends StructureParser {
 
     for (const atom of structure.atoms) {
       lines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${atom.element.padEnd(4)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
       );
     }
 
@@ -171,7 +172,7 @@ export class XYZParser extends StructureParser {
     // Write new coordinates
     for (const atom of structure.atoms) {
       resultLines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${atom.element.padEnd(4)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
       );
     }
 

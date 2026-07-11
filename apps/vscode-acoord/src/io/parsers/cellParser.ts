@@ -4,6 +4,7 @@ import { UnitCell } from '../../models/unitCell.js';
 import { parseElement, getDefaultAtomRadius } from '../../utils/elementData.js';
 import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
 
 interface BlockData {
@@ -87,7 +88,7 @@ export class CellParser extends StructureParser {
       lines.push('%BLOCK LATTICE_CART ang');
       const vectors = structure.unitCell.getLatticeVectors();
       for (const vec of vectors) {
-        lines.push(`  ${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
+        lines.push(`  ${formatCoordinateTriplet(vec)}`);
       }
       lines.push('%ENDBLOCK LATTICE_CART');
       lines.push('');
@@ -109,7 +110,7 @@ export class CellParser extends StructureParser {
         fz = frac[2];
       }
 
-      let line = `${atom.element}  ${fx.toFixed(10)}  ${fy.toFixed(10)}  ${fz.toFixed(10)}`;
+      let line = `${atom.element.padEnd(8)}  ${formatCoordinateTriplet([fx, fy, fz])}`;
       
       if (spinArray && i < spinArray.length && spinArray[i] !== 0) {
         line += `  SPIN=${spinArray[i]}`;

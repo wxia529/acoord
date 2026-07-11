@@ -5,6 +5,7 @@ import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { BOHR_TO_ANGSTROM } from '../../utils/constants.js';
 import { ELEMENT_DATA, getDefaultAtomRadius, parseElement } from '../../utils/elementData.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinate } from '../../utils/coordinateFormat.js';
 
 type OpenMXCoordinateUnit = 'ang' | 'frac';
 
@@ -670,7 +671,7 @@ export class OpenMXParser extends StructureParser {
 
   private formatFloat(value: number): string {
     const cleaned = Math.abs(value) < 5e-13 ? 0 : value;
-    return cleaned.toFixed(7).padStart(14);
+    return formatCoordinate(cleaned, 7, 14);
   }
 
   private computeKgrid(vectors: number[][], spacing: number): [number, number, number] {

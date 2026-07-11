@@ -99,8 +99,8 @@ C  1.0  0.0  0.0  1 1 1
     const reparsed = parser.parse(serialized);
 
     expect(structure.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
-    expect(serialized).to.include('C  0.0000000000  0.0000000000  0.0000000000  0 1 1');
-    expect(serialized).to.include('C  1.0000000000  0.0000000000  0.0000000000  1 1 1');
+    expect(serialized).to.match(/C\s+0\.0000000000\s+0\.0000000000\s+0\.0000000000\s+0 1 1/);
+    expect(serialized).to.match(/C\s+1\.0000000000\s+0\.0000000000\s+0\.0000000000\s+1 1 1/);
     expect(reparsed.atoms[0].selectiveDynamics).to.deep.equal([false, true, true]);
   });
 

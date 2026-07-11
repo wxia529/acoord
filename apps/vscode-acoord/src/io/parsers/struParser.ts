@@ -7,6 +7,7 @@ import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { BOHR_TO_ANGSTROM, ANGSTROM_TO_BOHR } from '../../utils/constants.js';
 import { fractionalToCartesian } from '../../utils/parserUtils.js';
 import { StructureParser } from './structureParser.js';
+import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 type AbacusOrbitalLibrary = 'efficiency' | 'precision';
 
@@ -599,7 +600,7 @@ export class STRUParser extends StructureParser {
       lines.push('LATTICE_VECTORS');
       const vectors = structure.unitCell.getLatticeVectors();
       for (const vec of vectors) {
-        lines.push(`${vec[0].toFixed(12)}  ${vec[1].toFixed(12)}  ${vec[2].toFixed(12)}`);
+        lines.push(formatCoordinateTriplet(vec, 12));
       }
       lines.push('');
     }
@@ -630,7 +631,7 @@ export class STRUParser extends StructureParser {
         }
         const flag = hasMovementConstraints ? this.formatMovementFlags(atom) : null;
         const extras = flag ? `  ${flag}` : '';
-        lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}${extras}`);
+        lines.push(`${formatCoordinateTriplet([x, y, z], 12)}${extras}`);
       }
     }
 
@@ -775,7 +776,7 @@ export class STRUParser extends StructureParser {
         const [x, y, z] = this.getOutputCoordinates(atom, structure, coordType);
         const flag = hasMovementConstraints ? this.formatMovementFlags(atom) : null;
         const extras = this.formatAtomExtras(atomExtras?.get(atom.id), flag);
-        lines.push(`${x.toFixed(12)}  ${y.toFixed(12)}  ${z.toFixed(12)}${extras}`);
+        lines.push(`${formatCoordinateTriplet([x, y, z], 12)}${extras}`);
       }
     }
   }

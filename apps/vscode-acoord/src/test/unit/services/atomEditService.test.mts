@@ -140,6 +140,17 @@ describe('AtomEditService', () => {
       expect(() => svc.insertGhostAtom(s.atoms.map((atom) => atom.id), 'geometry', 'H', 1))
         .to.throw(/collinear/);
     });
+
+    it('should report PCA plane RMS for four non-planar atoms', () => {
+      const s = new Structure('non-planar');
+      s.addAtom(new Atom('C', -1, -1, 0.2));
+      s.addAtom(new Atom('C', 1, -1, -0.2));
+      s.addAtom(new Atom('C', 1, 1, 0.2));
+      s.addAtom(new Atom('C', -1, 1, -0.2));
+      const { svc } = makeServices(s);
+      const result = svc.insertGhostAtom(s.atoms.map((atom) => atom.id), 'geometry', 'H', 1);
+      expect(result.planeRms).to.be.greaterThan(0.1);
+    });
   });
 
   describe('deleteAtom', () => {
