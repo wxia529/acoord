@@ -90,9 +90,15 @@ export class GJFParser extends StructureParser {
         continue;
       }
 
-      const element = parseElement(parts[0]);
+      const isDefaultGhost = /^bq$/i.test(parts[0]);
+      const ghostMatch = /^([a-z]{1,2})-bq$/i.exec(parts[0]);
+      const isGhost = isDefaultGhost || ghostMatch !== null;
+      const isDummy = !isGhost && /^x\d*$/i.test(parts[0]);
+      const element = isDummy
+        ? 'X'
+        : parseElement(isDefaultGhost ? 'H' : ghostMatch ? ghostMatch[1] : parts[0]);
       if (!element) {
-        continue;
+        throw new Error(`GJFParser line ${idx + 1}: invalid atom label "${parts[0]}"`);
       }
 
       const hasFreezeCode = parts.length >= 5 && this.isInteger(parts[1]);
@@ -112,6 +118,8 @@ export class GJFParser extends StructureParser {
         selectiveDynamics: hasFreezeCode
           ? (fixed ? [false, false, false] : [true, true, true])
           : undefined,
+        role: isDummy ? 'dummy' : isGhost ? 'ghost' : 'real',
+        sourceLabel: isDummy ? 'X' : isGhost ? parts[0] : undefined,
       }));
     }
 
@@ -216,7 +224,7 @@ export class GJFParser extends StructureParser {
     for (const atom of structure.atoms) {
       const freezeCode = includeFreezeCodes ? `  ${atom.fixed ? -1 : 0}` : '';
       lines.push(
-        `${atom.element}${freezeCode}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${this.getAtomLabel(atom)}${freezeCode}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
       );
     }
 
@@ -226,6 +234,16 @@ export class GJFParser extends StructureParser {
         lines.push(`TV  ${vec[0].toFixed(10)}  ${vec[1].toFixed(10)}  ${vec[2].toFixed(10)}`);
       }
     }
+  }
+
+  private getAtomLabel(atom: Atom): string {
+    if (atom.role === 'dummy') {
+      return 'X';
+    }
+    if (atom.role === 'ghost') {
+      return atom.element === 'H' ? 'Bq' : `${atom.element}-Bq`;
+    }
+    return atom.element;
   }
 
   private isInteger(value: string): boolean {

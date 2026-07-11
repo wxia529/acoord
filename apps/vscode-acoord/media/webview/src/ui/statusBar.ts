@@ -110,7 +110,7 @@ function updateCoordinateDisplay(
   if (cartesianEl) {
     cartesianEl.hidden = !showCoordinates;
     cartesianEl.textContent = showCoordinates
-      ? `Cartesian: (${selected.position.map((value) => value.toFixed(4)).join(', ')})`
+      ? `Cartesian: (${selected.position.map((value) => value.toFixed(6)).join(', ')})`
       : '';
   }
 
@@ -118,7 +118,7 @@ function updateCoordinateDisplay(
     fractionalEl.hidden = !showCoordinates;
     fractionalEl.textContent = showCoordinates
       ? `Fractional: ${selected.fractionalPosition
-        ? `(${selected.fractionalPosition.map((value) => value.toFixed(6)).join(', ')})`
+        ? `(${selected.fractionalPosition.map((value) => value.toFixed(8)).join(', ')})`
         : '--'}`
       : '';
   }

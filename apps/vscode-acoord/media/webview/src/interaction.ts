@@ -7,6 +7,7 @@ import { init as initDisplay } from './interactionDisplay';
 import { init as initConfig } from './interactionConfig';
 import { setupContextMenu, showContextMenuAt, type ContextMenuHandlers } from './components/contextMenu';
 import { updateToolButtons, updateStatusBar } from './ui/statusBar';
+import { normalizeAtomBrushMaxDistance, resolveAtomBrushDistance } from './utils/atomBrush';
 
 const SINGLE_LETTER_ELEMENTS = new Set(['H', 'B', 'C', 'N', 'O', 'F', 'P', 'S', 'K', 'V', 'Y', 'I', 'W', 'U']);
 
@@ -142,8 +143,15 @@ function setTool(tool: ToolType, canvas: HTMLCanvasElement, handlers: Interactio
   
   if (tool === 'delete') {
     canvas.style.cursor = 'not-allowed';
+  } else if (tool === 'add') {
+    canvas.style.cursor = 'crosshair';
   } else {
     canvas.style.cursor = 'default';
+  }
+  const brushButton = document.getElementById('toolbar-atom-brush');
+  if (brushButton) {
+    brushButton.setAttribute('appearance', tool === 'add' ? 'primary' : 'secondary');
+    brushButton.setAttribute('aria-pressed', String(tool === 'add'));
   }
 }
 
@@ -160,6 +168,11 @@ function setupLeftToolbar(canvas: HTMLCanvasElement, handlers: InteractionHandle
       }
     }
   });
+
+  const brushButton = document.getElementById('toolbar-atom-brush');
+  brushButton?.addEventListener('click', () => {
+    setTool(interactionStore.currentTool === 'add' ? 'select' : 'add', canvas, handlers);
+  });
 }
 
 export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): void {
@@ -169,6 +182,13 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   let pendingDrag: { atomId: string; hitPoint: Vector3; startX: number; startY: number } | null = null;
   let boxSelect: { startX: number; startY: number } | null = null;
   let isPointerDownOnEmpty = false;
+  let brushStroke: {
+    element: string;
+    sourceWorld: Vector3;
+    endpointWorld: Vector3;
+    plane: Plane;
+    activated: boolean;
+  } | null = null;
   const ELEMENT_INPUT_TIMEOUT_MS = 500;
 
   const _intersection = new Vector3();
@@ -177,6 +197,70 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   const _normalDelta  = new Vector3();
   const _newPos       = new Vector3();
   const _projected    = new Vector3();
+
+  const brushPreviewLine = document.createElement('div');
+  brushPreviewLine.className = 'atom-brush-preview-line';
+  const brushPreviewDot = document.createElement('div');
+  brushPreviewDot.className = 'atom-brush-preview-dot';
+  canvas.parentElement?.append(brushPreviewLine, brushPreviewDot);
+
+  const projectToCanvas = (position: Vector3): { x: number; y: number } | null => {
+    const camera = renderer.getCamera();
+    if (!camera) return null;
+    const rect = canvas.getBoundingClientRect();
+    const projected = position.clone().project(camera);
+    return { x: (projected.x * 0.5 + 0.5) * rect.width, y: (-projected.y * 0.5 + 0.5) * rect.height };
+  };
+
+  const hideBrushPreview = (): void => {
+    brushPreviewLine.style.display = 'none';
+    brushPreviewDot.style.display = 'none';
+  };
+
+  const updateBrushPreview = (): void => {
+    if (!brushStroke || !brushStroke.activated) {
+      hideBrushPreview();
+      return;
+    }
+    const start = projectToCanvas(brushStroke.sourceWorld);
+    const end = projectToCanvas(brushStroke.endpointWorld);
+    if (!start || !end) return;
+    const dx = end.x - start.x;
+    const dy = end.y - start.y;
+    brushPreviewLine.style.display = 'block';
+    brushPreviewLine.style.left = `${start.x}px`;
+    brushPreviewLine.style.top = `${start.y}px`;
+    brushPreviewLine.style.width = `${Math.hypot(dx, dy)}px`;
+    brushPreviewLine.style.transform = `rotate(${Math.atan2(dy, dx)}rad)`;
+    brushPreviewDot.style.display = 'block';
+    brushPreviewDot.style.left = `${end.x}px`;
+    brushPreviewDot.style.top = `${end.y}px`;
+  };
+
+  const updateBrushEndpoint = (event: PointerEvent): void => {
+    if (!brushStroke) return;
+    const raycaster = renderer.getRaycaster();
+    const mouse = renderer.getMouse();
+    const camera = renderer.getCamera();
+    if (!raycaster || !mouse || !camera) return;
+    const rect = canvas.getBoundingClientRect();
+    mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+    mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const hit = raycaster.ray.intersectPlane(brushStroke.plane, new Vector3());
+    if (!hit) return;
+    const delta = hit.sub(brushStroke.sourceWorld);
+    const scale = renderer.getScale();
+    const worldMaxDistance = normalizeAtomBrushMaxDistance(
+      (document.getElementById('toolbar-brush-spacing') as HTMLInputElement | null)?.value
+    ) * (scale || 1);
+    const resolvedDistance = resolveAtomBrushDistance(delta.length(), worldMaxDistance, 0.15 * (scale || 1));
+    brushStroke.activated = resolvedDistance !== null;
+    if (resolvedDistance !== null) {
+      brushStroke.endpointWorld.copy(brushStroke.sourceWorld).add(delta.normalize().multiplyScalar(resolvedDistance));
+    }
+    updateBrushPreview();
+  };
   
   controller = new AbortController();
   
@@ -336,44 +420,35 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
     const currentTool = interactionStore.currentTool;
 
     if (interactionStore.addingAtomElement && handlers.onAddAtom) {
-      const raycaster = renderer.getRaycaster();
-      const mouse = renderer.getMouse();
-      const camera = renderer.getCamera();
-      if (!raycaster || !mouse || !camera) { return; }
-
-      const meshes = Array.from(renderer.getAtomMeshes().values());
-      const rect = canvas.getBoundingClientRect();
-      mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
-      mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
-      raycaster.setFromCamera(mouse, camera);
-      const hits = meshes.length > 0 ? raycaster.intersectObjects(meshes) : [];
-
-      if (hits.length > 0) {
-        const hit = hits[0];
-        const atomId = hit.object.userData && (hit.object.userData as Record<string, unknown>).atomId as string | undefined;
-        if (atomId) {
-          interactionStore.addingAtomElement = null;
-          canvas.style.cursor = 'default';
-          handlers.onSetStatus('');
-          handlers.onSelectAtom(atomId, event.ctrlKey || event.metaKey, false);
+      if (interactionStore.currentTool === 'add' && event.button === 0) {
+        const raycaster = renderer.getRaycaster();
+        const mouse = renderer.getMouse();
+        const camera = renderer.getCamera();
+        if (!raycaster || !mouse || !camera) return;
+        const rect = canvas.getBoundingClientRect();
+        mouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        mouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+        raycaster.setFromCamera(mouse, camera);
+        const hits = raycaster.intersectObjects(Array.from(renderer.getAtomMeshes().values()));
+        const sourceMesh = hits[0]?.object;
+        const atomId = sourceMesh?.userData?.atomId as string | undefined;
+        if (!sourceMesh || !atomId) {
+          handlers.onSetStatus('Atom brush: start the drag on an existing atom');
           return;
         }
-      }
-
-      const dragPlane = new Plane();
-      const planeNormal = new Vector3();
-      camera.getWorldDirection(planeNormal);
-      dragPlane.setFromNormalAndCoplanarPoint(planeNormal, new Vector3(0, 0, 0));
-      const intersection = new Vector3();
-      raycaster.ray.intersectPlane(dragPlane, intersection);
-
-      if (intersection) {
-        const scale = renderer.getScale();
-        const invScale = scale ? 1 / scale : 1;
-        const x = intersection.x * invScale;
-        const y = intersection.y * invScale;
-        const z = intersection.z * invScale;
-        handlers.onAddAtom(interactionStore.addingAtomElement, x, y, z);
+        camera.getWorldDirection(_normal);
+        brushStroke = {
+          element: interactionStore.addingAtomElement,
+          sourceWorld: sourceMesh.position.clone(),
+          endpointWorld: sourceMesh.position.clone(),
+          plane: new Plane().setFromNormalAndCoplanarPoint(_normal, sourceMesh.position),
+          activated: false,
+        };
+        renderer.setControlsEnabled(false);
+        canvas.setPointerCapture(event.pointerId);
+        handlers.onSetStatus(`Pull ${interactionStore.addingAtomElement} from the atom; release to place`);
+        event.preventDefault();
+        return;
       }
       return;
     }
@@ -449,6 +524,11 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   canvas.addEventListener('pointermove', (event: PointerEvent) => {
     if (pickerState.activeLightPicker && pickerState.lightPickerDragging) {
       interactionLighting.applyFromEvent(event, canvas);
+      return;
+    }
+    if (brushStroke && (event.buttons & 1) && interactionStore.currentTool === 'add') {
+      updateBrushEndpoint(event);
+      event.preventDefault();
       return;
     }
     
@@ -573,6 +653,26 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
   }, { signal: controller.signal });
 
   const endDrag = (event: PointerEvent) => {
+    if (brushStroke) {
+      const completedStroke = brushStroke;
+      brushStroke = null;
+      hideBrushPreview();
+      renderer.setControlsEnabled(true);
+      if (completedStroke.activated && handlers.onAddAtom) {
+        const scale = renderer.getScale();
+        const invScale = scale ? 1 / scale : 1;
+        handlers.onAddAtom(
+          completedStroke.element,
+          completedStroke.endpointWorld.x * invScale,
+          completedStroke.endpointWorld.y * invScale,
+          completedStroke.endpointWorld.z * invScale
+        );
+        handlers.onSetStatus(`Added ${completedStroke.element}; drag from another atom or press Esc`);
+      } else {
+        handlers.onSetStatus('Atom brush: drag farther to create an atom');
+      }
+      return;
+    }
     if (pickerState.lightPickerDragging) {
       pickerState.lightPickerDragging = false;
       renderer.setControlsEnabled(!pickerState.activeLightPicker);
@@ -735,6 +835,11 @@ export function init(canvas: HTMLCanvasElement, handlers: InteractionHandlers): 
 
   canvas.addEventListener('keydown', (event: KeyboardEvent) => {
     if (event.key === 'Escape') {
+      if (brushStroke) {
+        brushStroke = null;
+        hideBrushPreview();
+        renderer.setControlsEnabled(true);
+      }
       if (interactionStore.addingAtomElement) {
         interactionStore.addingAtomElement = null;
         canvas.style.cursor = 'default';

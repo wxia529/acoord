@@ -13,6 +13,22 @@ export function updatePropertiesPanel(): void {
 
   const selectedAtomIds = selectionStore.selectedAtomIds || [];
   const selectedBondKeys = selectionStore.selectedBondKeys || [];
+  const selectedAtoms = selectedAtomIds.map(getAtomById).filter((atom): atom is Atom => atom !== null);
+  const realAtomCount = selectedAtoms.filter((atom) => !atom.role || atom.role === 'real').length;
+  const dummySelection = document.getElementById('dummy-atom-selection');
+  const dummyButton = document.getElementById('btn-insert-dummy') as HTMLButtonElement | null;
+  const centerMode = document.getElementById('dummy-center-mode') as HTMLSelectElement | null;
+  if (dummySelection) {
+    dummySelection.textContent = selectedAtomIds.length === 0
+      ? 'Select one or more atoms'
+      : `Selected: ${selectedAtomIds.length} (${realAtomCount} real)`;
+  }
+  if (dummyButton) dummyButton.disabled = selectedAtomIds.length === 0;
+  if (centerMode) {
+    const massOption = centerMode.querySelector('option[value="mass"]') as HTMLOptionElement | null;
+    if (massOption) massOption.disabled = realAtomCount === 0;
+    if (realAtomCount === 0 && centerMode.value === 'mass') centerMode.value = 'geometry';
+  }
 
   noSelection.style.display = 'none';
   singleAtom.style.display = 'none';
@@ -65,7 +81,7 @@ export function updateSelectedInputs(atom: Atom | null): void {
   const fy = document.getElementById('sel-fy') as HTMLInputElement | null;
   const fz = document.getElementById('sel-fz') as HTMLInputElement | null;
   const disabled = !atom;
-  if (el) el.disabled = disabled;
+  if (el) el.disabled = disabled || atom?.role === 'ghost';
   if (x) x.disabled = disabled;
   if (y) y.disabled = disabled;
   if (z) z.disabled = disabled;
@@ -82,7 +98,7 @@ export function updateSelectedInputs(atom: Atom | null): void {
     if (fz) fz.value = '';
     return;
   }
-  if (el) el.value = atom.element;
+  if (el) el.value = atom.displayLabel ?? atom.element;
   if (x) x.value = atom.position[0].toFixed(4);
   if (y) y.value = atom.position[1].toFixed(4);
   if (z) z.value = atom.position[2].toFixed(4);

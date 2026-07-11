@@ -178,3 +178,38 @@ H 0 0 1
     expect(unconstrained).to.not.contain('{ C 1 C }');
   });
 });
+
+describe('ORCA dummy atoms', () => {
+  it('should parse and preserve DA, X, and Xx labels', () => {
+    const parser = new ORCAParser();
+    const input = '! HF\n* xyz 0 1\nDA 0 0 0\nX 0 0 1\nXx 0 0 2\n*';
+    const structure = parser.parse(input);
+    expect(structure.atoms.every((atom) => atom.role === 'dummy')).to.be.true;
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.include('DA  ');
+    expect(serialized).to.include('X  ');
+    expect(serialized).to.include('Xx  ');
+    expect(parser.parse(serialized).atoms).to.have.lengthOf(3);
+  });
+});
+
+describe('ORCA ghost atoms', () => {
+  it('should parse and round-trip H: centers', () => {
+    const parser = new ORCAParser();
+    const input = '! HF def2-SVP\n* xyz 0 1\nC 0 0 0\nH: 0 0 1\n*';
+    const structure = parser.parse(input);
+    expect(structure.atoms[1].role).to.equal('ghost');
+    expect(structure.atoms[1].element).to.equal('H');
+    expect(parser.serialize(structure)).to.include('H:  ');
+  });
+
+  it('should preserve non-H ghost basis elements', () => {
+    const parser = new ORCAParser();
+    const input = '! HF def2-SVP\n* xyz 0 1\nC: 0 0 0\nO: 0 0 1\n*';
+    const structure = parser.parse(input);
+    expect(structure.atoms.map((atom) => atom.element)).to.deep.equal(['C', 'O']);
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.include('C:  ');
+    expect(serialized).to.include('O:  ');
+  });
+});

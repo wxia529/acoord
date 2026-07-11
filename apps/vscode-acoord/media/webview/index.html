@@ -23,6 +23,9 @@
         <vscode-option value="Br">Bromine (Br)</vscode-option>
         <vscode-option value="more">More elements...</vscode-option>
       </vscode-dropdown>
+      <vscode-button id="toolbar-atom-brush" appearance="secondary" title="Toggle atom brush (A)">Brush</vscode-button>
+      <label for="toolbar-brush-spacing">Max length:</label>
+      <input id="toolbar-brush-spacing" class="toolbar-number-input" type="number" value="1.54" min="0.2" step="0.01" title="Maximum pull-out distance in Angstrom" />
       <vscode-button id="toolbar-delete" appearance="secondary" title="Delete selected (Delete)">Delete</vscode-button>
     </div>
     <div class="toolbar-separator"></div>
@@ -122,6 +125,7 @@
               <vscode-button id="btn-apply-cartesian" appearance="primary">Apply Cartesian</vscode-button>
               <vscode-button id="btn-apply-fractional" appearance="secondary">Apply Fractional</vscode-button>
             </div>
+            <vscode-button id="btn-copy-coordinates" appearance="secondary" title="Copy x, y, z without brackets">Copy x, y, z</vscode-button>
           </div>
           <div id="properties-multi-atom" style="display:none;">
             <div class="properties-message">
@@ -160,6 +164,30 @@
             </div>
             <vscode-button id="btn-add-atom-form" appearance="primary">Add</vscode-button>
           </div>
+        </div>
+      </div>
+
+      <div class="collapsible-panel" data-panel="dummy-atom">
+        <div class="panel-header">
+          <span class="panel-title">Ghost Atom</span>
+          <span class="panel-toggle">▼</span>
+        </div>
+        <div class="panel-content" id="panel-dummy-atom">
+          <div id="dummy-atom-selection" class="properties-message">Select one or more atoms</div>
+          <div class="input-group">
+            <label>Insertion position</label>
+            <select id="dummy-center-mode">
+              <option value="geometry">Geometric center</option>
+              <option value="mass">Center of mass</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label>Plane-normal offset (A)</label>
+            <input type="number" id="ghost-normal-offset" value="0" step="0.1" />
+          </div>
+          <div class="properties-message">Positive and negative values select opposite sides of the plane. Non-zero offset requires 3 non-collinear atoms.</div>
+          <div class="properties-message">Basis element: H</div>
+          <vscode-button id="btn-insert-dummy" appearance="primary" disabled>Insert H Ghost Atom</vscode-button>
         </div>
       </div>
 

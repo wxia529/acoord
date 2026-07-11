@@ -448,6 +448,40 @@ vscode-checkbox::part(control) {
   box-shadow: inset 8px 0 16px rgba(0, 0, 0, 0.25);
 }
 
+.toolbar-number-input {
+  width: 52px;
+  box-sizing: border-box;
+  color: var(--vscode-input-foreground);
+  background: var(--vscode-input-background);
+  border: 1px solid var(--vscode-input-border, transparent);
+  padding: 3px 5px;
+}
+
+.atom-brush-preview-line {
+  position: absolute;
+  display: none;
+  height: 2px;
+  transform-origin: 0 50%;
+  pointer-events: none;
+  z-index: 8;
+  background: var(--vscode-focusBorder, #58a6ff);
+  box-shadow: 0 0 6px rgba(88, 166, 255, 0.8);
+}
+
+.atom-brush-preview-dot {
+  position: absolute;
+  display: none;
+  width: 14px;
+  height: 14px;
+  margin: -7px 0 0 -7px;
+  border: 2px solid var(--vscode-focusBorder, #58a6ff);
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 9;
+  background: rgba(88, 166, 255, 0.22);
+  box-shadow: 0 0 8px rgba(88, 166, 255, 0.8);
+}
+
 .collapsible-panel {
   border-bottom: 1px solid var(--acoord-border);
 }

@@ -33,9 +33,16 @@ ACoord is a VS Code extension for 3D visualization and editing of atomic, molecu
 
 - **16+ file formats** — XYZ, CIF, POSCAR, XDATCAR, OUTCAR, PDB, Gaussian, ORCA, QE, ABACUS STRU, CASTEP, SIESTA, OpenMX, .acoord native
 - **50+ webview commands** — Typed JSON messages via `src/shared/protocol.ts`
+- **Special atom roles** — `real`, `dummy`, and `ghost` remain distinct through model, wire, clipboard, native persistence, and format serialization
 - **Interactive 3D rendering** — Three.js inside VS Code Custom Editor API
 - **Trajectory support** — Multi-frame file navigation
 - **Standalone rendering engine** — `acoord-3d` package for reuse
+
+Ghost insertion follows the extension-host computation rule. The webview sends
+`insertGhostAtom` with selected atom IDs, center mode, H basis element, and an
+optional signed normal offset. `AtomEditService` computes the center and plane
+normal, creates the immutable edit snapshot, and updates undo history. The
+webview must not calculate or send the final ghost coordinates.
 
 ### 1.2 Design Principles
 

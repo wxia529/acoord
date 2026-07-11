@@ -25,6 +25,9 @@ export interface WireAtom {
   selected?: boolean;
   selectable?: boolean;
   fixed?: boolean;
+  role?: 'real' | 'dummy' | 'ghost';
+  sourceLabel?: string;
+  displayLabel?: string;
 }
 
 /**
@@ -310,6 +313,20 @@ export interface AddAtomMessage {
   z: number;
 }
 
+export interface InsertDummyAtomMessage {
+  command: 'insertDummyAtom';
+  atomIds: string[];
+  centerMode: 'geometry' | 'mass';
+}
+
+export interface InsertGhostAtomMessage {
+  command: 'insertGhostAtom';
+  atomIds: string[];
+  centerMode: 'geometry' | 'mass';
+  basisElement?: string;
+  normalOffset?: number;
+}
+
 export interface DeleteAtomMessage {
   command: 'deleteAtom';
   atomId: string;
@@ -561,6 +578,8 @@ export type WebviewToExtensionMessage =
   | CenterToUnitCellMessage
   | SetSupercellMessage
   | AddAtomMessage
+  | InsertDummyAtomMessage
+  | InsertGhostAtomMessage
   | DeleteAtomMessage
   | DeleteAtomsMessage
   | MoveAtomMessage

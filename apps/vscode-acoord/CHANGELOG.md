@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0]
+
+### Added
+
+- **Gaussian and ORCA ghost atoms**: Distinguishes real, dummy, and ghost atom roles; supports Gaussian `Bq`/`C-Bq` and ORCA `H:`/`C:` parsing and round-trip serialization.
+- **Ghost atom insertion**: Inserts an H-basis ghost at the geometric center or center of mass of selected atoms, with an optional signed plane-normal offset.
+- **Ghost visualization**: Ghost centers use selectable translucent wireframe shells and dedicated `Bq`/element-basis labels.
+- **Directional atom brush**: Pulls one new atom from an existing atom with a live direction/endpoint preview, activation threshold, and a default `1.54 Å` maximum length.
+- **Coordinate clipboard action**: Copies a selected atom's Cartesian coordinates as plain `x, y, z` text without brackets.
+
+### Changed
+
+- **Coordinate precision**: The status bar now displays Cartesian coordinates with six decimals and fractional coordinates with eight decimals.
+- **Native atom metadata**: `.acoord`, clipboard, clone, supercell, and renderer wire paths preserve dummy/ghost roles and source labels.
+
 ## [0.3.22]
 
 ### Changed

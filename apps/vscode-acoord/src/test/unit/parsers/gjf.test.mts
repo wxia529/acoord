@@ -164,3 +164,46 @@ Ga2
     expect(serialized).to.match(/H\s+0\s+0\.6310000000/);
   });
 });
+
+describe('GJF dummy atoms', () => {
+  it('should parse and round-trip X centers', () => {
+    const parser = new GJFParser();
+    const input = '#P\n\ndummy\n\n0 1\nC 0 0 0\nX 0 0 1\n\n';
+    const structure = parser.parse(input);
+    expect(structure.atoms[1].role).to.equal('dummy');
+    const reparsed = parser.parse(parser.serialize(structure));
+    expect(reparsed.atoms[1].role).to.equal('dummy');
+    expect(reparsed.atoms[1].element).to.equal('X');
+  });
+});
+
+describe('GJF ghost atoms', () => {
+  it('should normalize H-Bq centers to Bq on write', () => {
+    const parser = new GJFParser();
+    const input = '#P\n\nghost\n\n0 1\nC 0 0 0\nH-Bq 0 0 1\n\n';
+    const structure = parser.parse(input);
+    expect(structure.atoms[1].role).to.equal('ghost');
+    expect(structure.atoms[1].element).to.equal('H');
+    expect(parser.serialize(structure)).to.include('Bq  ');
+    expect(parser.serialize(structure)).to.not.include('H-Bq');
+  });
+
+  it('should parse standalone Bq as an H-basis ghost', () => {
+    const parser = new GJFParser();
+    const input = '#P\n\nghost\n\n0 1\nBq 0 0 1\n\n';
+    const structure = parser.parse(input);
+    expect(structure.atoms[0].role).to.equal('ghost');
+    expect(structure.atoms[0].element).to.equal('H');
+    expect(parser.serialize(structure)).to.include('Bq  ');
+  });
+
+  it('should preserve non-H ghost basis elements', () => {
+    const parser = new GJFParser();
+    const input = '#P\n\nghost\n\n0 1\nC-Bq 0 0 0\nO-Bq 0 0 1\n\n';
+    const structure = parser.parse(input);
+    expect(structure.atoms.map((atom) => atom.element)).to.deep.equal(['C', 'O']);
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.include('C-Bq');
+    expect(serialized).to.include('O-Bq');
+  });
+});

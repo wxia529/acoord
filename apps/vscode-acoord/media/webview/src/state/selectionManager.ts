@@ -30,8 +30,8 @@ export function updateBondSelectionUI(): void {
     } else {
       const atom1 = getAtomById(pair[0]);
       const atom2 = getAtomById(pair[1]);
-      const left = atom1 ? `${atom1.element}(${pair[0].slice(-4)})` : pair[0];
-      const right = atom2 ? `${atom2.element}(${pair[1].slice(-4)})` : pair[1];
+      const left = atom1 ? `${atom1.displayLabel ?? atom1.element}(${pair[0].slice(-4)})` : pair[0];
+      const right = atom2 ? `${atom2.displayLabel ?? atom2.element}(${pair[1].slice(-4)})` : pair[1];
       label.textContent = `${left} - ${right}`;
     }
   } else {
@@ -132,7 +132,7 @@ export function updateAtomList(
       item.className = 'atom-item'
         + (isSelected ? ' selected' : '')
         + (hasSizeOverride ? ' size-override' : '');
-      item.textContent = atom.element + ' #' + (index + 1);
+      item.textContent = (atom.displayLabel ?? atom.element) + ' #' + (index + 1);
       item.title = atom.id;
       item.addEventListener('click', (event: MouseEvent) =>
         handleSelect(atom.id, (event.ctrlKey || event.metaKey), false, vscode, callbacks));

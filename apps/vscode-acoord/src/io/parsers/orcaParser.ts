@@ -52,9 +52,12 @@ export class ORCAParser extends StructureParser {
       if (parts.length < 4) {
         continue;
       }
-      const element = parseElement(parts[0]);
+      const ghostMatch = /^([a-z]{1,2}):$/i.exec(parts[0]);
+      const isGhost = ghostMatch !== null;
+      const isDummy = !isGhost && /^(?:da|x|xx)$/i.test(parts[0]);
+      const element = isDummy ? 'X' : parseElement(isGhost ? ghostMatch[1] : parts[0]);
       if (!element) {
-        continue;
+        throw new Error(`ORCAParser line ${i + 1}: invalid atom label "${parts[0]}"`);
       }
       const x = parseFloat(parts[1]);
       const y = parseFloat(parts[2]);
@@ -65,6 +68,8 @@ export class ORCAParser extends StructureParser {
       structure.addAtom(new Atom(element, x, y, z, undefined, {
         color: BRIGHT_SCHEME.colors[element] || '#C0C0C0',
         radius: getDefaultAtomRadius(element),
+        role: isDummy ? 'dummy' : isGhost ? 'ghost' : 'real',
+        sourceLabel: isDummy || isGhost ? parts[0] : undefined,
       }));
     }
 
@@ -104,7 +109,7 @@ export class ORCAParser extends StructureParser {
     lines.push(`* xyz ${charge} ${multiplicity}`);
     for (const atom of structure.atoms) {
       lines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${this.getAtomLabel(atom)}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
       );
     }
     lines.push('*');
@@ -175,9 +180,16 @@ export class ORCAParser extends StructureParser {
   private writeORCACoordinates(lines: string[], structure: Structure): void {
     for (const atom of structure.atoms) {
       lines.push(
-        `${atom.element}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
+        `${this.getAtomLabel(atom)}  ${atom.x.toFixed(10)}  ${atom.y.toFixed(10)}  ${atom.z.toFixed(10)}`
       );
     }
+  }
+
+  private getAtomLabel(atom: Atom): string {
+    if (atom.role !== 'dummy') {
+      return atom.role === 'ghost' ? `${atom.element}:` : atom.element;
+    }
+    return /^(?:da|x|xx)$/i.test(atom.sourceLabel ?? '') ? atom.sourceLabel as string : 'DA';
   }
 
   private applyCartesianConstraints(lines: string[], structure: Structure): void {

@@ -56,6 +56,19 @@ Constraint management for geometry optimization:
   and native `.acoord` files where supported
 - Omits redundant constraint flags when all atoms are unconstrained
 
+### Directional Atom Brush
+
+- Drag from an existing atom to pull out one new atom
+- Live direction and endpoint preview
+- `1.54 Å` default maximum length with a small activation threshold
+
+### Ghost Atoms
+
+- Distinct real, dummy, and ghost atom roles
+- Gaussian `Bq` and element ghost syntax; ORCA element-colon syntax
+- H-basis insertion at geometric or mass centers
+- Signed plane-normal offset and translucent wireframe rendering
+
 ## Additional Features
 
 ### Trajectory Support

@@ -74,6 +74,74 @@ describe('AtomEditService', () => {
     });
   });
 
+  describe('insertDummyAtom', () => {
+    it('should insert at the geometric center', () => {
+      const s = makeStructure();
+      const { svc, tm } = makeServices(s);
+      svc.insertDummyAtom(s.atoms.map((atom) => atom.id), 'geometry');
+      const dummy = tm.activeStructure.atoms[2];
+      expect(dummy.role).to.equal('dummy');
+      expect(dummy.element).to.equal('X');
+      expect(dummy.x).to.equal(0.75);
+    });
+
+    it('should insert at the mass-weighted center', () => {
+      const s = makeStructure();
+      const { svc, tm } = makeServices(s);
+      svc.insertDummyAtom(s.atoms.map((atom) => atom.id), 'mass');
+      const expected = 1.5 * 15.999 / (12.011 + 15.999);
+      expect(tm.activeStructure.atoms[2].x).to.be.closeTo(expected, 1e-12);
+    });
+
+    it('should ignore dummy atoms for center of mass', () => {
+      const s = makeStructure();
+      s.addAtom(new Atom('X', 100, 0, 0, undefined, { role: 'dummy' }));
+      const { svc, tm } = makeServices(s);
+      svc.insertDummyAtom(s.atoms.map((atom) => atom.id), 'mass');
+      expect(tm.activeStructure.atoms[3].x).to.be.lessThan(1.5);
+    });
+
+    it('should reject an empty selection', () => {
+      const { svc } = makeServices(makeStructure());
+      expect(() => svc.insertDummyAtom([], 'geometry')).to.throw(/select at least one atom/);
+    });
+  });
+
+  describe('insertGhostAtom', () => {
+    it('should insert an H ghost atom at the selected center by default', () => {
+      const s = makeStructure();
+      const { svc, tm } = makeServices(s);
+      svc.insertGhostAtom(s.atoms.map((atom) => atom.id), 'geometry');
+      const ghost = tm.activeStructure.atoms[2];
+      expect(ghost.role).to.equal('ghost');
+      expect(ghost.element).to.equal('H');
+      expect(ghost.x).to.equal(0.75);
+    });
+
+    it('should apply positive and negative plane-normal offsets', () => {
+      const s = new Structure('plane');
+      s.addAtom(new Atom('C', 0, 0, 0));
+      s.addAtom(new Atom('C', 1, 0, 0));
+      s.addAtom(new Atom('C', 0, 1, 0));
+      const ids = s.atoms.map((atom) => atom.id);
+      const { svc, tm } = makeServices(s);
+      svc.insertGhostAtom(ids, 'geometry', 'H', 1.25);
+      expect(tm.activeStructure.atoms[3].z).to.be.closeTo(1.25, 1e-12);
+      svc.insertGhostAtom(ids, 'geometry', 'H', -0.5);
+      expect(tm.activeStructure.atoms[4].z).to.be.closeTo(-0.5, 1e-12);
+    });
+
+    it('should reject a normal offset for collinear atoms', () => {
+      const s = new Structure('line');
+      s.addAtom(new Atom('C', 0, 0, 0));
+      s.addAtom(new Atom('C', 1, 0, 0));
+      s.addAtom(new Atom('C', 2, 0, 0));
+      const { svc } = makeServices(s);
+      expect(() => svc.insertGhostAtom(s.atoms.map((atom) => atom.id), 'geometry', 'H', 1))
+        .to.throw(/collinear/);
+    });
+  });
+
   describe('deleteAtom', () => {
     it('should remove an atom by id', () => {
       const s = makeStructure();

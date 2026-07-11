@@ -24,6 +24,8 @@ describe('documentChangePolicy', () => {
   it('treats structure edits as mutating', () => {
     const messages: WebviewToExtensionMessage[] = [
       { command: 'addAtom', element: 'C', x: 0, y: 0, z: 0 },
+      { command: 'insertDummyAtom', atomIds: ['atom_1'], centerMode: 'geometry' },
+      { command: 'insertGhostAtom', atomIds: ['atom_1'], centerMode: 'mass', basisElement: 'H', normalOffset: 1 },
       { command: 'deleteAtoms', atomIds: ['atom_1'] },
       { command: 'moveAtom', atomId: 'atom_1', x: 1, y: 2, z: 3 },
       { command: 'setAtomsPositions', atomPositions: [{ id: 'atom_1', x: 1, y: 2, z: 3 }] },

@@ -8,6 +8,7 @@
  */
 import { selectionStore, structureStore } from './state';
 import type { VscodeContext, SelectionContext, EditContext } from './types';
+import { formatCoordinatesForClipboard } from './utils/coordinates';
 
 /** Combined context for appEdit module */
 type AppEditContext = VscodeContext & SelectionContext & EditContext;
@@ -37,6 +38,24 @@ export function setup(callbacks: AppEditContext): void {
         if (pyInput) { pyInput.value = ''; }
         if (pzInput) { pzInput.value = ''; }
       }
+    });
+  }
+
+  const insertDummyButton = document.getElementById('btn-insert-dummy') as HTMLButtonElement | null;
+  if (insertDummyButton) {
+    insertDummyButton.addEventListener('click', () => {
+      if (selectionStore.selectedAtomIds.length === 0) return;
+      const mode = (document.getElementById('dummy-center-mode') as HTMLSelectElement | null)?.value;
+      const offsetInput = document.getElementById('ghost-normal-offset') as HTMLInputElement | null;
+      const normalOffset = Number.parseFloat(offsetInput?.value ?? '0');
+      if (!Number.isFinite(normalOffset)) return;
+      vscode.postMessage({
+        command: 'insertGhostAtom',
+        atomIds: [...selectionStore.selectedAtomIds],
+        centerMode: mode === 'mass' ? 'mass' : 'geometry',
+        basisElement: 'H',
+        normalOffset,
+      });
     });
   }
 
@@ -74,6 +93,28 @@ export function setup(callbacks: AppEditContext): void {
   }
   if (selElement) {
     selElement.addEventListener('change', () => applySelectedAtomChanges('cartesian'));
+  }
+  const copyCoordinatesButton = document.getElementById('btn-copy-coordinates') as HTMLButtonElement | null;
+  if (copyCoordinatesButton) {
+    copyCoordinatesButton.addEventListener('click', async () => {
+      const atom = structureStore.currentSelectedAtom;
+      if (!atom) return;
+      const text = formatCoordinatesForClipboard(atom.position);
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        const textarea = document.createElement('textarea');
+        textarea.value = text;
+        textarea.style.position = 'fixed';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        textarea.remove();
+      }
+      copyCoordinatesButton.textContent = 'Copied';
+      window.setTimeout(() => { copyCoordinatesButton.textContent = 'Copy x, y, z'; }, 1200);
+    });
   }
 
   // ── Atom Color ─────────────────────────────────────────────────────────────

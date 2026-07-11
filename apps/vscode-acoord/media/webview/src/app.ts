@@ -177,6 +177,9 @@ function setupUI(): void {
         showElementPickerDialog((selectedElement) => {
           if (selectedElement) {
             interactionStore.addingAtomElement = selectedElement;
+            if (interactionStore.currentTool !== 'add') {
+              (document.getElementById('toolbar-atom-brush') as HTMLElement | null)?.click();
+            }
             canvas.style.cursor = 'crosshair';
             setStatus(`Adding ${selectedElement} atoms - Click to place, Esc to cancel`);
           }
@@ -184,6 +187,9 @@ function setupUI(): void {
         toolbarAddAtom.value = '';
       } else if (element) {
         interactionStore.addingAtomElement = element;
+        if (interactionStore.currentTool !== 'add') {
+          (document.getElementById('toolbar-atom-brush') as HTMLElement | null)?.click();
+        }
         canvas.style.cursor = 'crosshair';
         setStatus(`Adding ${element} atoms - Click to place, Esc to cancel`);
         toolbarAddAtom.value = '';

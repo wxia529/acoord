@@ -258,6 +258,7 @@ export class Structure {
 
     const atomData = new Map<string, { symbol: string; radius: number; atomicNumber: number }>();
     for (const atom of this.atoms) {
+      if (atom.role !== 'real') { continue; }
       const symbol = parseElement(atom.element) || atom.element;
       const data = ELEMENT_DATA[symbol];
       const radius = data?.covalentRadius || 1.5;
@@ -412,12 +413,17 @@ export class Structure {
       cz = 0;
 
     for (const atom of this.atoms) {
+      if (atom.role !== 'real') { continue; }
       const symbol = parseElement(atom.element) || atom.element;
       const mass = ELEMENT_DATA[symbol]?.atomicMass || 1;
       cx += atom.x * mass;
       cy += atom.y * mass;
       cz += atom.z * mass;
       totalMass += mass;
+    }
+
+    if (totalMass === 0) {
+      return [0, 0, 0];
     }
 
     return [cx / totalMass, cy / totalMass, cz / totalMass];
@@ -483,6 +489,8 @@ export class Structure {
               radius: atom.radius,
               fixed: atom.fixed,
               selectiveDynamics: atom.selectiveDynamics,
+              role: atom.role,
+              sourceLabel: atom.sourceLabel,
             });
             newAtom.x += displacement[0];
             newAtom.y += displacement[1];
@@ -642,6 +650,8 @@ export class Structure {
         radius: a.radius,
         fixed: a.fixed ?? false,
         selectiveDynamics: a.selectiveDynamics,
+        role: a.role,
+        sourceLabel: a.sourceLabel,
       });
       s.addAtom(atom);
     }

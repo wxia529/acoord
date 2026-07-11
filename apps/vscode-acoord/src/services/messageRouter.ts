@@ -176,6 +176,23 @@ export class MessageRouter {
       return this.atomEditService.addAtom(message.element, message.x, message.y, message.z);
     });
 
+    this.registerTyped('insertDummyAtom', (message) => {
+      const atomId = this.atomEditService.insertDummyAtom(message.atomIds, message.centerMode);
+      this.selectionService.setSelection([atomId]);
+      return true;
+    });
+
+    this.registerTyped('insertGhostAtom', (message) => {
+      const atomId = this.atomEditService.insertGhostAtom(
+        message.atomIds,
+        message.centerMode,
+        message.basisElement ?? 'H',
+        message.normalOffset ?? 0
+      );
+      this.selectionService.setSelection([atomId]);
+      return true;
+    });
+
     this.registerTyped('deleteAtom', (message) => {
       if (message.atomId) {
         this.atomEditService.deleteAtom(message.atomId);

@@ -17,6 +17,9 @@ an interactive 3D editor without switching tools.
 - Inspect structures with an interactive Three.js viewer: rotate, pan, zoom,
   select atoms, measure distances, angles, and dihedrals.
 - Edit atom positions, elements, colors, bonds, fixed states, and unit cells.
+- Pull new atoms from existing atoms with the directional toolbar brush and a configurable maximum length.
+- Insert H-basis ghost atoms at a selection's geometric center or center of
+  mass, with an optional signed plane-normal offset.
 - Navigate trajectories from formats such as XYZ, XDATCAR, OUTCAR, QE output,
   and CASTEP output.
 - Save edited inputs while preserving format-specific calculation sections where
@@ -88,6 +91,7 @@ Common controls:
 | Box select | Shift-drag empty canvas |
 | Delete selected atoms | Delete / Backspace |
 | Save | Ctrl/Cmd-S |
+| Atom brush | Choose an element, toggle **Brush**, then drag from an existing atom |
 
 ## Editing and Save Behavior
 
@@ -103,6 +107,8 @@ Supported edits include:
 - Edit unit cell parameters and generate supercells.
 - Mark atoms as fixed or free for geometry optimization workflows.
 - Apply built-in or custom color schemes.
+- Insert Gaussian/ORCA dummy and ghost centers while preserving their distinct
+  computational semantics.
 
 When saving an existing input file, ACoord tries to update only structural data
 and preserve calculation settings:

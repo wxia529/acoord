@@ -83,6 +83,138 @@ export class AtomEditService {
     return true;
   }
 
+  /** Insert a dummy atom at the geometric center or center of mass of selected atoms. */
+  insertDummyAtom(atomIds: string[], centerMode: 'geometry' | 'mass'): string {
+    return this.insertSpecialAtom(atomIds, centerMode, 'dummy', 'X');
+  }
+
+  /** Insert a ghost atom carrying the requested element basis (H by default). */
+  insertGhostAtom(
+    atomIds: string[],
+    centerMode: 'geometry' | 'mass',
+    basisElement: string = 'H',
+    normalOffset: number = 0
+  ): string {
+    const element = parseElement(basisElement);
+    if (!element) {
+      throw new Error(`insertGhostAtom: invalid basis element "${basisElement}"`);
+    }
+    if (!Number.isFinite(normalOffset)) {
+      throw new Error('insertGhostAtom: normal offset must be finite');
+    }
+    return this.insertSpecialAtom(atomIds, centerMode, 'ghost', element, normalOffset);
+  }
+
+  private insertSpecialAtom(
+    atomIds: string[],
+    centerMode: 'geometry' | 'mass',
+    role: 'dummy' | 'ghost',
+    element: string,
+    normalOffset: number = 0
+  ): string {
+    const uniqueIds = [...new Set(atomIds)];
+    if (uniqueIds.length === 0) {
+      throw new Error('insertDummyAtom: select at least one atom');
+    }
+    if (!this.trajectoryManager.isEditing) {
+      this.trajectoryManager.beginEdit();
+    }
+    const editStructure = this.trajectoryManager.activeStructure;
+    const atoms = uniqueIds.map((id) => {
+      const atom = editStructure.getAtom(id);
+      if (!atom) {
+        throw new Error(`insertDummyAtom: atom "${id}" not found`);
+      }
+      return atom;
+    });
+    const weightedAtoms = centerMode === 'mass'
+      ? atoms.filter((atom) => atom.role === 'real')
+      : atoms;
+    if (weightedAtoms.length === 0) {
+      throw new Error('insertDummyAtom: center of mass requires at least one real atom');
+    }
+    let totalWeight = 0;
+    let x = 0;
+    let y = 0;
+    let z = 0;
+    for (const atom of weightedAtoms) {
+      const weight = centerMode === 'mass' ? ELEMENT_DATA[atom.element]?.atomicMass ?? 0 : 1;
+      if (weight <= 0) {
+        continue;
+      }
+      totalWeight += weight;
+      x += atom.x * weight;
+      y += atom.y * weight;
+      z += atom.z * weight;
+    }
+    if (totalWeight === 0) {
+      throw new Error('insertDummyAtom: selected atoms have no valid mass');
+    }
+    let centerX = x / totalWeight;
+    let centerY = y / totalWeight;
+    let centerZ = z / totalWeight;
+    if (normalOffset !== 0) {
+      const [nx, ny, nz] = this.getPlaneNormal(atoms);
+      centerX += nx * normalOffset;
+      centerY += ny * normalOffset;
+      centerZ += nz * normalOffset;
+    }
+    const specialAtom = new Atom(element, centerX, centerY, centerZ, undefined, {
+      color: '#A0A0A0',
+      radius: 0.18,
+      label: role === 'ghost' ? `${element}:` : 'X',
+      role,
+    });
+    this.undoManager.push(editStructure);
+    editStructure.addAtom(specialAtom);
+    this.renderer.setStructure(editStructure);
+    this.trajectoryManager.commitEdit();
+    return specialAtom.id;
+  }
+
+  private getPlaneNormal(atoms: Atom[]): [number, number, number] {
+    if (atoms.length < 3) {
+      throw new Error('insertGhostAtom: non-zero normal offset requires at least three atoms');
+    }
+    for (let i = 0; i < atoms.length - 2; i++) {
+      for (let j = i + 1; j < atoms.length - 1; j++) {
+        for (let k = j + 1; k < atoms.length; k++) {
+          const abx = atoms[j].x - atoms[i].x;
+          const aby = atoms[j].y - atoms[i].y;
+          const abz = atoms[j].z - atoms[i].z;
+          const acx = atoms[k].x - atoms[i].x;
+          const acy = atoms[k].y - atoms[i].y;
+          const acz = atoms[k].z - atoms[i].z;
+          let nx = aby * acz - abz * acy;
+          let ny = abz * acx - abx * acz;
+          let nz = abx * acy - aby * acx;
+          const length = Math.hypot(nx, ny, nz);
+          if (length <= 1e-12) {
+            continue;
+          }
+          nx /= length;
+          ny /= length;
+          nz /= length;
+          const components = [nx, ny, nz];
+          let dominantIndex = 0;
+          if (Math.abs(ny) > Math.abs(components[dominantIndex])) {
+            dominantIndex = 1;
+          }
+          if (Math.abs(nz) > Math.abs(components[dominantIndex])) {
+            dominantIndex = 2;
+          }
+          if (components[dominantIndex] < 0) {
+            nx = -nx;
+            ny = -ny;
+            nz = -nz;
+          }
+          return [nx, ny, nz];
+        }
+      }
+    }
+    throw new Error('insertGhostAtom: selected atoms are collinear; plane normal is undefined');
+  }
+
   deleteAtom(atomId: string): void {
     if (!this.trajectoryManager.isEditing) {
       this.trajectoryManager.beginEdit();
@@ -246,6 +378,8 @@ export class AtomEditService {
           label: atom.label,
           fixed: atom.fixed,
           selectiveDynamics: atom.selectiveDynamics,
+          role: atom.role,
+          sourceLabel: atom.sourceLabel,
         }
       );
       editStructure.addAtom(copy);
@@ -282,6 +416,8 @@ export class AtomEditService {
         atom.element = parsedElement;
         atom.color = color;
         atom.radius = radius;
+        atom.role = 'real';
+        atom.sourceLabel = undefined;
       }
     }
     this.renderer.setStructure(editStructure);
@@ -500,6 +636,8 @@ export class AtomEditService {
       const parsedElement = parseElement(options.element);
       if (parsedElement) {
         atom.element = parsedElement;
+        atom.role = 'real';
+        atom.sourceLabel = undefined;
       }
     }
     

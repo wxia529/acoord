@@ -30,6 +30,8 @@ export class ClipboardService {
           color: atom.color,
           position: [atom.x, atom.y, atom.z],
           radius: atom.radius,
+          role: atom.role,
+          sourceLabel: atom.sourceLabel,
         });
       }
     }
@@ -72,6 +74,8 @@ export class ClipboardService {
         {
           color: wireAtom.color,
           radius: wireAtom.radius,
+          role: wireAtom.role,
+          sourceLabel: wireAtom.sourceLabel,
         }
       );
       structure.addAtom(atom);

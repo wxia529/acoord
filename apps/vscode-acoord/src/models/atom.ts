@@ -8,6 +8,8 @@
  * 
  * Key principle: Extension owns all computation, webview only renders.
  */
+export type AtomRole = 'real' | 'dummy' | 'ghost';
+
 export class Atom {
   id: string;
   element: string;
@@ -36,6 +38,8 @@ export class Atom {
   selected: boolean = false;
   fixed: boolean = false;
   selectiveDynamics?: [boolean, boolean, boolean];
+  role: AtomRole;
+  sourceLabel?: string;
 
   constructor(
     element: string,
@@ -49,6 +53,8 @@ export class Atom {
       label?: string;
       fixed?: boolean;
       selectiveDynamics?: [boolean, boolean, boolean];
+      role?: AtomRole;
+      sourceLabel?: string;
     }
   ) {
     this.element = element;
@@ -61,6 +67,8 @@ export class Atom {
     this.label = options?.label;
     this.fixed = options?.fixed ?? false;
     this.selectiveDynamics = options?.selectiveDynamics;
+    this.role = options?.role ?? 'real';
+    this.sourceLabel = options?.sourceLabel;
   }
 
   /**
@@ -99,6 +107,8 @@ export class Atom {
       label: this.label,
       fixed: this.fixed,
       selectiveDynamics: this.selectiveDynamics ? [...this.selectiveDynamics] as [boolean, boolean, boolean] : undefined,
+      role: this.role,
+      sourceLabel: this.sourceLabel,
     });
     cloned.selected = this.selected;
     return cloned;
@@ -119,6 +129,8 @@ export class Atom {
       label: this.label,
       fixed: this.fixed,
       selectiveDynamics: this.selectiveDynamics,
+      role: this.role,
+      sourceLabel: this.sourceLabel,
     };
   }
 }

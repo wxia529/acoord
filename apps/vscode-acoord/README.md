@@ -2,7 +2,7 @@
 
 > **Note**: This extension is part of the [acoord monorepo](../../README.md). For development setup, see the monorepo root.
 
-**Version:** 0.3.20  
+**Version:** 0.4.0
 **License:** MIT  
 **Repository:** https://github.com/wxia529/acoord  
 **Marketplace:** https://marketplace.visualstudio.com/items?itemName=wxia529.acoord
@@ -26,6 +26,8 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 ### Editing Features
 
 - **Atom Manipulation** — Move, add, delete, copy/paste atoms
+- **Atom Brush** — Drag from an existing atom to pull out one new atom with a capped distance
+- **Ghost Atoms** — Insert H-basis ghost centers at geometric/mass centers with signed normal offsets
 - **Bond Management** — Manual bond creation/deletion, automatic bond detection
 - **Lattice Editing** — Modify unit cell parameters with optional atom scaling
 - **Selection Tools** — Single-click, multi-select, box selection
@@ -62,8 +64,8 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 | **CIF** | `.cif` | Full crystallographic data |
 | **POSCAR** | `POSCAR`, `CONTCAR`, `.vasp` | Selective dynamics preserved via fixed flags |
 | **PDB** | `.pdb` | Basic CRYST1 + ATOM/HETATM records |
-| **Gaussian Input** | `.gjf` | Preserves route section and metadata |
-| **ORCA Input** | `.inp` | Preserves ! settings and blocks |
+| **Gaussian Input** | `.gjf` | Preserves route metadata; supports `X` dummy, `Bq` H-basis ghosts, and element ghosts such as `C-Bq` |
+| **ORCA Input** | `.inp` | Preserves settings/blocks; supports `DA`/`X`/`Xx` dummy and `H:` ghost centers |
 | **Quantum ESPRESSO Input** | `.in`, `.pwi` | Preserves &CONTROL, &SYSTEM, &ELECTRONS sections |
 | **ABACUS STRU** | `.STRU` | Preserves species, orbitals, movement flags, magnetism, velocity, and spin extras |
 | **OpenMX Input** | `.dat` | Preserves calculation parameters; updates coordinates, lattice, species, and fixed constraints |
@@ -145,7 +147,8 @@ See [DEVELOPMENT.md](DEVELOPMENT.md) for detailed architecture and contribution 
 | **Box select** | Shift+drag in empty space |
 | **Move atoms** | Shift+drag selected atoms |
 | **Delete atoms** | Press Delete/Backspace |
-| **Add atom** | Use Add Atom panel or press `A` |
+| **Add atom** | Select an element and use **Brush**, Quick Add, or press `A` |
+| **Pull out an atom** | Enable **Brush**, then drag from an existing atom and release |
 
 ### Measurement
 
@@ -179,7 +182,7 @@ partial movement constraint exists.
 | `Ctrl+Shift+S` | Save as |
 | `Ctrl+C` | Copy selected atoms |
 | `Ctrl+V` | Paste atoms |
-| `A` | Focus Add Atom form |
+| `A` | Toggle atom-add/brush mode |
 
 ---
 

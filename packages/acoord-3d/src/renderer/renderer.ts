@@ -691,11 +691,15 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
     // radius can share a single InstancedMesh (one draw call per group).
     const selectableAtoms = renderAtoms.filter((atom) => {
       if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) return false;
-      return atom.selectable !== false;
+      return atom.selectable !== false && atom.role !== 'ghost';
     });
     const nonSelectableAtoms = renderAtoms.filter((atom) => {
       if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) return false;
-      return atom.selectable === false;
+      return atom.selectable === false && atom.role !== 'ghost';
+    });
+    const ghostAtoms = renderAtoms.filter((atom) => {
+      if (!Number.isFinite(atom.position[0]) || !Number.isFinite(atom.position[1]) || !Number.isFinite(atom.position[2])) return false;
+      return atom.role === 'ghost';
     });
 
     // Build instanced meshes for selectable atoms grouped by radius key.
@@ -779,6 +783,32 @@ function renderStructure(data: Structure, uiHooks?: Partial<UiHooks>, options?: 
         mesh.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
         rendererState.scene!.add(mesh);
         rendererState.extraMeshes.push(mesh);
+      }
+    }
+
+    // Ghost atoms are basis-only centers: render them as translucent wireframe
+    // shells so they cannot be confused with real nuclei. They keep an
+    // invisible solid hit target and remain fully selectable/draggable.
+    if (ghostAtoms.length > 0) {
+      const sharedGhostGeo = new THREE.SphereGeometry(1, 16, 12);
+      for (const atom of ghostAtoms) {
+        const isSelected = !!atom.selected || selectedSet.has(atom.id);
+        const configuredRadius = getConfiguredAtomRadius(atom);
+        const sphereRadius = Math.max(configuredRadius * sizeScale, 0.18) * (isSelected ? 1.12 : 1);
+        const material = new THREE.MeshBasicMaterial({
+          color: new THREE.Color(isSelected ? '#f6d55c' : '#8fd3ff'),
+          transparent: true,
+          opacity: 0.72,
+          wireframe: true,
+          depthWrite: false,
+        });
+        const shell = new THREE.Mesh(sharedGhostGeo, material);
+        shell.scale.set(sphereRadius, sphereRadius, sphereRadius);
+        shell.position.set(atom.position[0] * scale, atom.position[1] * scale, atom.position[2] * scale);
+        shell.userData = { atomId: atom.id };
+        rendererState.scene!.add(shell);
+        rendererState.extraMeshes.push(shell);
+        rendererState.atomMeshes.set(atom.id, shell);
       }
     }
   }

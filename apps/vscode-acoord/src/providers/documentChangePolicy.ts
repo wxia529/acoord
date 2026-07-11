@@ -4,6 +4,8 @@ type WebviewCommand = WebviewToExtensionMessage['command'];
 
 const DOCUMENT_MUTATION_COMMANDS = new Set<WebviewCommand>([
   'addAtom',
+  'insertDummyAtom',
+  'insertGhostAtom',
   'applyDisplaySettings',
   'calculateBonds',
   'centerToUnitCell',

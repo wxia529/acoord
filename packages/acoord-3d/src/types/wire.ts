@@ -10,6 +10,9 @@ export interface WireAtom {
   selected?: boolean;
   selectable?: boolean;
   fixed?: boolean;
+  role?: 'real' | 'dummy' | 'ghost';
+  sourceLabel?: string;
+  displayLabel?: string;
 }
 
 export interface WireBond {

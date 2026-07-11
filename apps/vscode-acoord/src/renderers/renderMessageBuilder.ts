@@ -196,6 +196,11 @@ export class RenderMessageBuilder {
         color: atom.color,
         selected: atom.selected,
         fixed: atom.fixed,
+        role: atom.role,
+        sourceLabel: atom.sourceLabel,
+        displayLabel: atom.role === 'ghost'
+          ? (atom.element === 'H' ? 'Bq' : `${atom.element}-Bq`)
+          : atom.element,
       };
     });
   }

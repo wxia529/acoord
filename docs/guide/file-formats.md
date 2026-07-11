@@ -122,6 +122,22 @@ Quantum chemistry input files.
 - ✅ Charge and multiplicity
 - ✅ TV lattice vectors (for periodic systems)
 - ✅ Format preservation (headers, route section preserved on save)
+- ✅ Dummy atoms using `X`
+- ✅ Ghost atoms with an element basis; H-basis ghosts write as `Bq`, while other elements use forms such as `C-Bq`
+
+ACoord keeps dummy and ghost centers distinct. Ghost atoms inserted from the
+right-side panel use H basis functions and serialize as `Bq`.
+
+### ORCA Input
+
+**Support:**
+- ✅ `* xyz charge multiplicity` Cartesian coordinate blocks
+- ✅ Charge, multiplicity, Cartesian constraints, and input-block preservation
+- ✅ Dummy atom labels `DA`, `X`, and `Xx`
+- ✅ Element-based ghost labels such as `H:`
+
+New ghost atoms use the H basis and serialize as `H:`. Imported ORCA dummy
+labels are preserved on round trip.
 
 ### Quantum ESPRESSO
 

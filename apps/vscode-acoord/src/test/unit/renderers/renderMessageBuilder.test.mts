@@ -35,3 +35,21 @@ describe('RenderMessageBuilder', () => {
     });
   });
 });
+
+describe('RenderMessageBuilder ghost atoms', () => {
+  it('should expose Bq as the display label while preserving the basis element', () => {
+    const structure = new Structure('ghost');
+    structure.addAtom(new Atom('H', 0, 0, 0, undefined, { role: 'ghost' }));
+    const builder = new RenderMessageBuilder(structure);
+    const message = builder.getRenderMessage();
+    expect(message.data.atoms[0].element).to.equal('H');
+    expect(message.data.atoms[0].displayLabel).to.equal('Bq');
+  });
+
+  it('should expose the basis element for non-H ghosts', () => {
+    const structure = new Structure('ghost');
+    structure.addAtom(new Atom('C', 0, 0, 0, undefined, { role: 'ghost' }));
+    const message = new RenderMessageBuilder(structure).getRenderMessage();
+    expect(message.data.atoms[0].displayLabel).to.equal('C-Bq');
+  });
+});

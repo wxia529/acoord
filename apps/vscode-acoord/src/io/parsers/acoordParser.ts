@@ -31,6 +31,8 @@ interface ACoordAtom {
   label?: string;
   fixed?: boolean;
   selectiveDynamics?: [boolean, boolean, boolean];
+  role?: 'real' | 'dummy' | 'ghost';
+  sourceLabel?: string;
 }
 
 interface ACoordUnitCell {
@@ -76,7 +78,9 @@ export class ACoordParser extends StructureParser {
     const structure = new Structure('ACoord Structure');
 
     for (const atomData of data.atoms) {
-      const element = parseElement(atomData.element);
+      const isDummy = atomData.role === 'dummy';
+      const isGhost = atomData.role === 'ghost';
+      const element = isDummy ? 'X' : parseElement(atomData.element);
       if (!element) {
         throw new Error(`ACoordParser: invalid element "${atomData.element}"`);
       }
@@ -96,6 +100,8 @@ export class ACoordParser extends StructureParser {
         label: atomData.label,
         fixed: atomData.fixed ?? false,
         selectiveDynamics: atomData.selectiveDynamics,
+        role: isDummy ? 'dummy' : isGhost ? 'ghost' : 'real',
+        sourceLabel: isDummy || isGhost ? atomData.sourceLabel : undefined,
       });
 
       structure.addAtom(atom);
@@ -145,6 +151,12 @@ export class ACoordParser extends StructureParser {
       }
       if (atom.selectiveDynamics?.some((canMove) => !canMove)) {
         atomData.selectiveDynamics = atom.selectiveDynamics;
+      }
+      if (atom.role !== 'real') {
+        atomData.role = atom.role;
+        if (atom.sourceLabel) {
+          atomData.sourceLabel = atom.sourceLabel;
+        }
       }
       return atomData;
     });
