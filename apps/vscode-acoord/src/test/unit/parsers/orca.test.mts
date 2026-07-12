@@ -203,6 +203,23 @@ describe('ORCA ghost atoms', () => {
     expect(parser.serialize(structure)).to.include('H:  ');
   });
 
+  it('should preserve an inline NewGTO basis after ghost coordinates', () => {
+    const parser = new ORCAParser();
+    const basis = 'NewGTO S 1 1 1e6 1 end';
+    const input = `! HF\n* xyz 0 1\nH:   0.000000   0.000000   0.000000   ${basis}\n*`;
+    const structure = parser.parse(input);
+
+    expect(structure.atoms).to.have.lengthOf(1);
+    expect(structure.atoms[0].role).to.equal('ghost');
+    expect(structure.atoms[0].element).to.equal('H');
+
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.include(basis);
+    const reparsed = parser.parse(serialized);
+    expect(reparsed.atoms).to.have.lengthOf(1);
+    expect(reparsed.atoms[0].role).to.equal('ghost');
+  });
+
   it('should preserve non-H ghost basis elements', () => {
     const parser = new ORCAParser();
     const input = '! HF def2-SVP\n* xyz 0 1\nC: 0 0 0\nO: 0 0 1\n*';
@@ -211,5 +228,30 @@ describe('ORCA ghost atoms', () => {
     const serialized = parser.serialize(structure);
     expect(serialized).to.include('C:  ');
     expect(serialized).to.include('O:  ');
+  });
+});
+
+describe('ORCA point charges', () => {
+  it('should parse and round-trip Q charge X Y Z entries', () => {
+    const parser = new ORCAParser();
+    const input = '! HF\n* xyz 0 1\nC 0 0 0\nQ -0.5000 3.000 0.000 0.000\n*';
+    const structure = parser.parse(input);
+
+    expect(structure.atoms).to.have.lengthOf(2);
+    expect(structure.atoms[1].role).to.equal('dummy');
+    expect(structure.atoms[1].sourceLabel).to.equal('Q');
+    expect(structure.atoms[1].x).to.equal(3);
+
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.match(/Q\s+-0\.5000\s+3\.0000000000\s+0\.0000000000\s+0\.0000000000/);
+    const reparsed = parser.parse(serialized);
+    expect(reparsed.atoms[1].sourceLabel).to.equal('Q');
+    expect(reparsed.atoms[1].x).to.equal(3);
+  });
+
+  it('should reject a Q entry without all required fields', () => {
+    const parser = new ORCAParser();
+    const input = '! HF\n* xyz 0 1\nQ -0.5 1.0 2.0\n*';
+    expect(() => parser.parse(input)).to.throw('point charge requires charge, X, Y, and Z values');
   });
 });

@@ -178,14 +178,13 @@ describe('GJF dummy atoms', () => {
 });
 
 describe('GJF ghost atoms', () => {
-  it('should normalize H-Bq centers to Bq on write', () => {
+  it('should preserve an explicit H-Bq label on write', () => {
     const parser = new GJFParser();
     const input = '#P\n\nghost\n\n0 1\nC 0 0 0\nH-Bq 0 0 1\n\n';
     const structure = parser.parse(input);
     expect(structure.atoms[1].role).to.equal('ghost');
     expect(structure.atoms[1].element).to.equal('H');
-    expect(parser.serialize(structure)).to.include('Bq  ');
-    expect(parser.serialize(structure)).to.not.include('H-Bq');
+    expect(parser.serialize(structure)).to.include('H-Bq');
   });
 
   it('should parse standalone Bq as an H-basis ghost', () => {
@@ -195,6 +194,18 @@ describe('GJF ghost atoms', () => {
     expect(structure.atoms[0].role).to.equal('ghost');
     expect(structure.atoms[0].element).to.equal('H');
     expect(parser.serialize(structure)).to.include('Bq  ');
+  });
+
+  it('should write newly created H-basis ghosts as Bq', () => {
+    const parser = new GJFParser();
+    const structure = parser.parse('#P\n\nghost\n\n0 1\nH 0 0 0\n\n');
+    structure.atoms[0].role = 'ghost';
+    structure.atoms[0].sourceLabel = 'H:';
+
+    const serialized = parser.serialize(structure);
+    expect(serialized).to.include('Bq  ');
+    expect(serialized).to.not.include('H-Bq');
+    expect(serialized).to.not.include('H:');
   });
 
   it('should preserve non-H ghost basis elements', () => {

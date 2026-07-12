@@ -242,6 +242,9 @@ export class GJFParser extends StructureParser {
       return 'X';
     }
     if (atom.role === 'ghost') {
+      if (/^(?:bq|[a-z]{1,2}-bq)$/i.test(atom.sourceLabel ?? '')) {
+        return atom.sourceLabel as string;
+      }
       return atom.element === 'H' ? 'Bq' : `${atom.element}-Bq`;
     }
     return atom.element;

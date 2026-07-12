@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.4]
+
+### Added
+
+- **ORCA point charges**: Parses and round-trips `Q charge x y z` entries while preserving their charge values.
+- **ORCA inline ghost basis definitions**: Preserves coordinate-line suffixes such as `NewGTO S 1 1 1e6 1 end` on ghost atoms when coordinates are rewritten.
+
+### Fixed
+
+- **Gaussian ghost labels**: Explicit labels such as `H-Bq`, `C-Bq`, and `O-Bq` are preserved on save, while newly inserted H-basis ghosts still default to `Bq`.
+
 ## [0.4.3]
 
 ### Changed

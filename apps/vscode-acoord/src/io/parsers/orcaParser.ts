@@ -5,6 +5,9 @@ import { BRIGHT_SCHEME } from '../../config/presets/color-schemes/index.js';
 import { StructureParser } from './structureParser.js';
 import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
+const ORCA_COORDINATE_SUFFIXES = 'orcaCoordinateSuffixes';
+const ORCA_POINT_CHARGES = 'orcaPointCharges';
+
 /**
  * ORCA input file parser (.inp)
  * Minimal support: * xyz charge mult ... *
@@ -40,9 +43,12 @@ export class ORCAParser extends StructureParser {
     
     // Store raw content in metadata for serialization
     structure.metadata.set('orcaRawContent', rawContent);
+    const coordinateSuffixes: Record<string, string> = {};
+    const pointCharges: Record<string, string> = {};
 
     for (let i = startIndex + 1; i < lines.length; i++) {
-      const line = lines[i].trim();
+      const rawLine = lines[i];
+      const line = rawLine.trim();
       if (!line) {
         continue;
       }
@@ -53,26 +59,45 @@ export class ORCAParser extends StructureParser {
       if (parts.length < 4) {
         continue;
       }
+      const isPointCharge = /^q$/i.test(parts[0]);
+      if (isPointCharge && parts.length < 5) {
+        throw new Error(`ORCAParser line ${i + 1}: point charge requires charge, X, Y, and Z values`);
+      }
       const ghostMatch = /^([a-z]{1,2}):$/i.exec(parts[0]);
       const isGhost = ghostMatch !== null;
-      const isDummy = !isGhost && /^(?:da|x|xx)$/i.test(parts[0]);
+      const isDummy = !isGhost && (isPointCharge || /^(?:da|x|xx)$/i.test(parts[0]));
       const element = isDummy ? 'X' : parseElement(isGhost ? ghostMatch[1] : parts[0]);
       if (!element) {
         throw new Error(`ORCAParser line ${i + 1}: invalid atom label "${parts[0]}"`);
       }
-      const x = parseFloat(parts[1]);
-      const y = parseFloat(parts[2]);
-      const z = parseFloat(parts[3]);
+      const coordinateOffset = isPointCharge ? 2 : 1;
+      const x = parseFloat(parts[coordinateOffset]);
+      const y = parseFloat(parts[coordinateOffset + 1]);
+      const z = parseFloat(parts[coordinateOffset + 2]);
       if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) {
         continue;
       }
-      structure.addAtom(new Atom(element, x, y, z, undefined, {
+      if (isPointCharge && !Number.isFinite(parseFloat(parts[1]))) {
+        throw new Error(`ORCAParser line ${i + 1}: invalid point charge "${parts[1]}"`);
+      }
+      const atom = new Atom(element, x, y, z, undefined, {
         color: BRIGHT_SCHEME.colors[element] || '#C0C0C0',
         radius: getDefaultAtomRadius(element),
         role: isDummy ? 'dummy' : isGhost ? 'ghost' : 'real',
         sourceLabel: isDummy || isGhost ? parts[0] : undefined,
-      }));
+      });
+      structure.addAtom(atom);
+      if (isPointCharge) {
+        pointCharges[atom.id] = parts[1];
+      }
+      const suffix = this.extractLineSuffix(rawLine, isPointCharge ? 5 : 4);
+      if (suffix) {
+        coordinateSuffixes[atom.id] = suffix;
+      }
     }
+
+    structure.metadata.set(ORCA_COORDINATE_SUFFIXES, coordinateSuffixes);
+    structure.metadata.set(ORCA_POINT_CHARGES, pointCharges);
 
     this.applyCartesianConstraints(lines, structure);
 
@@ -110,7 +135,7 @@ export class ORCAParser extends StructureParser {
     lines.push(`* xyz ${charge} ${multiplicity}`);
     for (const atom of structure.atoms) {
       lines.push(
-        `${this.getAtomLabel(atom).padEnd(6)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
+        this.formatCoordinateLine(atom, structure)
       );
     }
     lines.push('*');
@@ -180,10 +205,29 @@ export class ORCAParser extends StructureParser {
 
   private writeORCACoordinates(lines: string[], structure: Structure): void {
     for (const atom of structure.atoms) {
-      lines.push(
-        `${this.getAtomLabel(atom).padEnd(6)}  ${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`
-      );
+      lines.push(this.formatCoordinateLine(atom, structure));
     }
+  }
+
+  private formatCoordinateLine(atom: Atom, structure: Structure): string {
+    const suffixes = structure.metadata.get(ORCA_COORDINATE_SUFFIXES) as Record<string, string> | undefined;
+    const suffix = suffixes?.[atom.id];
+    const pointCharges = structure.metadata.get(ORCA_POINT_CHARGES) as Record<string, string> | undefined;
+    const pointCharge = pointCharges?.[atom.id];
+    const label = pointCharge !== undefined ? 'Q' : this.getAtomLabel(atom);
+    const chargeField = pointCharge !== undefined ? `${pointCharge}  ` : '';
+    const coordinateLine = `${label.padEnd(6)}  ${chargeField}${formatCoordinateTriplet([atom.x, atom.y, atom.z])}`;
+    return suffix ? `${coordinateLine}  ${suffix}` : coordinateLine;
+  }
+
+  private extractLineSuffix(line: string, fieldCount: number): string | undefined {
+    const matches = [...line.matchAll(/\S+/g)];
+    const lastField = matches[fieldCount - 1];
+    if (!lastField || lastField.index === undefined) {
+      return undefined;
+    }
+    const suffix = line.slice(lastField.index + lastField[0].length).trim();
+    return suffix || undefined;
   }
 
   private getAtomLabel(atom: Atom): string {
