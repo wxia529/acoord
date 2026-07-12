@@ -189,7 +189,6 @@ export class MessageRouter {
         message.basisElement ?? 'H',
         message.normalOffset ?? 0
       );
-      this.selectionService.setSelection([result.atomId]);
       if (result.planeRms !== undefined && result.planeRms > 0.1) {
         void vscode.window.showWarningMessage(
           `ACoord: selected atoms are noticeably non-planar (best-fit plane RMS ${result.planeRms.toFixed(4)} Å).`

@@ -3,7 +3,7 @@
   "displayName": "ACoord",
   "description": "Atomic Coordinate Toolkit",
   "publisher": "wxia529",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "license": "MIT",
   "type": "module",
   "icon": "media/acoord-icon.png",
