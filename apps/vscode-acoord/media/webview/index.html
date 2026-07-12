@@ -191,6 +191,25 @@
         </div>
       </div>
 
+      <div class="collapsible-panel" data-panel="atom-selection">
+        <div class="panel-header">
+          <span class="panel-title">Atom Selection</span>
+          <span class="panel-toggle">▼</span>
+        </div>
+        <div class="panel-content" id="panel-atom-selection">
+          <div class="input-group">
+            <label>Selected atom indices (1-based)</label>
+            <input type="text" id="selected-atom-indices" readonly placeholder="Select atoms" />
+          </div>
+          <vscode-button id="btn-copy-atom-indices" appearance="secondary" disabled>Copy 1-based indices</vscode-button>
+          <div class="input-group">
+            <label>Selected atom indices (0-based)</label>
+            <input type="text" id="selected-atom-indices-zero" readonly placeholder="Select atoms" />
+          </div>
+          <vscode-button id="btn-copy-atom-indices-zero" appearance="secondary" disabled>Copy 0-based indices</vscode-button>
+        </div>
+      </div>
+
       <div class="collapsible-panel" data-panel="atom-list">
         <div class="panel-header">
           <span class="panel-title">Atom List</span>

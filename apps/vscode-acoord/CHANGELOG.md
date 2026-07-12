@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.2]
+
+### Added
+
+- **Selected atom indices**: The Properties sidebar now shows copyable 1-based and 0-based atom-index expressions, compacting runs of three or more consecutive atoms into ranges such as `1,2,5-8,9`.
+
+### Changed
+
+- **Compact coordinate clipboard output**: Cartesian coordinates copied from Properties now use the `x,y,z` format without spaces.
+
 ## [0.4.1]
 
 ### Changed

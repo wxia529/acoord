@@ -2,6 +2,7 @@ import { structureStore, selectionStore } from '../state';
 import { getAtomById } from '../utils/measurements';
 import { getAdsorptionReference } from '../utils/transformations';
 import type { Atom } from '../types';
+import { formatSelectedAtomIndices } from '../utils/atomSelection';
 
 export function updatePropertiesPanel(): void {
   const noSelection = document.getElementById('properties-no-selection');
@@ -14,6 +15,17 @@ export function updatePropertiesPanel(): void {
   const selectedAtomIds = selectionStore.selectedAtomIds || [];
   const selectedBondKeys = selectionStore.selectedBondKeys || [];
   const selectedAtoms = selectedAtomIds.map(getAtomById).filter((atom): atom is Atom => atom !== null);
+  const selectionIndices = document.getElementById('selected-atom-indices') as HTMLInputElement | null;
+  const zeroBasedSelectionIndices = document.getElementById('selected-atom-indices-zero') as HTMLInputElement | null;
+  const copySelectionButton = document.getElementById('btn-copy-atom-indices') as HTMLButtonElement | null;
+  const copyZeroBasedButton = document.getElementById('btn-copy-atom-indices-zero') as HTMLButtonElement | null;
+  const atomIds = structureStore.currentStructure?.atoms.map((atom) => atom.id) ?? [];
+  const formattedSelection = formatSelectedAtomIndices(atomIds, selectedAtomIds);
+  const zeroBasedSelection = formatSelectedAtomIndices(atomIds, selectedAtomIds, 0);
+  if (selectionIndices) selectionIndices.value = formattedSelection;
+  if (zeroBasedSelectionIndices) zeroBasedSelectionIndices.value = zeroBasedSelection;
+  if (copySelectionButton) copySelectionButton.disabled = formattedSelection.length === 0;
+  if (copyZeroBasedButton) copyZeroBasedButton.disabled = zeroBasedSelection.length === 0;
   const realAtomCount = selectedAtoms.filter((atom) => !atom.role || atom.role === 'real').length;
   const dummySelection = document.getElementById('dummy-atom-selection');
   const dummyButton = document.getElementById('btn-insert-dummy') as HTMLButtonElement | null;

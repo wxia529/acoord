@@ -116,6 +116,25 @@ export function setup(callbacks: AppEditContext): void {
       window.setTimeout(() => { copyCoordinatesButton.textContent = 'Copy x, y, z'; }, 1200);
     });
   }
+  const setupIndexCopyButton = (buttonId: string, inputId: string, label: string): void => {
+    const button = document.getElementById(buttonId) as HTMLButtonElement | null;
+    if (!button) return;
+    button.addEventListener('click', async () => {
+      const input = document.getElementById(inputId) as HTMLInputElement | null;
+      const text = input?.value ?? '';
+      if (!text) return;
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch {
+        input?.select();
+        document.execCommand('copy');
+      }
+      button.textContent = 'Copied';
+      window.setTimeout(() => { button.textContent = label; }, 1200);
+    });
+  };
+  setupIndexCopyButton('btn-copy-atom-indices', 'selected-atom-indices', 'Copy 1-based indices');
+  setupIndexCopyButton('btn-copy-atom-indices-zero', 'selected-atom-indices-zero', 'Copy 0-based indices');
 
   // ── Atom Color ─────────────────────────────────────────────────────────────
 

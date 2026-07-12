@@ -25,7 +25,13 @@ brush settings.
 
 Select one atom and click **Copy x, y, z** in the right-side Properties panel.
 The clipboard receives plain comma-separated values such as
-`1.25, -2, 3.123456789`, without parentheses or an element label.
+`1.25,-2,3.123456789`, without spaces, parentheses, or an element label.
+
+### Copying Selected Atom Indices
+
+The right-side **Atom Selection** panel simultaneously lists 1-based and 0-based
+atom indices, each with its own copy button. Runs of three or more consecutive
+atoms are compressed, for example `1,2,5-8,10`, with no spaces.
 
 ### Method 2: Keyboard Shortcut
 
