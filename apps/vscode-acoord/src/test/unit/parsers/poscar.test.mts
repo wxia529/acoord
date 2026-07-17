@@ -5,6 +5,7 @@ import { dirname, join } from 'path';
 import { Structure } from '../../../models/structure.js';
 import { UnitCell } from '../../../models/unitCell.js';
 import { POSCARParser } from '../../../io/parsers/poscarParser.js';
+import { FileManager } from '../../../io/fileManager.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(__dirname, '../../fixtures');
@@ -30,6 +31,48 @@ Direct
     expect(structure.atoms).to.have.lengthOf(2);
     expect(structure.unitCell).to.be.instanceOf(UnitCell);
     expect(structure.atoms[0].element).to.equal('Fe');
+  });
+
+  it('should export explicitly selected Direct coordinates', () => {
+    const parser = new POSCARParser();
+    const structure = parser.parse(`Simple BCC Iron
+1.0
+2.866 0.0 0.0
+0.0 2.866 0.0
+0.0 0.0 2.866
+Fe
+2
+Direct
+0.0 0.0 0.0
+0.5 0.5 0.5`);
+    const serialized = FileManager.saveStructure(structure, 'poscar', {
+      vaspCoordinateMode: 'direct',
+    });
+
+    expect(serialized).to.match(/^Direct$/m);
+    expect(serialized).to.match(/0\.5000000000\s+0\.5000000000\s+0\.5000000000/);
+  });
+
+  it('should export explicitly selected Cartesian coordinates', () => {
+    const parser = new POSCARParser();
+    const structure = parser.parse(`Simple BCC Iron
+1.0
+2.866 0.0 0.0
+0.0 2.866 0.0
+0.0 0.0 2.866
+Fe
+2
+Direct
+0.0 0.0 0.0
+0.5 0.5 0.5`);
+    const serialized = FileManager.saveStructure(structure, 'poscar', {
+      vaspCoordinateMode: 'cartesian',
+    });
+    const reparsed = parser.parse(serialized);
+
+    expect(serialized).to.match(/^Cartesian$/m);
+    expect(serialized).to.match(/1\.4330000000\s+1\.4330000000\s+1\.4330000000/);
+    expect(reparsed.atoms[1].getPosition()).to.deep.equal(structure.atoms[1].getPosition());
   });
 
   it('should parse selective dynamics', () => {

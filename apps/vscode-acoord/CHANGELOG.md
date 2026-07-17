@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0]
+
+### Added
+
+- **Quantum ESPRESSO `pw.x` structure parsing**: Supports order-independent structure cards, documented explicit `ibrav` variants, `alat`/`bohr`/`angstrom`/`crystal` coordinates, algebraic coordinate expressions, and distinct species labels with their original masses and pseudopotentials.
+- **Coordinate-mode export selection**: QE exports prompt for `crystal` or `angstrom`, while VASP/POSCAR exports prompt for `Direct` or `Cartesian` coordinates.
+
+### Fixed
+
+- **QE crystal-coordinate parsing**: `ATOMIC_POSITIONS crystal` now parses correctly when `CELL_PARAMETERS` appears later in the standard `pw.x` card order.
+- **QE coordinate round trips**: Saving fractional or Bohr-based inputs no longer retains an incompatible unit header around Cartesian Å values.
+
 ## [0.4.4]
 
 ### Added

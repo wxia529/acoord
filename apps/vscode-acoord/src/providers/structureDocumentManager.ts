@@ -1,7 +1,9 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import { Structure } from '../models/structure.js';
-import { FileManager } from '../io/fileManager.js';
+import { FileManager, type StructureSaveOptions } from '../io/fileManager.js';
+import type { QEPositionUnit } from '../io/parsers/qeParser.js';
+import type { POSCARCoordinateMode } from '../io/parsers/poscarParser.js';
 
 /**
  * Handles all file I/O for structure documents: loading, saving in-place, and
@@ -65,7 +67,8 @@ export class StructureDocumentManager {
   static async saveAs(
     destination: vscode.Uri,
     exportFrames: Structure[],
-    format: string
+    format: string,
+    options?: StructureSaveOptions
   ): Promise<void> {
     if (FileManager.isReadOnlyFormat(destination.fsPath)) {
       const ext = path.extname(destination.fsPath).slice(1).toLowerCase() || path.basename(destination.fsPath);
@@ -86,12 +89,52 @@ export class StructureDocumentManager {
 
     const content = isMultiFrame
       ? FileManager.saveStructures(exportFrames, resolvedFormat)
-      : FileManager.saveStructure(exportFrames[0], resolvedFormat);
+      : FileManager.saveStructure(exportFrames[0], resolvedFormat, options);
 
     await vscode.workspace.fs.writeFile(
       destination,
       new TextEncoder().encode(content)
     );
+  }
+
+  /** Ask which coordinate representation to use for a QE input export. */
+  static async pickQEPositionUnit(structure: Structure): Promise<QEPositionUnit | null> {
+    const choices: Array<{
+      id: QEPositionUnit;
+      label: string;
+    }> = [];
+    if (structure.unitCell) {
+      choices.push({
+        id: 'crystal',
+        label: 'Fractional coordinates — crystal',
+      });
+    }
+    choices.push({
+      id: 'angstrom',
+      label: 'Cartesian coordinates — angstrom',
+    });
+    const selected = await vscode.window.showQuickPick(choices, {
+      placeHolder: 'Select ATOMIC_POSITIONS coordinate type for QE export',
+      ignoreFocusOut: true,
+    });
+    return selected?.id ?? null;
+  }
+
+  /** Ask which coordinate representation to use for a VASP export. */
+  static async pickVASPCoordinateMode(structure: Structure): Promise<POSCARCoordinateMode | null> {
+    const choices: Array<{
+      id: POSCARCoordinateMode;
+      label: string;
+    }> = [];
+    if (structure.unitCell) {
+      choices.push({ id: 'direct', label: 'Fractional coordinates — Direct' });
+    }
+    choices.push({ id: 'cartesian', label: 'Cartesian coordinates — Cartesian' });
+    const selected = await vscode.window.showQuickPick(choices, {
+      placeHolder: 'Select coordinate type for VASP export',
+      ignoreFocusOut: true,
+    });
+    return selected?.id ?? null;
   }
 
   /**

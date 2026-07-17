@@ -11,6 +11,7 @@ import { UnitCell } from './models/unitCell.js';
 import { FileManager } from './io/fileManager.js';
 import { ColorSchemeManager } from './config/colorSchemeManager.js';
 import { ConfigMigration } from './config/configMigration.js';
+import { StructureDocumentManager } from './providers/structureDocumentManager.js';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('ACoord extension is now active!');
@@ -169,10 +170,25 @@ export function activate(context: vscode.ExtensionContext) {
             }
             exportStructures = scope.id === 'all' ? structures : [primaryStructure];
           }
+          const qePositionUnit = selectedFormat === 'in' || selectedFormat === 'pwi'
+            ? await StructureDocumentManager.pickQEPositionUnit(primaryStructure)
+            : undefined;
+          if ((selectedFormat === 'in' || selectedFormat === 'pwi') && !qePositionUnit) {
+            return;
+          }
+          const vaspCoordinateMode = selectedFormat === 'poscar' || selectedFormat === 'vasp'
+            ? await StructureDocumentManager.pickVASPCoordinateMode(primaryStructure)
+            : undefined;
+          if ((selectedFormat === 'poscar' || selectedFormat === 'vasp') && !vaspCoordinateMode) {
+            return;
+          }
           const exportContent =
             (selectedFormat === 'xyz' || selectedFormat === 'xdatcar') && exportStructures.length > 1
               ? FileManager.saveStructures(exportStructures, selectedFormat)
-              : FileManager.saveStructure(exportStructures[0], selectedFormat);
+              : FileManager.saveStructure(exportStructures[0], selectedFormat, {
+                qePositionUnit: qePositionUnit ?? undefined,
+                vaspCoordinateMode: vaspCoordinateMode ?? undefined,
+              });
 
           const originalName =
             fileUri.fsPath.split(/[\\/]/).pop()?.split('.')[0] || 'structure';

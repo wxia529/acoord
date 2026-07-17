@@ -7,7 +7,7 @@ import { expandElements, fractionalToCartesian } from '../../utils/parserUtils.j
 import { StructureParser } from './structureParser.js';
 import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
-type CoordinateMode = 'direct' | 'cartesian';
+export type POSCARCoordinateMode = 'direct' | 'cartesian';
 
 interface ParsedHeader {
   name: string;
@@ -15,7 +15,7 @@ interface ParsedHeader {
   elements: string[];
   counts: number[];
   hasSelectiveDynamics: boolean;
-  coordinateMode: CoordinateMode;
+  coordinateMode: POSCARCoordinateMode;
   atomStartLine: number;
 }
 
@@ -85,6 +85,11 @@ export class POSCARParser extends StructureParser {
   }
 
   serialize(structure: Structure): string {
+    return this.serializeWithCoordinateMode(structure, 'direct');
+  }
+
+  /** Serialize a POSCAR using Direct or Cartesian atomic coordinates. */
+  serializeWithCoordinateMode(structure: Structure, coordinateMode: POSCARCoordinateMode): string {
     const lines: string[] = [];
     lines.push((structure.name || '').trim() || 'Created by ACoord');
     lines.push('1.0');
@@ -116,13 +121,13 @@ export class POSCARParser extends StructureParser {
     if (hasSelectiveDynamics) {
       lines.push('Selective dynamics');
     }
-    lines.push('Direct');
+    lines.push(coordinateMode === 'direct' ? 'Direct' : 'Cartesian');
 
     for (const atom of orderedAtoms) {
       let fx = atom.x;
       let fy = atom.y;
       let fz = atom.z;
-      if (structure.unitCell) {
+      if (coordinateMode === 'direct' && structure.unitCell) {
         const frac = structure.unitCell.cartesianToFractional(atom.x, atom.y, atom.z);
         fx = frac[0];
         fy = frac[1];
@@ -197,7 +202,7 @@ export class POSCARParser extends StructureParser {
       index += 1;
     }
 
-    let coordinateMode: CoordinateMode = 'direct';
+    let coordinateMode: POSCARCoordinateMode = 'direct';
     const modeTokens = this.tokenizeDataLine(lines[index] || '');
     const firstToken = (modeTokens[0] || '').toLowerCase();
     const looksLikeCoordinate =

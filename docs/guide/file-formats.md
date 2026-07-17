@@ -86,6 +86,7 @@ Direct
 - ✅ Unit cell vectors
 - ✅ Selective dynamics
 - ✅ Multiple atom types
+- ✅ Export-time choice between `Direct` and `Cartesian` coordinates
 
 #### XDATCAR
 
@@ -147,8 +148,11 @@ labels are preserved on round trip.
 
 **Support:**
 - ✅ `pw.x` input format
-- ✅ Cell parameters
-- ✅ Atomic positions
+- ✅ Explicit `CELL_PARAMETERS` in `alat`, `bohr`, or `angstrom`
+- ✅ Documented explicit `ibrav` lattice variants
+- ✅ `ATOMIC_POSITIONS` in `alat`, `bohr`, `angstrom`, or `crystal`
+- ✅ QE algebraic coordinate expressions
+- ✅ Distinct species labels, masses, and pseudopotential filenames
 - ✅ Fixed and partially constrained position flags
 - ✅ Output file parsing (final structure)
 
@@ -156,6 +160,8 @@ labels are preserved on round trip.
 - `ATOMIC_POSITIONS` movement flags are written only when at least one atom has
   a real constraint. If every atom is unconstrained, ACoord omits redundant
   `1 1 1` flags.
+- Save As asks whether positions should be written as fractional `crystal`
+  coordinates or Cartesian `angstrom` coordinates.
 
 ### ABACUS STRU
 

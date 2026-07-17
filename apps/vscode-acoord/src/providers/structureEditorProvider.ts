@@ -416,7 +416,22 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
         }
         exportFrames = chosen;
       }
-      await StructureDocumentManager.saveAs(destination, exportFrames, format);
+      const qePositionUnit = format === 'in' || format === 'pwi'
+        ? await StructureDocumentManager.pickQEPositionUnit(exportFrames[0])
+        : undefined;
+      if ((format === 'in' || format === 'pwi') && !qePositionUnit) {
+        throw new Error('Save As cancelled.');
+      }
+      const vaspCoordinateMode = format === 'poscar' || format === 'vasp'
+        ? await StructureDocumentManager.pickVASPCoordinateMode(exportFrames[0])
+        : undefined;
+      if ((format === 'poscar' || format === 'vasp') && !vaspCoordinateMode) {
+        throw new Error('Save As cancelled.');
+      }
+      await StructureDocumentManager.saveAs(destination, exportFrames, format, {
+        qePositionUnit: qePositionUnit ?? undefined,
+        vaspCoordinateMode: vaspCoordinateMode ?? undefined,
+      });
     } catch (error) {
       if (error instanceof Error && error.message === 'Save As cancelled.') {
         throw error;

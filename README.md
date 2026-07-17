@@ -32,13 +32,13 @@ an interactive 3D editor without switching tools.
 |---|---:|---:|---|
 | XYZ | yes | yes | Single structures and multi-frame trajectories |
 | CIF | yes | yes | Unit cells and symmetry-expanded atoms |
-| POSCAR / CONTCAR / VASP | yes | yes | Unit cells and selective dynamics |
+| POSCAR / CONTCAR / VASP | yes | yes | Unit cells, selective dynamics, Direct/Cartesian export |
 | XDATCAR | yes | no | VASP trajectory |
 | OUTCAR | yes | no | VASP output structures |
 | PDB | yes | yes | `CRYST1`, `ATOM`, and `HETATM` records |
 | Gaussian input | yes | yes | Preserves route/header metadata |
 | ORCA input | yes | yes | Preserves input header and blocks |
-| Quantum ESPRESSO input | yes | yes | Preserves namelists and structure cards |
+| Quantum ESPRESSO input | yes | yes | `pw.x` lattices/units; preserves namelists and structure cards |
 | Quantum ESPRESSO output | yes | no | Multi-frame output parsing |
 | ABACUS STRU | yes | yes | Preserves species, orbitals, magnetism, velocity, spin extras |
 | OpenMX DAT | yes | yes | Preserves calculation parameters and species rows |
@@ -115,6 +115,8 @@ and preserve calculation settings:
 
 - Gaussian, ORCA, QE, STRU, OpenMX, SIESTA, and related formats preserve
   non-structure sections where the parser supports round-trip metadata.
+- QE Save As asks whether to write `ATOMIC_POSITIONS crystal` or `angstrom`;
+  VASP/POSCAR Save As similarly asks for `Direct` or `Cartesian` coordinates.
 - Fixed-atom or selective-dynamics flags are written only when there is a real
   constraint. If all atoms are unconstrained, writable formats omit the redundant
   fixed/free flags where the format allows it.

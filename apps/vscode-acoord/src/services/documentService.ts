@@ -6,6 +6,8 @@ import { StructureDocumentManager } from '../providers/structureDocumentManager.
 import { TrajectoryManager } from '../providers/trajectoryManager.js';
 import { UndoManager } from '../providers/undoManager.js';
 import { RenderMessageBuilder } from '../renderers/renderMessageBuilder.js';
+import type { QEPositionUnit } from '../io/parsers/qeParser.js';
+import type { POSCARCoordinateMode } from '../io/parsers/poscarParser.js';
 
 export class DocumentService {
   async saveStructure(key: string, activeStructure: Structure, frames: Structure[]): Promise<void> {
@@ -66,6 +68,23 @@ export class DocumentService {
       exportFrames = chosen;
     }
 
+    let qePositionUnit: QEPositionUnit | undefined;
+    if (selectedFormat === 'in' || selectedFormat === 'pwi') {
+      const selectedPositionUnit = await StructureDocumentManager.pickQEPositionUnit(exportFrames[0]);
+      if (!selectedPositionUnit) {
+        return;
+      }
+      qePositionUnit = selectedPositionUnit;
+    }
+    let vaspCoordinateMode: POSCARCoordinateMode | undefined;
+    if (selectedFormat === 'poscar' || selectedFormat === 'vasp') {
+      const selectedCoordinateMode = await StructureDocumentManager.pickVASPCoordinateMode(exportFrames[0]);
+      if (!selectedCoordinateMode) {
+        return;
+      }
+      vaspCoordinateMode = selectedCoordinateMode;
+    }
+
     const defaultFileName = StructureDocumentManager.defaultSaveAsFileName(key, selectedFormat);
     const noExtensionFormats = ['poscar', 'vasp', 'stru'];
     const isNoExtensionFormat = noExtensionFormats.includes(selectedFormat.toLowerCase());
@@ -87,7 +106,10 @@ export class DocumentService {
     }
 
     try {
-      await StructureDocumentManager.saveAs(uri, exportFrames, selectedFormat);
+      await StructureDocumentManager.saveAs(uri, exportFrames, selectedFormat, {
+        qePositionUnit,
+        vaspCoordinateMode,
+      });
 
       const actualFormat = FileManager.resolveFormat(selectedFormat, 'xyz');
       const fileExt = path.extname(uri.fsPath).slice(1).toLowerCase();

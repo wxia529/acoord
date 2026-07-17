@@ -17,6 +17,13 @@ import {
   OpenMXParser,
   StructureParser,
 } from './parsers/index.js';
+import type { QEPositionUnit } from './parsers/qeParser.js';
+import type { POSCARCoordinateMode } from './parsers/poscarParser.js';
+
+export interface StructureSaveOptions {
+  qePositionUnit?: QEPositionUnit;
+  vaspCoordinateMode?: POSCARCoordinateMode;
+}
 
 /**
  * File extension to parser mapping
@@ -127,14 +134,16 @@ export class FileManager {
    */
   static saveStructure(
     structure: Structure,
-    format: string
+    format: string,
+    options?: StructureSaveOptions
   ): string {
-    return this.saveStructures([structure], format);
+    return this.saveStructures([structure], format, options);
   }
 
   static saveStructures(
     structures: Structure[],
-    format: string
+    format: string,
+    options?: StructureSaveOptions
   ): string {
     if (!structures || structures.length === 0) {
       throw new Error('No structure available to save');
@@ -149,6 +158,12 @@ export class FileManager {
       throw new Error(`Unsupported export format: ${ext}`);
     }
 
+    if (parser instanceof QEParser && options?.qePositionUnit) {
+      return parser.serializeWithPositionUnit(structures[0], options.qePositionUnit);
+    }
+    if (parser instanceof POSCARParser && options?.vaspCoordinateMode) {
+      return parser.serializeWithCoordinateMode(structures[0], options.vaspCoordinateMode);
+    }
     return parser.serializeTrajectory(structures);
   }
 

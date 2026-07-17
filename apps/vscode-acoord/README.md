@@ -62,11 +62,11 @@ Atomic Coordinate Toolkit (ACoord) is a VS Code extension for **3D visualization
 |--------|------------|-------|
 | **XYZ** | `.xyz` | Trajectory support for multi-frame files |
 | **CIF** | `.cif` | Full crystallographic data |
-| **POSCAR** | `POSCAR`, `CONTCAR`, `.vasp` | Selective dynamics preserved via fixed flags |
+| **POSCAR** | `POSCAR`, `CONTCAR`, `.vasp` | Selective dynamics; Direct/Cartesian export choice |
 | **PDB** | `.pdb` | Basic CRYST1 + ATOM/HETATM records |
 | **Gaussian Input** | `.gjf` | Preserves route metadata; supports `X` dummy, `Bq` H-basis ghosts, and element ghosts such as `C-Bq` |
 | **ORCA Input** | `.inp` | Preserves settings/blocks; supports `DA`/`X`/`Xx` dummy and `H:` ghost centers |
-| **Quantum ESPRESSO Input** | `.in`, `.pwi` | Preserves &CONTROL, &SYSTEM, &ELECTRONS sections |
+| **Quantum ESPRESSO Input** | `.in`, `.pwi` | `pw.x` lattices and coordinate units; preserves calculation sections |
 | **ABACUS STRU** | `.STRU` | Preserves species, orbitals, movement flags, magnetism, velocity, and spin extras |
 | **OpenMX Input** | `.dat` | Preserves calculation parameters; updates coordinates, lattice, species, and fixed constraints |
 | **ACoord Native** | `.acoord` | JSON format preserving all atom properties |
@@ -162,6 +162,10 @@ Select 2, 3, or 4 atoms to display:
 1. Click **Save** (Ctrl+S) to save in current format
 2. Click **Save As** (Ctrl+Shift+S) to choose format
 3. Click **Export Image** to save high-resolution PNG
+
+When exporting QE input, choose fractional `crystal` or Cartesian `angstrom`
+atomic positions. VASP/POSCAR export similarly offers `Direct` or `Cartesian`
+coordinates.
 
 When saving edited input files, ACoord preserves existing calculation
 parameters where the format supports round-trip metadata and only updates
