@@ -10,7 +10,11 @@ import {
   formatComposition,
 } from '../../../io/abacus/bsseGenerator.js';
 import { buildBsseFileSet } from '../../../io/abacus/bsseSetWriter.js';
-import { computeCounterpoise, parseAbacusTotalEnergy } from '../../../io/abacus/bsseEnergy.js';
+import {
+  buildBsseResultMarkdown,
+  computeCounterpoise,
+  parseAbacusTotalEnergy,
+} from '../../../io/abacus/bsseEnergy.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const FIXTURES = join(__dirname, '../../fixtures/bsse_water');
@@ -154,6 +158,81 @@ E_KohnSham = -1.0 Ry
     ]);
     expect(result.corrected).to.equal(undefined);
     expect(result.fragmentSum).to.equal(-1);
+    expect(result.error).to.be.a('string');
+    expect(result.error).to.contain('full system (complex)');
+  });
+
+  it('should not correct when a required fragment energy is missing', () => {
+    const result = computeCounterpoise(
+      { label: 'STRU_0', energy: -100, source: 'calc_0/log.txt' },
+      [{ label: 'STRU_1', energy: -40, source: 'calc_1/log.txt' }],
+      ['STRU_2', 'STRU_3']
+    );
+
+    expect(result.corrected).to.equal(undefined);
+    expect(result.reference?.energy).to.equal(-100);
+    expect(result.missing).to.deep.equal(['STRU_2', 'STRU_3']);
+    expect(result.error).to.contain('STRU_2');
+    expect(result.error).to.contain('STRU_3');
+  });
+
+  it('should not correct when the complex energy is missing', () => {
+    const result = computeCounterpoise(
+      undefined,
+      [
+        { label: 'STRU_1', energy: -40, source: 'calc_1/log.txt' },
+        { label: 'STRU_2', energy: -10, source: 'calc_2/log.txt' },
+      ],
+      ['STRU_0']
+    );
+
+    expect(result.corrected).to.equal(undefined);
+    expect(result.missing).to.include('STRU_0');
+    expect(result.error).to.contain('STRU_0');
+    expect(result.error).to.contain('full system (complex)');
+  });
+
+  it('should not correct when a fragment energy is not finite', () => {
+    const result = computeCounterpoise(
+      { label: 'STRU_0', energy: -100, source: 'calc_0/log.txt' },
+      [
+        { label: 'STRU_1', energy: Number.NaN, source: 'calc_1/log.txt' },
+        { label: 'STRU_2', energy: Number.POSITIVE_INFINITY, source: 'calc_2/log.txt' },
+      ]
+    );
+
+    expect(result.corrected).to.equal(undefined);
+    expect(result.missing).to.deep.equal(['STRU_1', 'STRU_2']);
+    expect(result.error).to.contain('STRU_1 (not finite)');
+    expect(result.error).to.contain('STRU_2 (not finite)');
+  });
+
+  it('should not correct when the complex energy is not finite', () => {
+    const result = computeCounterpoise(
+      { label: 'STRU_0', energy: Number.NaN, source: 'calc_0/log.txt' },
+      [{ label: 'STRU_1', energy: -40, source: 'calc_1/log.txt' }]
+    );
+
+    expect(result.corrected).to.equal(undefined);
+    expect(result.reference).to.equal(undefined);
+    expect(result.missing).to.include('STRU_0');
+    expect(result.error).to.contain('STRU_0 (not finite)');
+  });
+
+  it('should name the missing calculations in the report and omit a corrected value', () => {
+    const result = computeCounterpoise(
+      { label: 'STRU_0', energy: -100, source: 'calc_0/log.txt' },
+      [{ label: 'STRU_1', energy: -40, source: 'calc_1/log.txt' }],
+      ['STRU_2']
+    );
+    const markdown = buildBsseResultMarkdown(result, { title: 'water' });
+
+    expect(markdown).to.contain('STRU_2');
+    expect(markdown).to.contain('Missing energies: STRU_2');
+    expect(markdown).to.contain('Cannot compute a BSSE-corrected energy');
+    expect(markdown).to.not.contain('**BSSE-corrected energy:');
+    expect(markdown).to.not.contain('E_BSSE = E_total');
+    expect(markdown).to.not.contain('-60');
   });
 });
 
