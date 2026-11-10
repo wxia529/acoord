@@ -11,6 +11,70 @@ import { formatCoordinateTriplet } from '../../utils/coordinateFormat.js';
 
 type AbacusOrbitalLibrary = 'efficiency' | 'precision';
 
+// ============================================================================
+// Empty (ghost) species labels
+// ============================================================================
+// ABACUS marks basis-only centres with an `empty` suffix on the species label,
+// e.g. `H_empty`, `O_empty` or `H_empty_2`. Such an atom contributes its basis
+// functions to the Hamiltonian while its ionic potential is left out, which is
+// what the counterpoise (BSSE) correction needs. The suffix belongs to the
+// *label*, never to the element symbol.
+
+/** True when a STRU species label denotes an empty (ghost / basis-only) atom. */
+export function isGhostSpeciesLabel(label: string): boolean {
+  return /empty/i.test(label);
+}
+
+/** Base element symbol of a STRU species label: `H_empty_2` -> `H`. */
+export function baseElementFromSpeciesLabel(label: string): string | undefined {
+  const token = (label || '').trim().split(/\s+/)[0] ?? '';
+  if (!token) {
+    return undefined;
+  }
+  return parseElement(token.split('_')[0] ?? token);
+}
+
+/**
+ * Species label written for an atom: ghost atoms get an `empty` suffix, real
+ * atoms keep their element symbol.
+ */
+export function getStruSpeciesLabel(atom: Atom): string {
+  if (atom.role !== 'ghost') {
+    const explicit = (atom.sourceLabel ?? '').trim().split(/\s+/)[0];
+    return explicit && !isGhostSpeciesLabel(explicit) ? explicit : atom.element;
+  }
+  const explicit = (atom.sourceLabel ?? '').trim().split(/\s+/)[0];
+  if (explicit && isGhostSpeciesLabel(explicit)) {
+    return explicit;
+  }
+  return `${atom.element}_empty`;
+}
+
+/**
+ * Species label of a single atom as written in the file (`H_a`, `O_water`, ...).
+ *
+ * Unlike `getStruSpeciesLabel` this keeps whatever label the file used for real
+ * atoms too, which is what the "per species label" BSSE mode groups by.
+ */
+export function getStruAtomSpeciesLabel(atom: Atom): string {
+  const explicit = (atom.sourceLabel ?? '').trim().split(/\s+/)[0];
+  return explicit || atom.element;
+}
+
+/** Species labels of a structure in STRU block order (one per ATOMIC_SPECIES row). */
+export function collectStruSpeciesLabels(structure: Structure): string[] {
+  const labels: string[] = [];
+  const seen = new Set<string>();
+  for (const atom of structure.atoms) {
+    const label = getStruSpeciesLabel(atom);
+    if (!seen.has(label)) {
+      seen.add(label);
+      labels.push(label);
+    }
+  }
+  return labels;
+}
+
 interface StruSpecies {
   label: string;
   mass: number;
@@ -418,31 +482,33 @@ export class STRUParser extends StructureParser {
             break;
           }
 
-          const element = parseElement(elementLine.split(/\s+/)[0]);
+          const speciesLabel = elementLine.split(/\s+/)[0];
+          const baseElement = baseElementFromSpeciesLabel(speciesLabel);
+          const isGhostSpecies = isGhostSpeciesLabel(speciesLabel);
           i++;
-          if (!element || i >= lines.length) {
+          if (!baseElement || i >= lines.length) {
             throw new Error(`STRUParser line ${i}: invalid element "${elementLine}"`);
           }
 
           const magnetismRawLine = lines[i];
           const magnetismLine = this.cleanLine(magnetismRawLine);
-          elementMagnetism.set(element, magnetismLine);
+          elementMagnetism.set(speciesLabel, magnetismLine);
           i++;
           if (i >= lines.length) {
-            throw new Error(`STRUParser line ${i}: missing atom count for ${element}`);
+            throw new Error(`STRUParser line ${i}: missing atom count for ${speciesLabel}`);
           }
 
           const countSplit = this.splitComment(lines[i]);
           const countLine = countSplit.content.trim();
           const count = this.parseStrictInteger(countLine, 'atom count', i + 1);
-          elementBlocks.set(element, {
+          elementBlocks.set(speciesLabel, {
             elementLine: rawElementLine,
             magnetismLine: magnetismRawLine,
             countCommentSuffix: countSplit.commentSuffix,
           });
           i++;
           if (count < 0) {
-            throw new Error(`STRUParser line ${i}: atom count must be non-negative for ${element}`);
+            throw new Error(`STRUParser line ${i}: atom count must be non-negative for ${speciesLabel}`);
           }
 
           let atomsRead = 0;
@@ -500,9 +566,12 @@ export class STRUParser extends StructureParser {
               z *= scale;
             }
 
-            const atom = new Atom(element, x, y, z, undefined, {
-              color: BRIGHT_SCHEME.colors[element] || '#C0C0C0',
-              radius: getDefaultAtomRadius(element),
+            const atom = new Atom(baseElement, x, y, z, undefined, {
+              color: BRIGHT_SCHEME.colors[baseElement] || '#C0C0C0',
+              radius: getDefaultAtomRadius(baseElement),
+              role: isGhostSpecies ? 'ghost' : 'real',
+              sourceLabel:
+                isGhostSpecies || speciesLabel !== baseElement ? speciesLabel : undefined,
             });
             atom.fixed = fixed;
             atom.selectiveDynamics = selectiveDynamics;
@@ -511,7 +580,7 @@ export class STRUParser extends StructureParser {
           }
 
           if (atomsRead < count) {
-            throw new Error(`STRUParser line ${i + 1}: expected ${count} atoms for ${element}`);
+            throw new Error(`STRUParser line ${i + 1}: expected ${count} atoms for ${speciesLabel}`);
           }
         }
         continue;
@@ -574,20 +643,34 @@ export class STRUParser extends StructureParser {
 
   private generateDefaultSTRU(structure: Structure): string {
     const lines: string[] = [];
-    const elements = this.collectElementGroups(structure);
+    const groups = this.collectSpeciesGroups(structure);
+    const speciesByLabel = this.getSpeciesByLabel(structure);
+    const orbitalsByLabel = this.getOrbitalsByLabel(structure);
 
     lines.push('ATOMIC_SPECIES');
-    for (const [element] of elements) {
+    for (const [label] of groups) {
+      const element = baseElementFromSpeciesLabel(label) ?? label;
+      const existing = speciesByLabel.get(label);
+      if (existing) {
+        lines.push(existing.rawLine);
+        continue;
+      }
+      const template = this.findSpeciesRow(speciesByLabel, label);
+      if (template) {
+        lines.push(this.renameSpeciesRow(template.rawLine, label));
+        continue;
+      }
       const mass = this.getAtomicMass(element);
       const pseudopotential = this.getDefaultPseudopotential(element);
-      lines.push(`${element}  ${mass.toFixed(3)}  ${pseudopotential}`);
+      lines.push(`${label}  ${mass.toFixed(3)}  ${pseudopotential}`);
     }
     lines.push('');
 
     lines.push('NUMERICAL_ORBITAL');
-    for (const [element] of elements) {
-      const orbital = this.getDefaultNumericalOrbital(element);
-      lines.push(orbital);
+    for (const [label] of groups) {
+      const element = baseElementFromSpeciesLabel(label) ?? label;
+      const existing = this.findOrbitalRow(orbitalsByLabel, label);
+      lines.push(existing?.rawLine ?? this.getDefaultNumericalOrbital(element));
     }
     lines.push('');
 
@@ -613,9 +696,9 @@ export class STRUParser extends StructureParser {
     }
 
     const hasMovementConstraints = this.hasMovementConstraints(structure);
-    for (const [element, atoms] of elements) {
+    for (const [label, atoms] of groups) {
       lines.push('');
-      lines.push(element);
+      lines.push(label);
       lines.push('0.0');
       lines.push(String(atoms.length));
 
@@ -644,11 +727,18 @@ export class STRUParser extends StructureParser {
   }
 
   private syncAtomicSpeciesSection(rawContent: string, structure: Structure): string {
-    const elements = this.collectElementGroups(structure).map(([element]) => element);
-    const speciesByElement = this.getSpeciesByElement(structure);
-    const rows = elements.map((element) => {
-      const existing = speciesByElement.get(element);
-      return existing?.rawLine ?? this.formatDefaultSpeciesRow(element);
+    const labels = this.collectSpeciesGroups(structure).map(([label]) => label);
+    const speciesByLabel = this.getSpeciesByLabel(structure);
+    const rows = labels.map((label) => {
+      const existing = speciesByLabel.get(label);
+      if (existing) {
+        return existing.rawLine;
+      }
+      const template = this.findSpeciesRow(speciesByLabel, label);
+      if (template) {
+        return this.renameSpeciesRow(template.rawLine, label);
+      }
+      return this.formatDefaultSpeciesRow(label);
     });
 
     const lines = rawContent.split(/\r?\n/);
@@ -664,7 +754,7 @@ export class STRUParser extends StructureParser {
     const replacement = [lines[section.start]];
     const countInfo = this.getOptionalCountLine(lines, section.start + 1, section.end);
     if (countInfo) {
-      replacement.push(`${elements.length}${countInfo.commentSuffix}`);
+      replacement.push(`${labels.length}${countInfo.commentSuffix}`);
     }
     replacement.push(...rows);
     replacement.push('');
@@ -672,11 +762,12 @@ export class STRUParser extends StructureParser {
   }
 
   private syncNumericalOrbitalSection(rawContent: string, structure: Structure): string {
-    const elements = this.collectElementGroups(structure).map(([element]) => element);
-    const orbitalsByElement = this.getOrbitalsByElement(structure);
-    const rows = elements.map((element) => {
-      const existing = orbitalsByElement.get(element);
-      return existing?.rawLine ?? this.getDefaultNumericalOrbital(element);
+    const labels = this.collectSpeciesGroups(structure).map(([label]) => label);
+    const orbitalsByLabel = this.getOrbitalsByLabel(structure);
+    const rows = labels.map((label) => {
+      const element = baseElementFromSpeciesLabel(label) ?? label;
+      const template = this.findOrbitalRow(orbitalsByLabel, label);
+      return template?.rawLine ?? this.getDefaultNumericalOrbital(element);
     });
 
     const lines = rawContent.split(/\r?\n/);
@@ -759,17 +850,17 @@ export class STRUParser extends StructureParser {
   }
 
   private writeAtomicPositions(lines: string[], structure: Structure, coordType: string): void {
-    const elements = this.collectElementGroups(structure);
+    const groups = this.collectSpeciesGroups(structure);
     const elementMagnetism = structure.metadata.get('struElementMagnetism') as Map<string, string> | undefined;
     const elementBlocks = structure.metadata.get('struElementBlocks') as Map<string, StruElementBlockMetadata> | undefined;
     const atomExtras = structure.metadata.get('struAtomExtras') as Map<string, StruAtomExtras> | undefined;
     const hasMovementConstraints = this.hasMovementConstraints(structure);
     
-    for (const [element, atoms] of elements) {
-      const elementBlock = elementBlocks?.get(element);
+    for (const [label, atoms] of groups) {
+      const elementBlock = elementBlocks?.get(label);
       lines.push('');
-      lines.push(elementBlock?.elementLine ?? element);
-      lines.push(elementBlock?.magnetismLine ?? elementMagnetism?.get(element) ?? '0.0');
+      lines.push(elementBlock?.elementLine ?? label);
+      lines.push(elementBlock?.magnetismLine ?? elementMagnetism?.get(label) ?? '0.0');
       lines.push(`${atoms.length}${elementBlock?.countCommentSuffix ?? ''}`);
 
       for (const atom of atoms) {
@@ -822,25 +913,89 @@ export class STRUParser extends StructureParser {
     return { species, nextIndex: i };
   }
 
-  private getSpeciesByElement(structure: Structure): Map<string, StruSpecies> {
+  /**
+   * Labels that may satisfy a lookup, most specific first: the label itself, the
+   * parent of an `empty` label (`O_water_empty` -> `O_water`) and finally the
+   * element symbol.
+   */
+  private labelCandidates(label: string): string[] {
+    const candidates = [label];
+    const parent = label.replace(/_empty.*$/i, '');
+    if (parent && parent !== label) {
+      candidates.push(parent);
+    }
+    const element = baseElementFromSpeciesLabel(label) ?? label;
+    if (!candidates.includes(element)) {
+      candidates.push(element);
+    }
+    return candidates;
+  }
+
+  private sameElement(key: string, element: string): boolean {
+    return (baseElementFromSpeciesLabel(key) ?? key) === element;
+  }
+
+  /**
+   * Row to copy for a species label: the exact row when it exists, then the
+   * parent species of an `empty` label, then any row of the same element.
+   */
+  private findSpeciesRow(
+    speciesByLabel: Map<string, StruSpecies>,
+    label: string
+  ): StruSpecies | undefined {
+    for (const candidate of this.labelCandidates(label)) {
+      const row = speciesByLabel.get(candidate);
+      if (row) {
+        return row;
+      }
+    }
+    const element = baseElementFromSpeciesLabel(label) ?? label;
+    for (const [key, row] of speciesByLabel) {
+      if (this.sameElement(key, element)) {
+        return row;
+      }
+    }
+    return undefined;
+  }
+
+  /** Orbital row matching a species label, with the same fallbacks. */
+  private findOrbitalRow(
+    orbitalsByLabel: Map<string, StruOrbital>,
+    label: string
+  ): StruOrbital | undefined {
+    for (const candidate of this.labelCandidates(label)) {
+      const row = orbitalsByLabel.get(candidate);
+      if (row) {
+        return row;
+      }
+    }
+    const element = baseElementFromSpeciesLabel(label) ?? label;
+    for (const [key, row] of orbitalsByLabel) {
+      if (this.sameElement(key, element)) {
+        return row;
+      }
+    }
+    return undefined;
+  }
+
+  private getSpeciesByLabel(structure: Structure): Map<string, StruSpecies> {
     const species = structure.metadata.get('struAtomicSpecies') as StruSpecies[] | undefined;
     const result = new Map<string, StruSpecies>();
     for (const item of species ?? []) {
-      const element = parseElement(item.label);
-      if (element && !result.has(element)) {
-        result.set(element, item);
+      if (item.label && !result.has(item.label)) {
+        result.set(item.label, item);
       }
     }
     return result;
   }
 
-  private getOrbitalsByElement(structure: Structure): Map<string, StruOrbital> {
+  private getOrbitalsByLabel(structure: Structure): Map<string, StruOrbital> {
     const orbitals = structure.metadata.get('struNumericalOrbitals') as StruOrbital[] | undefined;
     const result = new Map<string, StruOrbital>();
     for (const item of orbitals ?? []) {
-      const element = item.element ? parseElement(item.element) : this.inferElementFromFileName(item.orbitalFile);
-      if (element && !result.has(element)) {
-        result.set(element, item);
+      const label = item.element ?? this.inferElementFromFileName(item.orbitalFile);
+      if (label && !result.has(label)) {
+        result.set(label, item);
       }
     }
     return result;
@@ -852,10 +1007,27 @@ export class STRUParser extends StructureParser {
     return match ? parseElement(match[1]) : undefined;
   }
 
-  private formatDefaultSpeciesRow(element: string): string {
+  private formatDefaultSpeciesRow(label: string): string {
+    const element = baseElementFromSpeciesLabel(label) ?? label;
     const mass = this.getAtomicMass(element);
     const pseudopotential = this.getDefaultPseudopotential(element);
-    return `${element}  ${mass.toFixed(3)}  ${pseudopotential}`;
+    return `${label}  ${mass.toFixed(3)}  ${pseudopotential}`;
+  }
+
+  /**
+   * Copy a species row while replacing its leading label token.
+   *
+   * Empty atoms inherit the mass / pseudopotential of the parent element row so
+   * the counterpoise calculation really reuses the same basis.
+   */
+  private renameSpeciesRow(rawLine: string, label: string): string {
+    const split = this.splitComment(rawLine);
+    const content = split.content.trim();
+    const head = content.split(/\s+/)[0];
+    if (!head) {
+      return this.formatDefaultSpeciesRow(label);
+    }
+    return `${label}${content.slice(head.length)}${split.commentSuffix}`;
   }
 
   private findSection(lines: string[], header: string): { start: number; end: number } | null {
@@ -1092,11 +1264,15 @@ export class STRUParser extends StructureParser {
 
   private hasMovementConstraints(structure: Structure): boolean {
     return structure.atoms.some((atom) =>
-      atom.fixed || this.hasPartialMovementConstraint(atom)
+      atom.role === 'real' && (atom.fixed || this.hasPartialMovementConstraint(atom))
     );
   }
 
   private formatMovementFlags(atom: Atom): string {
+    if (atom.role !== 'real') {
+      // Empty (ghost) centres carry no nucleus and are never moved.
+      return '0 0 0';
+    }
     let selectiveDynamics: [boolean, boolean, boolean];
     if (atom.fixed) {
       selectiveDynamics = [false, false, false];
@@ -1272,12 +1448,20 @@ export class STRUParser extends StructureParser {
     return null;
   }
 
-  private collectElementGroups(structure: Structure): Array<[string, Atom[]]> {
+  /**
+   * Group atoms by STRU species label.
+   *
+   * Real atoms are grouped by element symbol; ghost ("empty") atoms keep their
+   * own `X_empty` label so ATOMIC_SPECIES / ATOMIC_POSITIONS stay consistent
+   * with `ntype`.
+   */
+  private collectSpeciesGroups(structure: Structure): Array<[string, Atom[]]> {
     const groups = new Map<string, Atom[]>();
     for (const atom of structure.atoms) {
-      const list = groups.get(atom.element) || [];
+      const label = getStruSpeciesLabel(atom);
+      const list = groups.get(label) || [];
       list.push(atom);
-      groups.set(atom.element, list);
+      groups.set(label, list);
     }
     return Array.from(groups.entries());
   }

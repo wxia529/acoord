@@ -12,6 +12,7 @@ import { FileManager } from './io/fileManager.js';
 import { ColorSchemeManager } from './config/colorSchemeManager.js';
 import { ConfigMigration } from './config/configMigration.js';
 import { StructureDocumentManager } from './providers/structureDocumentManager.js';
+import { registerAbacusCommands } from './commands/abacusCommands.js';
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('ACoord extension is now active!');
@@ -35,6 +36,8 @@ export function activate(context: vscode.ExtensionContext) {
     )
   );
   
+  registerAbacusCommands(context, editorProvider);
+
   colorSchemeManager.initialize().catch(console.error);
   
   context.subscriptions.push({

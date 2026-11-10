@@ -1,0 +1,16 @@
+#this is the input of using counterpoise to correct the BSSE error
+#
+INPUT_PARAMETERS
+#Parameters    (General)
+pseudo_dir           ../../../tests/PP_ORB
+orbital_dir          ../../../tests/PP_ORB
+#Parameters (Accuracy)
+ecutwfc              60 ###Energy cutoff needs to be tested to ensure your calculation is reliable.
+scf_nmax             100
+scf_thr              1e-6
+basis_type           lcao
+
+gamma_only           1 ### Abacus will generate/overwrite a KPT file when gamma_only is set to 1.
+
+smearing_method      gauss
+smearing_sigma       0.015

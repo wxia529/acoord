@@ -77,6 +77,22 @@ export class StructureEditorProvider implements vscode.CustomEditorProvider<Stru
     this.clipboardService = new ClipboardService();
   }
 
+  /**
+   * Structure currently held by the open editor session for `uri`.
+   *
+   * Commands such as the BSSE generator must see the in-memory (possibly
+   * unsaved) structure, not the stale file on disk.
+   */
+  getStructureForUri(uri: vscode.Uri): Structure | undefined {
+    const target = uri.toString();
+    for (const session of this.sessions.values()) {
+      if (session.document.uri.toString() === target) {
+        return session.trajectoryManager.activeStructure;
+      }
+    }
+    return undefined;
+  }
+
   async openCustomDocument(
     uri: vscode.Uri,
     openContext: vscode.CustomDocumentOpenContext,

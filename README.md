@@ -20,6 +20,9 @@ an interactive 3D editor without switching tools.
 - Pull new atoms from existing atoms with the directional toolbar brush and a configurable maximum length.
 - Insert H-basis ghost atoms at a selection's geometric center or center of
   mass, with an optional signed plane-normal offset.
+- Read, edit, and write ABACUS "empty" (`X_empty`) atoms, and generate a complete
+  BSSE (counterpoise) calculation set plus geometry / variable-cell relaxation
+  `INPUT` files from the command palette.
 - Navigate trajectories from formats such as XYZ, XDATCAR, OUTCAR, QE output,
   and CASTEP output.
 - Save edited inputs while preserving format-specific calculation sections where
@@ -40,7 +43,7 @@ an interactive 3D editor without switching tools.
 | ORCA input | yes | yes | Preserves input header and blocks |
 | Quantum ESPRESSO input | yes | yes | `pw.x` lattices/units; preserves namelists and structure cards |
 | Quantum ESPRESSO output | yes | no | Multi-frame output parsing |
-| ABACUS STRU | yes | yes | Preserves species, orbitals, magnetism, velocity, spin extras |
+| ABACUS STRU | yes | yes | Preserves species, orbitals, magnetism, velocity, spin extras, `X_empty` ghost species |
 | OpenMX DAT | yes | yes | Preserves calculation parameters and species rows |
 | CASTEP cell | yes | yes | Lattice, positions, constraints, spin/label metadata |
 | CASTEP output | yes | no | Geometry optimization and trajectory output |
@@ -49,6 +52,21 @@ an interactive 3D editor without switching tools.
 
 Read-only output formats can still be opened, inspected, edited in memory, and
 exported to a writable format.
+
+## ABACUS Workflows
+
+Three commands turn a structure into runnable ABACUS inputs:
+
+| Command | What it does |
+|---|---|
+| `ACoord: Generate BSSE (Counterpoise) Set` | Writes `STRU_0..N` + `INPUT_0..N` (each with its own `ntype`), `run_bsse.sh`, `bsse_index.json`, `KPT`, and a README. Fragments can be molecules, elements, or single atoms. |
+| `ACoord: Collect BSSE Energies` | Reads the run logs (or `energies.txt`) and writes `bsse_result.md` with `E_total - ΣE_i`. |
+| `ACoord: Generate ABACUS INPUT (SCF / Relax / Cell-Relax)` | Adds `relax_nmax`, `relax_method`, `force_thr_ev`, `cal_force`, `cal_stress`, `stress_thr`, or MD keywords to the existing `INPUT`, keeping everything else. |
+
+Empty atoms (`H_empty`, `O_empty`, ...) are parsed as ghosts, rendered as
+translucent wireframe shells, excluded from bonds and move flags, and written
+back with their original label. See the
+[ABACUS BSSE & Relaxation guide](docs/guide/abacus-workflows.md).
 
 ## Install and Use
 

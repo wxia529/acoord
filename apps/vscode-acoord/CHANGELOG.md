@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0]
+
+### Added
+
+- **ABACUS empty (`X_empty`) species**: STRU parsing and serialization now handle basis-only atoms such as `H_empty`, `O_empty`, and numbered variants like `H_empty_2`. Empty atoms keep their file label, inherit the parent element's mass and pseudopotential row, render as translucent wireframe shells, and never receive moving flags.
+- **BSSE (counterpoise) generator**: `ACoord: Generate BSSE (Counterpoise) Set` writes `STRU_0..N` and `INPUT_0..N` (each with an explicit `ntype`), `run_bsse.sh`, `bsse_index.json`, a Gamma-only `KPT`, and a README describing the formula. Fragments can be molecules (bonded components), elements, or single atoms.
+- **Any structure format as BSSE input**: the wizard reads `STRU` (whatever the file is called), `xyz`, `cif`, `POSCAR`, `pdb`, `fdf`, `cell`, `gjf`, QE `in`/`pwi`, ORCA `inp`, and `.acoord`. Cell-free files are wrapped into a cubic box with 15 angstrom of vacuum so ABACUS always receives `LATTICE_VECTORS`; when only one fragment is detected the wizard offers the per-atom / per-element fallback instead of writing a meaningless set.
+- **Editor title bar and context menu entry points**: the BSSE and `INPUT` wizards are one click away on every supported structure file, not only on `STRU`.
+- **User-defined fragments**: a new `Pick the fragments by hand` mode selects the atoms of every fragment from a list, and a `One fragment per species label` mode groups by the labels written in the file (`O_water`, `H_water`, `Cu_surf`). Empty species inherit the pseudopotential *and* numerical orbital row of their parent label (`H_water` -> `H_water_empty`).
+- **Species labels survive a round trip**: real atoms keep the label they were read with (`O_water` is no longer rewritten as `O`), while structures that only use element symbols behave exactly as before.
+- **BSSE energy collection**: `ACoord: Collect BSSE Energies` reads `energies.txt` or ABACUS logs (`!FINAL_ETOT_IS`) and writes `bsse_result.md` with `E_total - sum(E_i)`.
+- **ABACUS INPUT generation**: `ACoord: Generate ABACUS INPUT (SCF / Relax / Cell-Relax)` updates an existing `INPUT` for single-point, fixed-cell relaxation, variable-cell relaxation (`cal_stress 1`, `stress_thr`), or MD, preserving unrelated parameters and comments. Fixed atoms can be written to STRU as `0 0 0` move flags.
+- **ABACUS INPUT reader/writer**: Order-preserving `INPUT` parser/serializer used by the wizards.
+
+### Changed
+
+- **Ghost display labels**: ABACUS empty atoms keep their `X_empty` label instead of the Gaussian-style `Bq` label.
+- **Ghost move flags**: Empty centres are excluded from movement constraints and are written as `0 0 0`.
+
 ## [0.5.0]
 
 ### Added

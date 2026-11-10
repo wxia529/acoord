@@ -22,7 +22,7 @@ layout, while native `.acoord` stores coordinates as JSON numbers.
 | ORCA | ✅ | ✅ | `.inp` | ORCA input |
 | Quantum ESPRESSO | ✅ | ✅ | `.in`, `.pwi` | QE input |
 | QE Output | ✅ | ❌ | `.out`, `.pwo`, `.log` | QE output |
-| ABACUS | ✅ | ✅ | `.stru` | ABACUS STRU |
+| ABACUS | ✅ | ✅ | `.stru`, `STRU` | ABACUS STRU (including `X_empty` ghost species) |
 | OpenMX | ✅ | ✅ | `.dat` | OpenMX input |
 | CASTEP Cell | ✅ | ✅ | `.cell` | CASTEP input structure |
 | CASTEP Output | ✅ | ❌ | `.castep` | CASTEP output file |
@@ -170,12 +170,20 @@ labels are preserved on round trip.
 - ✅ Unit cell
 - ✅ Numerical orbital info
 - ✅ Movement flags, magnetism, velocity, and spin-constraint extras
+- ✅ Empty ("ghost") species: `H_empty`, `O_empty`, `H_empty_2`, ...
 
 **Save behavior:**
 - Existing STRU species, orbital, lattice, magnetism, velocity, and spin extras
   are preserved where possible.
+- Empty species stay empty: the `empty` label is kept verbatim (including
+  numbered variants) and atoms marked as ghosts in the editor are written as
+  `X_empty`, reusing the parent element's mass and pseudopotential row.
 - Movement flags are written only when at least one atom is fixed or partially
   constrained. If every atom is mobile, ACoord omits redundant `1 1 1` flags.
+  Empty centres always receive `0 0 0`.
+
+See [ABACUS BSSE and Optimisation Workflows](./abacus-workflows.md) for the
+button-driven counterpoise and relaxation helpers.
 
 ### OpenMX Input (.dat)
 

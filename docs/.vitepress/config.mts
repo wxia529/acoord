@@ -30,6 +30,7 @@ export default defineConfig({
             { text: 'Getting Started', link: '/guide/getting-started' },
             { text: 'Installation', link: '/guide/installation' },
             { text: 'File Formats', link: '/guide/file-formats' },
+            { text: 'ABACUS BSSE & Relaxation', link: '/guide/abacus-workflows' },
           ],
         },
       ],

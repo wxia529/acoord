@@ -198,8 +198,12 @@ export class RenderMessageBuilder {
         fixed: atom.fixed,
         role: atom.role,
         sourceLabel: atom.sourceLabel,
+        // ABACUS empty species keep their file label (`H_empty`); Gaussian/ORCA
+        // ghosts fall back to the `Bq` convention.
         displayLabel: atom.role === 'ghost'
-          ? (atom.element === 'H' ? 'Bq' : `${atom.element}-Bq`)
+          ? (atom.sourceLabel && /empty/i.test(atom.sourceLabel)
+            ? atom.sourceLabel
+            : atom.element === 'H' ? 'Bq' : `${atom.element}-Bq`)
           : atom.element,
       };
     });
