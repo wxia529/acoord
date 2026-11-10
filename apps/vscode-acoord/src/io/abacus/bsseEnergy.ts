@@ -22,12 +22,19 @@ export interface AbacusEnergyReading {
 export interface BsseEnergyResult {
   reference?: AbacusEnergyReading;
   fragments: AbacusEnergyReading[];
-  /** Sum of the fragment energies (0 when no fragment was found). */
+  /** Sum of the finite fragment energies (0 when none were usable). */
   fragmentSum: number;
-  /** E_total - sum(E_fragment); undefined without a reference energy. */
+  /**
+   * E_total - sum(E_fragment).
+   * Omitted when any required complex or fragment energy is missing or not finite.
+   */
   corrected?: number;
-  /** Labels whose energy could not be found. */
+  /** Labels whose energy is missing or not finite. */
   missing: string[];
+  /**
+   * Why `corrected` was not computed. Names every missing or non-finite calculation.
+   */
+  error?: string;
 }
 
 const ENERGY_PATTERNS: RegExp[] = [
@@ -53,21 +60,72 @@ export function parseAbacusTotalEnergy(content: string): number | undefined {
   return undefined;
 }
 
-/** Combine the reference energy and the per-fragment energies. */
+/**
+ * Combine the complex (full-system) energy and the per-fragment energies.
+ *
+ * `corrected` is set only when every required energy is present and finite.
+ * Otherwise the result is invalid: `corrected` is omitted and `error` names
+ * the calculations that are missing or not finite.
+ *
+ * @param reference - Full-system energy, when it was read successfully.
+ * @param fragments - Fragment energies that were read.
+ * @param missingLabels - Required calculations whose energy was not found.
+ */
 export function computeCounterpoise(
   reference: AbacusEnergyReading | undefined,
-  fragments: AbacusEnergyReading[]
+  fragments: AbacusEnergyReading[],
+  missingLabels: readonly string[] = []
 ): BsseEnergyResult {
-  const fragmentSum = fragments.reduce((sum, reading) => sum + reading.energy, 0);
+  const missing = dedupeLabels(missingLabels);
+  const nonFinite: string[] = [];
+  const seen = new Set(missing);
+
+  const noteNonFinite = (reading: AbacusEnergyReading): void => {
+    if (Number.isFinite(reading.energy) || seen.has(reading.label)) {
+      return;
+    }
+    seen.add(reading.label);
+    nonFinite.push(reading.label);
+  };
+
+  if (reference) {
+    noteNonFinite(reference);
+  }
+  for (const fragment of fragments) {
+    noteNonFinite(fragment);
+  }
+
+  let fragmentSum = 0;
+  for (const fragment of fragments) {
+    if (Number.isFinite(fragment.energy)) {
+      fragmentSum += fragment.energy;
+    }
+  }
+
   const result: BsseEnergyResult = {
     fragments,
     fragmentSum,
-    missing: [],
+    missing: dedupeLabels([...missing, ...nonFinite]),
   };
-  if (reference) {
-    result.reference = reference;
-    result.corrected = reference.energy - fragmentSum;
+
+  if (
+    reference !== undefined &&
+    Number.isFinite(reference.energy) &&
+    missing.length === 0 &&
+    nonFinite.length === 0
+  ) {
+    const corrected = reference.energy - fragmentSum;
+    if (Number.isFinite(corrected)) {
+      result.reference = reference;
+      result.corrected = corrected;
+      return result;
+    }
   }
+
+  if (reference !== undefined && Number.isFinite(reference.energy)) {
+    result.reference = reference;
+  }
+  result.error = formatBsseEnergyError(reference, missing, nonFinite);
   return result;
 }
 
@@ -85,36 +143,76 @@ export function buildBsseResultMarkdown(
   }
   lines.push('| calculation | energy (eV) | source |');
   lines.push('| --- | ---: | --- |');
-  if (result.reference) {
+  if (result.reference && Number.isFinite(result.reference.energy)) {
     lines.push(
       `| ${result.reference.label} (full system) | ${formatEnergy(result.reference.energy)} | ${result.reference.source} |`
     );
   }
   for (const reading of result.fragments) {
-    lines.push(`| ${reading.label} | ${formatEnergy(reading.energy)} | ${reading.source} |`);
+    const energyText = Number.isFinite(reading.energy) ? formatEnergy(reading.energy) : 'invalid';
+    lines.push(`| ${reading.label} | ${energyText} | ${reading.source} |`);
   }
   lines.push('');
-  if (result.reference) {
+  const corrected = result.corrected;
+  if (
+    !result.error &&
+    result.reference &&
+    corrected !== undefined &&
+    Number.isFinite(corrected)
+  ) {
     lines.push(`Sum of fragments: **${formatEnergy(result.fragmentSum)} eV**`);
     lines.push('');
     lines.push('```text');
     lines.push('E_BSSE = E_total - sum_i E_i');
     lines.push('```');
     lines.push('');
-    if (result.corrected !== undefined) {
-      lines.push(`**BSSE-corrected energy: ${formatEnergy(result.corrected)} eV**`);
-    }
+    lines.push(`**BSSE-corrected energy: ${formatEnergy(corrected)} eV**`);
+  } else if (result.error) {
+    lines.push(`> ${result.error}`);
   } else {
     lines.push('> No reference (full-system) energy was found, so the sum could not be');
     lines.push('> corrected. Run `STRU_0` as well, or select the correct folder.');
   }
-  const missing = options?.missing ?? result.missing;
+  const missing = dedupeLabels([...(options?.missing ?? []), ...result.missing]);
   if (missing.length > 0) {
     lines.push('');
     lines.push(`Missing energies: ${missing.join(', ')}`);
   }
   lines.push('');
   return lines.join('\n');
+}
+
+function formatBsseEnergyError(
+  reference: AbacusEnergyReading | undefined,
+  missing: readonly string[],
+  nonFinite: readonly string[]
+): string {
+  const items: string[] = [];
+  if (reference === undefined) {
+    items.push('full system (complex)');
+  }
+  items.push(...missing);
+  for (const label of nonFinite) {
+    items.push(`${label} (not finite)`);
+  }
+  if (items.length === 0) {
+    items.push('a required energy is missing or not finite');
+  }
+  return `Cannot compute a BSSE-corrected energy. Missing or invalid calculations: ${items.join(', ')}.`;
+}
+
+function dedupeLabels(labels: readonly string[]): string[] {
+  const seen = new Set<string>();
+  const unique: string[] = [];
+  for (const label of labels) {
+    const trimmed = label.trim();
+    if (!trimmed || seen.has(trimmed)) {
+      continue;
+    }
+    seen.add(trimmed);
+    unique.push(trimmed);
+  }
+  return unique;
 }
 
 function formatEnergy(value: number): string {

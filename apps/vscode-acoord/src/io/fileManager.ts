@@ -64,6 +64,18 @@ export class FileManager {
   }
 
   /**
+   * Whether `filePath` is an ABACUS STRU file.
+   *
+   * A name that already has an extension is classified by that extension, so
+   * only `.stru` matches (`structure.xyz` does not). An extensionless name
+   * matches when it contains `STRU` (`STRU`, `STRU_relax`). Both cases use
+   * the same rules as file-format detection.
+   */
+  static isStruFile(filePath: string): boolean {
+    return this.getFileExtension(filePath) === 'stru';
+  }
+
+  /**
    * Load structure from file content
    */
   static loadStructure(

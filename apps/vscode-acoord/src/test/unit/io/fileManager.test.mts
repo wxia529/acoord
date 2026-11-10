@@ -1,4 +1,4 @@
-import { describe, it } from 'node:test';
+import { describe, it } from 'mocha';
 import assert from 'node:assert';
 import { FileManager } from '../../../io/fileManager.js';
 
@@ -71,6 +71,20 @@ describe('FileManager', () => {
       assert.strictEqual(getFileExtension('README'), '');
       assert.strictEqual(getFileExtension('Makefile'), '');
       assert.strictEqual(getFileExtension('unknown'), '');
+    });
+  });
+
+  describe('isStruFile', () => {
+    it('should accept extensionless STRU names and .stru files', () => {
+      assert.strictEqual(FileManager.isStruFile('STRU'), true);
+      assert.strictEqual(FileManager.isStruFile('STRU_relax'), true);
+      assert.strictEqual(FileManager.isStruFile('foo.stru'), true);
+    });
+
+    it('should reject other extensions even when the name contains stru', () => {
+      assert.strictEqual(FileManager.isStruFile('structure.xyz'), false);
+      assert.strictEqual(FileManager.isStruFile('my_struct.cif'), false);
+      assert.strictEqual(FileManager.isStruFile('instructions.txt'), false);
     });
   });
 

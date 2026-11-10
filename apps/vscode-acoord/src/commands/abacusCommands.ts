@@ -354,10 +354,9 @@ async function collectBsseEnergies(): Promise<void> {
     .filter((item) => item !== referenceEntry)
     .map((item) => item.reading);
 
-  const result = computeCounterpoise(reference, fragments);
+  const result = computeCounterpoise(reference, fragments, missing);
   const markdown = buildBsseResultMarkdown(result, {
     title: basename(dir),
-    missing,
   });
 
   const resultUri = vscode.Uri.file(join(dir, 'bsse_result.md'));
@@ -365,15 +364,18 @@ async function collectBsseEnergies(): Promise<void> {
   const document = await vscode.workspace.openTextDocument(resultUri);
   await vscode.window.showTextDocument(document, { preview: true });
 
-  if (result.corrected !== undefined) {
+  if (result.corrected !== undefined && !result.error) {
     vscode.window.showInformationMessage(
       `BSSE-corrected energy: ${result.corrected.toFixed(6)} eV`
     );
-  } else if (missing.length > 0) {
-    vscode.window.showWarningMessage(
-      `Missing energies for: ${missing.join(', ')}. Run the calculations first.`
-    );
+    return;
   }
+  vscode.window.showErrorMessage(
+    result.error ??
+      `Cannot compute a BSSE-corrected energy. Missing or invalid calculations: ${
+        result.missing.join(', ') || 'full system (complex)'
+      }.`
+  );
 }
 
 async function readEnergyList(dir: string): Promise<Map<number, number>> {
@@ -894,6 +896,5 @@ async function askNumber(
 }
 
 function isStruFile(uri: vscode.Uri): boolean {
-  const name = basename(uri.fsPath);
-  return /STRU/i.test(name) || name.toLowerCase().endsWith('.stru');
+  return FileManager.isStruFile(uri.fsPath);
 }
